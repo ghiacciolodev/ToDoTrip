@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: todotrip-db
+    # Local development credentials only. Production uses Neon and reads
+    # DATABASE_URL from the environment, never from this file.
+    environment:
+      POSTGRES_USER: todotrip
+      POSTGRES_PASSWORD: todotrip
+      POSTGRES_DB: todotrip
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Lets other services wait for a database that actually accepts queries,
+    # not just for a container that has started.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todotrip -d todotrip"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
