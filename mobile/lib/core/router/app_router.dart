@@ -7,6 +7,7 @@ import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/trips/presentation/add_screen.dart';
+import '../../features/trips/presentation/trip_shell.dart';
 import '../../features/trips/presentation/trips_screen.dart';
 import '../providers.dart';
 
@@ -24,7 +25,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(authProvider, (_, next) => session.value = next, fireImmediately: true);
   ref.onDispose(session.dispose);
 
+  // Lets a route opt out of the tab shell and cover it entirely.
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
+
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/trips',
     refreshListenable: session,
     redirect: (context, state) {
@@ -45,6 +50,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const _SplashScreen()),
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
+
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => AppShell(navigationShell: shell),
         branches: [
@@ -55,9 +61,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [GoRoute(path: '/add', builder: (_, _) => const AddScreen())],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen())],
+            routes: [
+              GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+            ],
           ),
         ],
+      ),
+
+      // Declared after the shell so "/trips" still matches the branch above,
+      // and attached to the root navigator so the trip detail covers the tab
+      // bar: it is a separate context with its own tabs, entered and left with
+      // back, not a fourth destination.
+      GoRoute(
+        path: '/trips/:tripId',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, state) => TripShell(tripId: state.pathParameters['tripId']!),
       ),
     ],
   );

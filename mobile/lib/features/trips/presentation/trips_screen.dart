@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
+import '../data/trip.dart';
 import '../providers.dart';
 import 'widgets/trip_card.dart';
 
@@ -11,29 +13,48 @@ class TripsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trips = ref.watch(tripsProvider);
-
     return Scaffold(
       appBar: AppBar(title: const Text('My trips')),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(tripsProvider.future),
-        child: trips.when(
-          // Skeletons rather than a spinner: the layout is already known, and
-          // showing it makes the wait feel roughly half as long.
-          loading: () => const _LoadingList(),
-          error: (error, _) => _ErrorState(
-            message: '$error',
-            onRetry: () => ref.invalidate(tripsProvider),
-          ),
-          data: (list) => list.isEmpty
-              ? const _EmptyState()
-              : ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            itemCount: list.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, index) => TripCard(trip: list[index]),
-          ),
+      // Someone else may have added a trip, or invited this user to one, while
+      // the app was in the background: refetch on resume rather than trusting
+      // whatever was on screen an hour ago.
+      body: RefreshOnResume(
+        onResume: () => ref.invalidate(tripsProvider),
+        child: RefreshIndicator(
+          onRefresh: () => ref.refresh(tripsProvider.future),
+          child: _buildBody(context, ref),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, WidgetRef ref) {
+    final trips = ref.watch(tripsProvider);
+    final list = trips.value;
+
+    // Only the first load shows skeletons. Once there is data, a refresh
+    // updates it in place instead of wiping the list.
+    if (list == null) {
+      if (trips.hasError) {
+        return _ErrorState(
+          message: '${trips.error}',
+          onRetry: () => ref.invalidate(tripsProvider),
+        );
+      }
+      return const _LoadingList();
+    }
+
+    if (list.isEmpty) return const _EmptyState();
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: list.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (_, index) => TripCard(
+        trip: list[index],
+        // push, not go: the trip detail sits on top of the tab shell, so back
+        // returns here instead of exiting the app.
+        onTap: () => context.push('/trips/${list[index].id}'),
       ),
     );
   }
@@ -44,6 +65,8 @@ class _LoadingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Skeletons rather than a spinner: the layout is already known, and showing
+    // it makes the wait feel roughly half as long.
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: 3,
@@ -83,8 +106,11 @@ class _EmptyState extends StatelessWidget {
                     color: AppColors.primaryTint,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.map_outlined,
-                      size: 40, color: AppColors.primaryDark),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    size: 40,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -139,7 +165,10 @@ class _ErrorState extends StatelessWidget {
                   style: const TextStyle(color: AppColors.inkMuted),
                 ),
                 const SizedBox(height: 20),
-                OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+                OutlinedButton(
+                  onPressed: onRetry,
+                  child: const Text('Try again'),
+                ),
               ],
             ),
           ),

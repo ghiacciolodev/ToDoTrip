@@ -1,0 +1,476 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/money.dart';
+import '../../../../core/providers.dart';
+import '../../../../core/theme/colors.dart';
+import '../../data/expense.dart';
+import '../../providers.dart';
+import '../widgets/expense_detail_sheet.dart';
+import '../widgets/settle_up_sheet.dart';
+
+class ExpensesTab extends ConsumerWidget {
+  const ExpensesTab({super.key, required this.tripId});
+
+  final String tripId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final myId = ref.watch(authProvider).value?.id;
+    if (myId == null) return const SizedBox.shrink();
+
+    return RefreshIndicator(
+      onRefresh: () async => invalidateMoney(ref, tripId),
+      child: _buildBody(context, ref, myId),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, WidgetRef ref, String myId) {
+    final expenses = ref.watch(expensesProvider(tripId));
+    final balance = ref.watch(balanceProvider(tripId));
+    final list = expenses.value;
+
+    // Only the very first load blanks the screen. Once there is data, a refresh
+    // updates it in place: replacing a populated list with a spinner every time
+    // the tab regains focus reads as the app losing its state.
+    if (list == null) {
+      if (expenses.hasError) {
+        return _ErrorState(
+          message: '${expenses.error}',
+          onRetry: () => invalidateMoney(ref, tripId),
+        );
+      }
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: _BalanceCard(
+              tripId: tripId,
+              report: balance.value,
+              myId: myId,
+            ),
+          ),
+        ),
+        if (list.isEmpty)
+          const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
+        else
+          ..._buildGroupedList(context, ref, list, myId),
+        const SliverToBoxAdapter(child: SizedBox(height: 96)),
+      ],
+    );
+  }
+
+  /// Groups by day with a sticky header, which is how people recall spending:
+  /// "what did we pay for on Tuesday", not "expense number 14".
+  List<Widget> _buildGroupedList(
+      BuildContext context,
+      WidgetRef ref,
+      List<Expense> expenses,
+      String myId,
+      ) {
+    final byDay = <DateTime, List<Expense>>{};
+    for (final expense in expenses) {
+      final local = expense.spentAt.toLocal();
+      final day = DateTime(local.year, local.month, local.day);
+      byDay.putIfAbsent(day, () => []).add(expense);
+    }
+
+    final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    return [
+      for (final day in days)
+        SliverMainAxisGroup(
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _DayHeaderDelegate(label: _dayLabel(day)),
+            ),
+            SliverList.builder(
+              itemCount: byDay[day]!.length,
+              itemBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: _ExpenseRow(
+                  tripId: tripId,
+                  expense: byDay[day]![index],
+                  myId: myId,
+                ),
+              ),
+            ),
+          ],
+        ),
+    ];
+  }
+
+  static String _dayLabel(DateTime day) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final difference = today.difference(day).inDays;
+    if (difference == 0) return 'Today';
+    if (difference == 1) return 'Yesterday';
+    return DateFormat('EEEE d MMMM').format(day);
+  }
+}
+
+class _BalanceCard extends ConsumerWidget {
+  const _BalanceCard({
+    required this.tripId,
+    required this.report,
+    required this.myId,
+  });
+
+  final String tripId;
+  final BalanceReport? report;
+  final String myId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (report == null) {
+      return const Card(
+        child: SizedBox(
+          height: 150,
+          child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
+      );
+    }
+
+    final mine = Money(report!.balanceFor(myId));
+    final total = Money(report!.totalSpentCents);
+    final hasDebts = report!.suggestedTransfers.isNotEmpty;
+
+    // Wording plus sign plus colour: red and green alone carry no meaning for
+    // roughly 8% of men.
+    final (label, colour) = switch (mine.cents) {
+      0 => ('All settled', AppColors.inkMuted),
+      > 0 => ('You are owed', AppColors.primaryDark),
+      _ => ('You owe', AppColors.terracotta),
+    };
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.inkMuted)),
+            const SizedBox(height: 6),
+            Text(
+              mine.isZero ? '—' : mine.abs.formatted,
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w700,
+                color: colour,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Trip total ${total.formatted}',
+              style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+            ),
+            if (hasDebts) ...[
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => showSettleUpSheet(context, tripId),
+                child: const Text('Settle up'),
+              ),
+            ],
+            if (report!.balances.length > 1) ...[
+              const SizedBox(height: 4),
+              _EveryoneBalance(tripId: tripId, report: report!, myId: myId),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Secondary information, collapsed by default: the question people open this
+/// screen with is "how do I stand", not "how does everyone stand".
+class _EveryoneBalance extends ConsumerWidget {
+  const _EveryoneBalance({
+    required this.tripId,
+    required this.report,
+    required this.myId,
+  });
+
+  final String tripId;
+  final BalanceReport report;
+  final String myId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lookup = ref.watch(memberLookupProvider(tripId));
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        title: const Text(
+          "Everyone's balance",
+          style: TextStyle(fontSize: 14, color: AppColors.inkMuted),
+        ),
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        children: [
+          for (final entry in report.balances)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.userId == myId
+                          ? 'You'
+                          : lookup[entry.userId]?.user.displayName ?? 'Unknown',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  Text(
+                    Money(entry.balanceCents).signed,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: switch (entry.balanceCents) {
+                        0 => AppColors.inkMuted,
+                        > 0 => AppColors.primaryDark,
+                        _ => AppColors.terracotta,
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpenseRow extends ConsumerWidget {
+  const _ExpenseRow({
+    required this.tripId,
+    required this.expense,
+    required this.myId,
+  });
+
+  final String tripId;
+  final Expense expense;
+  final String myId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lookup = ref.watch(memberLookupProvider(tripId));
+    final payer = expense.paidBy == myId
+        ? 'You'
+        : lookup[expense.paidBy]?.user.displayName ?? 'Someone';
+    final myShare = expense.shareFor(myId);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showExpenseDetailSheet(context, tripId, expense),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                height: 44,
+                width: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _iconFor(expense.description),
+                  color: AppColors.primaryDark,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      expense.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Paid by $payer',
+                      style: const TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    Money(expense.amountCents).formatted,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // "What it cost" and "what it costs me" are different
+                  // questions, and the second is the one people care about.
+                  Text(
+                    myShare == null
+                        ? 'not involved'
+                        : 'you: ${Money(myShare).formatted}',
+                    style: const TextStyle(
+                      color: AppColors.inkMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Crude keyword match, but it makes a long list scannable at a glance.
+  static IconData _iconFor(String description) {
+    final text = description.toLowerCase();
+    bool has(List<String> words) => words.any(text.contains);
+
+    if (has(['dinner', 'lunch', 'restaurant', 'food', 'breakfast', 'pizza'])) {
+      return Icons.restaurant;
+    }
+    if (has(['grocer', 'supermarket', 'market'])) return Icons.shopping_basket;
+    if (has(['taxi', 'uber', 'fuel', 'petrol', 'gas', 'car'])) {
+      return Icons.local_taxi;
+    }
+    if (has(['hotel', 'airbnb', 'hostel', 'room'])) return Icons.hotel;
+    if (has(['flight', 'plane', 'airport'])) return Icons.flight;
+    if (has(['train', 'bus', 'metro', 'ticket'])) {
+      return Icons.directions_transit;
+    }
+    if (has(['bar', 'drink', 'beer', 'coffee', 'wine'])) return Icons.local_bar;
+    if (has(['museum', 'tour', 'entry'])) return Icons.local_activity;
+    return Icons.receipt_long;
+  }
+}
+
+class _DayHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _DayHeaderDelegate({required this.label});
+
+  final String label;
+
+  @override
+  double get minExtent => 40;
+
+  @override
+  double get maxExtent => 40;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.background,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: AppColors.inkMuted,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_DayHeaderDelegate oldDelegate) =>
+      oldDelegate.label != label;
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.receipt_long_outlined,
+            size: 48,
+            color: AppColors.inkMuted,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No expenses yet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Add the first one and we\u2019ll keep\ntrack of who owes what.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.inkMuted, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    // A list, not a Column: the pull-to-refresh above needs something
+    // scrollable even when the screen has nothing on it.
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              const Icon(Icons.cloud_off, size: 48, color: AppColors.inkMuted),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.inkMuted),
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Try again'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
