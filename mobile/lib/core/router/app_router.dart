@@ -4,13 +4,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/user.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/shell/presentation/app_shell.dart';
+import '../../features/trips/presentation/add_screen.dart';
 import '../../features/trips/presentation/trips_screen.dart';
 import '../providers.dart';
 
 /// Application routes.
 ///
 /// The redirect derives navigation from session state instead of pushing and
-/// popping on login: whatever ends a session — an expired refresh token, a
+/// popping on sign-in: whatever ends a session — an expired refresh token, a
 /// revoked one — lands on the same screen, with no scattered navigation code.
 final routerProvider = Provider<GoRouter>((ref) {
   // One GoRouter for the app's lifetime. Watching authProvider here would
@@ -28,7 +31,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final auth = session.value;
 
       // Session still unknown on cold start: hold on the splash rather than
-      // flashing login at a user who is in fact signed in.
+      // flashing sign-in at a user who is in fact signed in.
       if (auth.isLoading) return '/splash';
 
       final signedIn = auth.value != null;
@@ -42,7 +45,20 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const _SplashScreen()),
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
-      GoRoute(path: '/trips', builder: (_, _) => const TripsScreen()),
+      StatefulShellRoute.indexedStack(
+        builder: (_, _, shell) => AppShell(navigationShell: shell),
+        branches: [
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/trips', builder: (_, _) => const TripsScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/add', builder: (_, _) => const AddScreen())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen())],
+          ),
+        ],
+      ),
     ],
   );
 });
