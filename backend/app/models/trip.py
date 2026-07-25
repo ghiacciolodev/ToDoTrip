@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 
-class MemberRole(str, enum.Enum):
+class MemberRole(enum.StrEnum):
     OWNER = "owner"
     MEMBER = "member"
 

@@ -5,15 +5,25 @@ are registered on Base.metadata at import time, so a missing import silently
 produces an incomplete migration.
 """
 
-from app.models.base import Base
-from app.models.user import User
 from app.models.auth import RefreshToken
-from app.models.trip import Trip, TripMember, MemberRole
+from app.models.base import Base
+from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
 from app.models.item import Item, ItemType
-from app.models.expense import Expense, ExpenseShare, Settlement
+from app.models.trip import MemberRole, Trip, TripMember
+from app.models.user import User
 
 __all__ = [
-    "Base", "User", "RefreshToken", "Trip", "TripMember", "MemberRole",
-    "Invite", "Item", "ItemType", "Expense", "ExpenseShare", "Settlement",
+    "Base",
+    "User",
+    "RefreshToken",
+    "Trip",
+    "TripMember",
+    "MemberRole",
+    "Invite",
+    "Item",
+    "ItemType",
+    "Expense",
+    "ExpenseShare",
+    "Settlement",
 ]

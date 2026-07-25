@@ -10,8 +10,14 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
-    BigInteger, CheckConstraint, DateTime, ForeignKey, String,
-    UniqueConstraint, Uuid, func,
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    Uuid,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

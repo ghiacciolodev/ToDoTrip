@@ -1,0 +1,78 @@
+name: backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push cancels the run still going for the same branch.
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Ephemeral PostgreSQL, same major version as production.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: todotrip
+          POSTGRES_PASSWORD: todotrip
+          POSTGRES_DB: todotrip_test
+        ports:
+          - 5432:5432
+        # Without the health check, steps would start before the database
+        # accepts connections and fail intermittently.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://todotrip:todotrip@localhost:5432/todotrip_test
+      # Required by app.config at import time; there is no .env in CI.
+      DATABASE_URL: postgresql+asyncpg://todotrip:todotrip@localhost:5432/todotrip_test
+      JWT_SECRET: ci-secret-not-used-in-production
+      ENVIRONMENT: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format check
+        run: ruff format --check .
+
+      - name: Run migrations
+        # Proves the migrations actually build the schema from scratch, which
+        # create_all in the tests would otherwise never exercise.
+        run: alembic upgrade head
+
+      - name: Detect model drift
+        # Fails if the models changed without a matching migration.
+        run: alembic check
+
+      - name: Tests
+        run: pytest -v

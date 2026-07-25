@@ -1,0 +1,32 @@
+[tool.pytest.ini_options]
+# pythonpath lets tests import `app` without installing the package.
+pythonpath = ["."]
+testpaths = ["tests"]
+
+# auto mode: async tests need no @pytest.mark.asyncio decorator.
+asyncio_mode = "auto"
+
+# Both scopes are "session" on purpose: asyncpg connections are bound to the
+# event loop that created them, so fixtures and tests must share one loop.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear: likely bugs
+    "SIM",  # simplifiable code
+]
+# B008 fires on FastAPI's Depends() in defaults, which is the intended pattern.
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Alembic writes these files itself; their line length is not our style choice.
+"alembic/versions/*" = ["E501"]

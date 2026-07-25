@@ -68,7 +68,9 @@ async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> tuple[User, 
     revoked token and is locked out, which makes the theft detectable.
     """
     stored = await db.scalar(
-        select(RefreshToken).where(RefreshToken.token_hash == security.hash_refresh_token(raw_token))
+        select(RefreshToken).where(
+            RefreshToken.token_hash == security.hash_refresh_token(raw_token)
+        )
     )
     if stored is None or stored.revoked_at is not None:
         raise AuthError
@@ -89,7 +91,9 @@ async def rotate_refresh_token(db: AsyncSession, raw_token: str) -> tuple[User, 
 async def revoke_refresh_token(db: AsyncSession, raw_token: str) -> None:
     """Logout. Idempotent on purpose: an unknown token is not an error."""
     stored = await db.scalar(
-        select(RefreshToken).where(RefreshToken.token_hash == security.hash_refresh_token(raw_token))
+        select(RefreshToken).where(
+            RefreshToken.token_hash == security.hash_refresh_token(raw_token)
+        )
     )
     if stored is not None and stored.revoked_at is None:
         stored.revoked_at = datetime.now(UTC)

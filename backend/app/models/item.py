@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin
 
 
-class ItemType(str, enum.Enum):
+class ItemType(enum.StrEnum):
     EVENT = "event"
     TASK = "task"
 
