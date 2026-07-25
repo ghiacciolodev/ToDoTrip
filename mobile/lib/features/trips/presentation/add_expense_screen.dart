@@ -26,7 +26,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   final _amount = TextEditingController();
   final _description = TextEditingController();
 
-  /// Custom amounts, in cents, keyed by user id. Only populated in custom mode.
+  /// Custom amounts keyed by user id. Only populated in custom mode.
   final _customShares = <String, TextEditingController>{};
 
   String? _paidBy;
@@ -60,24 +60,22 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   /// Even split computed locally so the per-person figure updates as you type.
   /// The server recomputes it on save; this is preview only.
   Map<String, int> get _evenShares {
-    final ids = _participants.toList()..sort();
+    final ids = _participants.toList();
     if (ids.isEmpty || _total.isZero) return {};
 
     final base = _total.cents ~/ ids.length;
     final remainder = _total.cents % ids.length;
-    // Remainder to the payer first, mirroring the backend's rule.
+    // Leftover cents go to the payer first, mirroring the backend's rule.
     ids.sort((a, b) => (a == _paidBy ? 0 : 1).compareTo(b == _paidBy ? 0 : 1));
     return {
       for (final (index, id) in ids.indexed) id: base + (index < remainder ? 1 : 0),
     };
   }
 
-  Map<String, int> get _customSharesCents {
-    return {
-      for (final id in _participants)
-        id: Money.tryParse(_customShares[id]?.text ?? '')?.cents ?? 0,
-    };
-  }
+  Map<String, int> get _customSharesCents => {
+    for (final id in _participants)
+      id: Money.tryParse(_customShares[id]?.text ?? '')?.cents ?? 0,
+  };
 
   /// How far the custom split is from the total. Zero means it can be saved.
   int get _remainingCents =>
@@ -227,23 +225,27 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             const SizedBox(height: 24),
 
             const _Label('PAID BY'),
-            Card(
-              child: Column(
-                children: [
-                  for (final (index, member) in members.indexed) ...[
-                    if (index > 0) const Divider(height: 1),
-                    RadioListTile<String>(
-                      value: member.user.id,
-                      groupValue: _paidBy,
-                      onChanged: (v) => setState(() => _paidBy = v),
-                      activeColor: AppColors.primary,
-                      dense: true,
-                      title: Text(
-                        member.user.id == myId ? 'You' : member.user.displayName,
+            // RadioGroup owns the selection now; the tiles below only declare
+            // their value.
+            RadioGroup<String>(
+              groupValue: _paidBy,
+              onChanged: (v) => setState(() => _paidBy = v),
+              child: Card(
+                child: Column(
+                  children: [
+                    for (final (index, member) in members.indexed) ...[
+                      if (index > 0) const Divider(height: 1),
+                      RadioListTile<String>(
+                        value: member.user.id,
+                        dense: true,
+                        activeColor: AppColors.primary,
+                        title: Text(
+                          member.user.id == myId ? 'You' : member.user.displayName,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -389,8 +391,7 @@ class _ParticipantRow extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 13,
-            backgroundColor:
-            selected ? avatarColorFor(userId) : AppColors.border,
+            backgroundColor: selected ? avatarColorFor(userId) : AppColors.border,
             child: Text(
               initialsFor(name),
               style: TextStyle(

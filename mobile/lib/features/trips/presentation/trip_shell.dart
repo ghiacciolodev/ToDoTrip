@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
+import '../data/item.dart';
 import '../providers.dart';
 import 'add_expense_screen.dart';
 import 'tabs/expenses_tab.dart';
 import 'tabs/group_tab.dart';
+import 'tabs/plan_tab.dart';
+import 'widgets/add_item_sheet.dart';
 
 /// Container for a single trip.
 ///
@@ -29,6 +32,10 @@ class TripShell extends ConsumerStatefulWidget {
 class _TripShellState extends ConsumerState<TripShell> {
   int _index = 0;
 
+  /// Owned here rather than inside PlanTab so the action button can create
+  /// whichever kind of item is currently on screen.
+  ItemType _planView = ItemType.event;
+
   /// Throttles per tab, so flicking through the bar does not fire a burst of
   /// identical requests.
   final _lastRefresh = <int, DateTime>{};
@@ -50,7 +57,7 @@ class _TripShellState extends ConsumerState<TripShell> {
 
     switch (index) {
       case 0:
-        break; // items, once Plan exists
+        ref.invalidate(itemsProvider(widget.tripId));
       case 1:
         invalidateMoney(ref, widget.tripId);
       case 2:
@@ -72,12 +79,12 @@ class _TripShellState extends ConsumerState<TripShell> {
     // Only gate on the first load. Checking hasValue as well means a refresh
     // updates the content in place instead of replacing the whole screen with
     // a spinner and remounting every tab.
-    final firstLoad =
-        (trip.isLoading && !trip.hasValue) || (members.isLoading && !members.hasValue);
+    final firstLoad = (trip.isLoading && !trip.hasValue) ||
+        (members.isLoading && !members.hasValue);
     // Likewise for errors: a failed refresh should not discard data already on
     // screen, so this only fires when there is nothing to show.
-    final fatalError =
-        (!trip.hasValue ? trip.error : null) ?? (!members.hasValue ? members.error : null);
+    final fatalError = (!trip.hasValue ? trip.error : null) ??
+        (!members.hasValue ? members.error : null);
     final ready = !firstLoad && fatalError == null;
 
     return Scaffold(
@@ -93,7 +100,11 @@ class _TripShellState extends ConsumerState<TripShell> {
           _ => IndexedStack(
             index: _index,
             children: [
-              _Placeholder(label: 'Plan', tripId: widget.tripId),
+              PlanTab(
+                tripId: widget.tripId,
+                view: _planView,
+                onViewChanged: (v) => setState(() => _planView = v),
+              ),
               ExpensesTab(tripId: widget.tripId),
               GroupTab(tripId: widget.tripId),
             ],
@@ -102,72 +113,52 @@ class _TripShellState extends ConsumerState<TripShell> {
       ),
 
       // Contextual: one button that does the right thing for the tab in view.
-      // Group has no FAB because its actions already live inline in the cards.
-      floatingActionButton: switch (_index) {
-        1 when ready => FloatingActionButton.extended(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => AddExpenseScreen(tripId: widget.tripId),
-            ),
-          ),
-          icon: const Icon(Icons.add),
-          label: const Text('Expense'),
-        ),
-        _ => null,
-      },
+      // Group has no action button because its actions live inline in the cards.
+      floatingActionButton: ready ? _buildFab() : null,
 
+      // Colours, height and label styling come from navigationBarTheme.
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _onTabSelected,
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primaryTint,
-        surfaceTintColor: Colors.transparent,
-        height: 68,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event, color: AppColors.primaryDark),
+            selectedIcon: Icon(Icons.event),
             label: 'Plan',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long, color: AppColors.primaryDark),
+            selectedIcon: Icon(Icons.receipt_long),
             label: 'Expenses',
           ),
           NavigationDestination(
             icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people, color: AppColors.primaryDark),
+            selectedIcon: Icon(Icons.people),
             label: 'Group',
           ),
         ],
       ),
     );
   }
-}
 
-/// Temporary: Plan is the last tab still to be built.
-class _Placeholder extends ConsumerWidget {
-  const _Placeholder({required this.label, required this.tripId});
-
-  final String label;
-  final String tripId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            '${members.length} ${members.length == 1 ? 'person' : 'people'}',
-            style: const TextStyle(color: AppColors.inkMuted),
-          ),
-        ],
+  Widget? _buildFab() {
+    return switch (_index) {
+      0 => FloatingActionButton.extended(
+        onPressed: () => showAddItemSheet(context, widget.tripId, _planView),
+        icon: const Icon(Icons.add),
+        label: Text(_planView == ItemType.event ? 'Event' : 'Task'),
       ),
-    );
+      1 => FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AddExpenseScreen(tripId: widget.tripId),
+          ),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Expense'),
+      ),
+      _ => null,
+    };
   }
 }
 

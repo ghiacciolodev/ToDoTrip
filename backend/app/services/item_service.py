@@ -6,7 +6,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Item, ItemType, TripMember
+from app.models import Item, ItemAssignee, ItemType, TripMember
 
 
 class ItemNotFound(Exception):
@@ -21,18 +21,29 @@ class NotATask(Exception):
     """Completion only applies to tasks, not to calendar events."""
 
 
-async def _ensure_member(db: AsyncSession, trip_id: UUID, user_id: UUID) -> None:
-    membership = await db.scalar(
-        select(TripMember).where(TripMember.trip_id == trip_id, TripMember.user_id == user_id)
+async def _ensure_members(db: AsyncSession, trip_id: UUID, user_ids: list[UUID]) -> None:
+    """Reject any assignee who is not in the trip.
+
+    Resolved in one query rather than one per person: work cannot be handed to
+    someone outside the group.
+    """
+    if not user_ids:
+        return
+    result = await db.execute(
+        select(TripMember.user_id).where(
+            TripMember.trip_id == trip_id, TripMember.user_id.in_(user_ids)
+        )
     )
-    if membership is None:
+    if set(result.scalars().all()) != set(user_ids):
         raise AssigneeNotMember
 
 
 async def create_item(db: AsyncSession, trip_id: UUID, user_id: UUID, data: dict) -> Item:
-    if data.get("assigned_to") is not None:
-        await _ensure_member(db, trip_id, data["assigned_to"])
+    assignee_ids = data.pop("assigned_to", None) or []
+    await _ensure_members(db, trip_id, assignee_ids)
+
     item = Item(trip_id=trip_id, created_by=user_id, **data)
+    item.assignees = [ItemAssignee(user_id=uid) for uid in assignee_ids]
     db.add(item)
     await db.commit()
     await db.refresh(item)
@@ -56,7 +67,9 @@ async def list_items(
     if type_ is not None:
         query = query.where(Item.type == type_)
     if assigned_to is not None:
-        query = query.where(Item.assigned_to == assigned_to)
+        query = query.join(ItemAssignee, ItemAssignee.item_id == Item.id).where(
+            ItemAssignee.user_id == assigned_to
+        )
     if completed is True:
         query = query.where(Item.completed_at.is_not(None))
     elif completed is False:
@@ -81,8 +94,13 @@ async def get_item(db: AsyncSession, trip_id: UUID, item_id: UUID) -> Item:
 
 
 async def update_item(db: AsyncSession, item: Item, data: dict) -> Item:
-    if data.get("assigned_to") is not None:
-        await _ensure_member(db, item.trip_id, data["assigned_to"])
+    assignee_ids = data.pop("assigned_to", None)
+    if assignee_ids is not None:
+        await _ensure_members(db, item.trip_id, assignee_ids)
+        # Replaced wholesale: the client sends the set it wants, not a delta,
+        # which spares it from tracking what changed.
+        item.assignees = [ItemAssignee(user_id=uid) for uid in assignee_ids]
+
     for key, value in data.items():
         setattr(item, key, value)
     await db.commit()

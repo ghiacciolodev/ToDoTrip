@@ -103,6 +103,62 @@ abstract final class AppTheme {
         thickness: 1,
         space: 1,
       ),
+
+      // M3 would tint this with a secondaryContainer derived from the seed,
+      // which is not the brand colour. Set explicitly, like primary itself.
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        highlightElevation: 4,
+        extendedTextStyle: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+
+      // Styled once here so both navigation bars — the app shell and the trip
+      // shell — stay identical without repeating themselves.
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        indicatorColor: AppColors.primaryTint,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        height: 64,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+              (states) => GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.primaryDark
+                : AppColors.inkMuted,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+              (states) => IconThemeData(
+            size: 22,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.primaryDark
+                : AppColors.inkMuted,
+          ),
+        ),
+      ),
+
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          selectedBackgroundColor: AppColors.primaryTint,
+          selectedForegroundColor: AppColors.primaryDark,
+          foregroundColor: AppColors.inkMuted,
+          side: const BorderSide(color: AppColors.border),
+          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
     );
   }
 

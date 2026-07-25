@@ -7,7 +7,8 @@ import 'data/trip_repository.dart';
 import 'data/invite.dart';
 import 'data/expense.dart';
 import 'data/expense_repository.dart';
-
+import 'data/item.dart';
+import 'data/item_repository.dart';
 final tripRepositoryProvider = Provider<TripRepository>((ref) {
   return TripRepository(dio: ref.watch(dioProvider));
 });
@@ -94,3 +95,15 @@ void invalidateMoney(WidgetRef ref, String tripId) {
   ref.invalidate(expensesProvider(tripId));
   ref.invalidate(balanceProvider(tripId));
 }
+
+final itemRepositoryProvider = Provider<ItemRepository>((ref) {
+  return ItemRepository(dio: ref.watch(dioProvider));
+});
+
+/// Every item of a trip, events and tasks together.
+///
+/// One request rather than two: they are one table on the server, and the
+/// segmented control is a filter over this list, not a separate resource.
+final itemsProvider = FutureProvider.family<List<Item>, String>((ref, tripId) {
+  return ref.watch(itemRepositoryProvider).list(tripId);
+});

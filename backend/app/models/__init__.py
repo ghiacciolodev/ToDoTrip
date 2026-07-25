@@ -9,21 +9,22 @@ from app.models.auth import RefreshToken
 from app.models.base import Base
 from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
-from app.models.item import Item, ItemType
+from app.models.item import Item, ItemAssignee, ItemType
 from app.models.trip import MemberRole, Trip, TripMember
 from app.models.user import User
 
 __all__ = [
     "Base",
-    "User",
-    "RefreshToken",
-    "Trip",
-    "TripMember",
-    "MemberRole",
-    "Invite",
-    "Item",
-    "ItemType",
     "Expense",
     "ExpenseShare",
+    "Invite",
+    "Item",
+    "ItemAssignee",
+    "ItemType",
+    "MemberRole",
+    "RefreshToken",
     "Settlement",
+    "Trip",
+    "TripMember",
+    "User",
 ]
