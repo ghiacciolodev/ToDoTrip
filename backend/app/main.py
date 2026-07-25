@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.database import engine
-from app.routers import auth
+from app.routers import auth, trips
 
 settings = get_settings()
 
@@ -28,6 +28,7 @@ app = FastAPI(
 # All routes are versioned from day one: /api/v2 can coexist with /api/v1 while
 # older mobile builds, which cannot be force-updated, keep working.
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(trips.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["system"])

@@ -78,6 +78,7 @@ async def client() -> AsyncGenerator[AsyncClient]:
 
 # Reused across tests so credentials live in exactly one place.
 USER = {"email": "mario@test.it", "password": "password123", "display_name": "Mario"}
+SECOND_USER = {"email": "luca@test.it", "password": "password123", "display_name": "Luca"}
 
 
 @pytest.fixture
@@ -98,3 +99,31 @@ async def tokens(client: AsyncClient, registered_user: dict) -> dict:
 @pytest.fixture
 def auth_headers(tokens: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+@pytest.fixture
+async def other_headers(client: AsyncClient) -> dict[str, str]:
+    """A second, unrelated account. Most authorization bugs only show up with two users."""
+    await client.post("/api/v1/auth/register", json=SECOND_USER)
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": SECOND_USER["email"], "password": SECOND_USER["password"]},
+    )
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+async def trip(client: AsyncClient, auth_headers: dict) -> dict:
+    """A trip owned by the first user."""
+    response = await client.post(
+        "/api/v1/trips", json={"name": "Lisbona 2026"}, headers=auth_headers
+    )
+    return response.json()
+
+
+@pytest.fixture
+async def invite_code(client: AsyncClient, auth_headers: dict, trip: dict) -> str:
+    response = await client.post(
+        f"/api/v1/trips/{trip['id']}/invites", json={}, headers=auth_headers
+    )
+    return response.json()["code"]

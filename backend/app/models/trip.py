@@ -1,10 +1,20 @@
 """Trips and their membership. A trip is the tenant boundary of the whole app."""
 
 import enum
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Date, Enum, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -58,6 +68,12 @@ class TripMember(Base):
     # later is a trivial migration; a native PostgreSQL enum would need ALTER TYPE.
     role: Mapped[MemberRole] = mapped_column(
         Enum(MemberRole, native_enum=False, length=20), default=MemberRole.MEMBER, nullable=False
+    )
+
+    # Not covered by TimestampMixin: a membership is never edited, only created
+    # or deleted, so updated_at would be dead weight.
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     trip: Mapped["Trip"] = relationship(back_populates="members")
