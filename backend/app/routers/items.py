@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from app.core.events import emit
 from app.dependencies import CurrentUser, DbSession, Membership
 from app.models import ItemType
 from app.schemas.item import ItemCreate, ItemPublic, ItemUpdate
@@ -28,9 +29,11 @@ async def create_item(
     trip_id: UUID, payload: ItemCreate, db: DbSession, user: CurrentUser, _: Membership
 ):
     try:
-        return await item_service.create_item(db, trip_id, user.id, payload.model_dump())
+        item = await item_service.create_item(db, trip_id, user.id, payload.model_dump())
     except AssigneeNotMember:
         raise _BAD_ASSIGNEE from None
+    await emit(trip_id, "items.changed", actor_id=user.id)
+    return item
 
 
 @router.get("", response_model=list[ItemPublic])
@@ -65,24 +68,27 @@ async def get_item(trip_id: UUID, item_id: UUID, db: DbSession, _: Membership):
 
 @router.patch("/{item_id}", response_model=ItemPublic)
 async def update_item(
-    trip_id: UUID, item_id: UUID, payload: ItemUpdate, db: DbSession, _: Membership
+    trip_id: UUID, item_id: UUID, payload: ItemUpdate, db: DbSession, membership: Membership
 ):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
-        return await item_service.update_item(db, item, payload.model_dump(exclude_unset=True))
+        item = await item_service.update_item(db, item, payload.model_dump(exclude_unset=True))
     except ItemNotFound:
         raise _NOT_FOUND from None
     except AssigneeNotMember:
         raise _BAD_ASSIGNEE from None
+    await emit(trip_id, "items.changed", actor_id=membership.user_id)
+    return item
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(trip_id: UUID, item_id: UUID, db: DbSession, _: Membership):
+async def delete_item(trip_id: UUID, item_id: UUID, db: DbSession, membership: Membership):
     """Any member can delete: a shared list nobody can tidy becomes unusable."""
     try:
         await item_service.delete_item(db, await item_service.get_item(db, trip_id, item_id))
     except ItemNotFound:
         raise _NOT_FOUND from None
+    await emit(trip_id, "items.changed", actor_id=membership.user_id)
 
 
 @router.post("/{item_id}/complete", response_model=ItemPublic)
@@ -91,11 +97,13 @@ async def complete_item(
 ):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
-        return await item_service.set_completion(db, item, True, user.id)
+        item = await item_service.set_completion(db, item, True, user.id)
     except ItemNotFound:
         raise _NOT_FOUND from None
     except NotATask:
         raise _NOT_A_TASK from None
+    await emit(trip_id, "items.changed", actor_id=user.id)
+    return item
 
 
 @router.delete("/{item_id}/complete", response_model=ItemPublic)
@@ -104,8 +112,10 @@ async def reopen_item(
 ):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
-        return await item_service.set_completion(db, item, False, user.id)
+        item = await item_service.set_completion(db, item, False, user.id)
     except ItemNotFound:
         raise _NOT_FOUND from None
     except NotATask:
         raise _NOT_A_TASK from None
+    await emit(trip_id, "items.changed", actor_id=user.id)
+    return item

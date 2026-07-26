@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.database import engine
-from app.routers import auth, checklists, expenses, items, trips
+from app.routers import auth, checklists, events, expenses, items, trips
 
 settings = get_settings()
 
@@ -32,6 +32,7 @@ app.include_router(trips.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1")
 app.include_router(expenses.router, prefix="/api/v1")
 app.include_router(checklists.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["system"])

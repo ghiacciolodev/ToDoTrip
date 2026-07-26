@@ -32,5 +32,12 @@ class TestJwtSecret:
             _settings(jwt_secret="change-me", environment="staging")
 
     def test_development_still_runs_with_the_sample_secret(self):
-        """A fresh clone must start from .env.example without ceremony."""
-        assert _settings(jwt_secret="change-me").environment == "development"
+        """A fresh clone must start from .env.example without ceremony.
+
+        The environment is passed explicitly: pydantic-settings also reads real
+        environment variables, and in CI the process carries ENVIRONMENT=test,
+        which would otherwise override the default and fail the validation this
+        test wants to see skipped.
+        """
+        settings = _settings(jwt_secret="change-me", environment="development")
+        assert settings.jwt_secret == "change-me"

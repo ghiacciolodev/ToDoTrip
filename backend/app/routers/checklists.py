@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.events import emit
 from app.dependencies import CurrentUser, DbSession, Membership
 from app.schemas.checklist import (
     ChecklistCreate,
@@ -27,7 +28,10 @@ _ENTRY_NOT_FOUND = HTTPException(status.HTTP_404_NOT_FOUND, "Entry not found")
 async def create_checklist(
     trip_id: UUID, payload: ChecklistCreate, db: DbSession, user: CurrentUser, _: Membership
 ):
-    return await checklist_service.create_checklist(db, trip_id, user.id, payload.model_dump())
+    checklist = await checklist_service.create_checklist(db, trip_id, user.id, payload.model_dump())
+    # Lists live on the same tab as tasks, so they share the items event.
+    await emit(trip_id, "items.changed", actor_id=user.id)
+    return checklist
 
 
 @router.get("", response_model=list[ChecklistPublic])
@@ -36,7 +40,9 @@ async def list_checklists(trip_id: UUID, db: DbSession, _: Membership):
 
 
 @router.delete("/{checklist_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_checklist(trip_id: UUID, checklist_id: UUID, db: DbSession, _: Membership):
+async def delete_checklist(
+    trip_id: UUID, checklist_id: UUID, db: DbSession, membership: Membership
+):
     """Any member can delete, as for items: a shared list nobody can tidy
     becomes unusable."""
     try:
@@ -44,6 +50,7 @@ async def delete_checklist(trip_id: UUID, checklist_id: UUID, db: DbSession, _: 
         await checklist_service.delete_checklist(db, checklist)
     except ChecklistNotFound:
         raise _NOT_FOUND from None
+    await emit(trip_id, "items.changed", actor_id=membership.user_id)
 
 
 @router.post(
@@ -56,18 +63,20 @@ async def add_entry(
     checklist_id: UUID,
     payload: ChecklistEntryCreate,
     db: DbSession,
-    _: Membership,
+    membership: Membership,
 ):
     try:
         checklist = await checklist_service.get_checklist(db, trip_id, checklist_id)
-        return await checklist_service.add_entry(db, checklist, payload.model_dump())
+        entry = await checklist_service.add_entry(db, checklist, payload.model_dump())
     except ChecklistNotFound:
         raise _NOT_FOUND from None
+    await emit(trip_id, "items.changed", actor_id=membership.user_id)
+    return entry
 
 
 @router.delete("/{checklist_id}/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_entry(
-    trip_id: UUID, checklist_id: UUID, entry_id: UUID, db: DbSession, _: Membership
+    trip_id: UUID, checklist_id: UUID, entry_id: UUID, db: DbSession, membership: Membership
 ):
     try:
         checklist = await checklist_service.get_checklist(db, trip_id, checklist_id)
@@ -77,6 +86,7 @@ async def delete_entry(
         raise _NOT_FOUND from None
     except EntryNotFound:
         raise _ENTRY_NOT_FOUND from None
+    await emit(trip_id, "items.changed", actor_id=membership.user_id)
 
 
 @router.post("/{checklist_id}/entries/{entry_id}/check", response_model=ChecklistEntryPublic)
@@ -116,8 +126,10 @@ async def _set_checked(
     try:
         checklist = await checklist_service.get_checklist(db, trip_id, checklist_id)
         entry = await checklist_service.get_entry(db, checklist.id, entry_id)
-        return await checklist_service.set_checked(db, entry, checked, user_id)
+        entry = await checklist_service.set_checked(db, entry, checked, user_id)
     except ChecklistNotFound:
         raise _NOT_FOUND from None
     except EntryNotFound:
         raise _ENTRY_NOT_FOUND from None
+    await emit(trip_id, "items.changed", actor_id=user_id)
+    return entry

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/providers.dart';
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
+import '../data/trip_events.dart';
 import '../providers.dart';
 import 'add_expense_screen.dart';
 import 'tabs/calendar_tab.dart';
@@ -45,6 +48,62 @@ class _TripShellState extends ConsumerState<TripShell> {
   /// identical requests.
   final _lastRefresh = <int, DateTime>{};
   static const _minInterval = Duration(seconds: 15);
+
+  /// Rings when another member changes something, so this phone updates
+  /// without waiting for a pull-to-refresh.
+  late final TripEventsChannel _events;
+
+  @override
+  void initState() {
+    super.initState();
+    _events = TripEventsChannel(
+      tripId: widget.tripId,
+      storage: ref.read(tokenStorageProvider),
+      onEvent: _onRemoteEvent,
+      onReconnected: _refreshEverything,
+    )..start();
+  }
+
+  @override
+  void dispose() {
+    _events.dispose();
+    super.dispose();
+  }
+
+  /// One provider group per event type: the client re-runs GETs it already
+  /// knows, it never receives data over the socket.
+  void _onRemoteEvent(String type) {
+    if (!mounted) return;
+    switch (type) {
+      case 'expenses.changed':
+        invalidateMoney(ref, widget.tripId);
+      case 'items.changed':
+        ref.invalidate(itemsProvider(widget.tripId));
+        ref.invalidate(checklistsProvider(widget.tripId));
+      case 'members.changed':
+        ref.invalidate(tripMembersProvider(widget.tripId));
+        ref.invalidate(tripInvitesProvider(widget.tripId));
+      case 'trip.changed':
+        ref.invalidate(tripProvider(widget.tripId));
+      case 'trip.deleted':
+        // Staying here would mean a screen where every action answers 404.
+        ref.invalidate(tripsProvider);
+        context.go('/trips');
+    }
+  }
+
+  /// After a gap in the connection anything may have changed, so everything is
+  /// refetched: recovering the missed events one by one is the kind of sync
+  /// bookkeeping this design deliberately avoids.
+  void _refreshEverything() {
+    if (!mounted) return;
+    ref.invalidate(tripProvider(widget.tripId));
+    ref.invalidate(tripMembersProvider(widget.tripId));
+    ref.invalidate(tripInvitesProvider(widget.tripId));
+    ref.invalidate(itemsProvider(widget.tripId));
+    ref.invalidate(checklistsProvider(widget.tripId));
+    invalidateMoney(ref, widget.tripId);
+  }
 
   /// Refetches what the given tab shows.
   ///

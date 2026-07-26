@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.events import close_trip, emit, kick
 from app.core.rate_limit import throttle
 from app.dependencies import CurrentUser, DbSession, Membership, Ownership
 from app.schemas.auth import UserPublic
@@ -76,9 +77,11 @@ async def list_trips(db: DbSession, user: CurrentUser):
 )
 async def join_trip(payload: JoinRequest, db: DbSession, user: CurrentUser):
     try:
-        return await trip_service.join_by_code(db, payload.code, user.id)
+        joined = await trip_service.join_by_code(db, payload.code, user.id)
     except InvalidInvite:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired invite") from None
+    await emit(joined.id, "members.changed", actor_id=user.id)
+    return joined
 
 
 @router.get("/{trip_id}", response_model=TripPublic)
@@ -87,15 +90,22 @@ async def get_trip(trip_id: UUID, db: DbSession, membership: Membership):
 
 
 @router.patch("/{trip_id}", response_model=TripPublic)
-async def update_trip(trip_id: UUID, payload: TripUpdate, db: DbSession, _: Ownership):
+async def update_trip(trip_id: UUID, payload: TripUpdate, db: DbSession, owner: Ownership):
     trip = await trip_service.get_trip(db, trip_id)
     # exclude_unset: a PATCH must not blank fields the client did not send.
-    return await trip_service.update_trip(db, trip, payload.model_dump(exclude_unset=True))
+    trip = await trip_service.update_trip(db, trip, payload.model_dump(exclude_unset=True))
+    await emit(trip_id, "trip.changed", actor_id=owner.user_id)
+    return trip
 
 
 @router.delete("/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_trip(trip_id: UUID, db: DbSession, _: Ownership):
+async def delete_trip(trip_id: UUID, db: DbSession, owner: Ownership):
+    actor_id = owner.user_id
     await trip_service.delete_trip(db, await trip_service.get_trip(db, trip_id))
+    # Tell everyone still on the screen, then hang up: there is nothing left to
+    # listen to.
+    await emit(trip_id, "trip.deleted", actor_id=actor_id)
+    await close_trip(trip_id)
 
 
 @router.get("/{trip_id}/members", response_model=list[MemberPublic])
@@ -135,12 +145,24 @@ async def leave_trip(db: DbSession, membership: Membership):
     balance: both are answered with a 409 carrying a code, because the app shows
     a different way forward for each.
     """
+    # Captured before the service call: on success the membership row is gone,
+    # and on trip deletion the trip is too.
+    trip_id = membership.trip_id
+    actor_id = membership.user_id
     try:
-        await trip_service.leave_trip(db, membership)
+        deleted = await trip_service.leave_trip(db, membership)
     except OwnerMustTransfer:
         raise _owner_must_transfer() from None
     except OutstandingBalance as e:
         raise _outstanding_balance(e) from None
+
+    if deleted:
+        await emit(trip_id, "trip.deleted", actor_id=actor_id)
+        await close_trip(trip_id)
+    else:
+        await emit(trip_id, "members.changed", actor_id=actor_id)
+        # Their own sockets stop hearing a trip they no longer belong to.
+        await kick(trip_id, actor_id)
 
 
 @router.delete("/{trip_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -151,12 +173,18 @@ async def remove_member(trip_id: UUID, user_id: UUID, db: DbSession, owner: Owne
     except NotAMember:
         raise _MEMBER_NOT_FOUND from None
 
+    actor_id = owner.user_id
     try:
         await trip_service.remove_by_owner(db, owner, target)
     except OwnerMustTransfer:
         raise _owner_must_transfer() from None
     except OutstandingBalance as e:
         raise _outstanding_balance(e) from None
+
+    await emit(trip_id, "members.changed", actor_id=actor_id)
+    # Cut the removed member's sockets: no data travels on this channel, but
+    # even the bell is a signal of activity they are no longer entitled to.
+    await kick(trip_id, user_id)
 
 
 @router.post("/{trip_id}/members/{user_id}/owner", response_model=list[MemberPublic])
@@ -171,7 +199,9 @@ async def transfer_ownership(trip_id: UUID, user_id: UUID, db: DbSession, owner:
     except NotAMember:
         raise _MEMBER_NOT_FOUND from None
 
+    actor_id = owner.user_id
     await trip_service.transfer_ownership(db, owner, target)
+    await emit(trip_id, "members.changed", actor_id=actor_id)
     return await _members(db, trip_id)
 
 
