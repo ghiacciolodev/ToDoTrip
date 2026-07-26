@@ -13,7 +13,13 @@ from app.schemas.expense import (
     SettlementPublic,
 )
 from app.services import expense_service
-from app.services.expense_service import ExpenseNotFound, NotAllMembers, SelfSettlement
+from app.services.expense_service import (
+    ExpenseNotFound,
+    NotAllMembers,
+    NotTheSender,
+    SelfSettlement,
+    SettlementNotFound,
+)
 
 router = APIRouter(prefix="/trips/{trip_id}", tags=["expenses"])
 
@@ -80,3 +86,20 @@ async def create_settlement(
 @router.get("/settlements", response_model=list[SettlementPublic])
 async def list_settlements(trip_id: UUID, db: DbSession, _: Membership):
     return await expense_service.list_settlements(db, trip_id)
+
+
+@router.delete("/settlements/{settlement_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_settlement(
+    trip_id: UUID, settlement_id: UUID, db: DbSession, user: CurrentUser, _: Membership
+):
+    """Undo a repayment. Only the member who recorded it can, since it is their
+    own claim to have paid."""
+    try:
+        settlement = await expense_service.get_settlement(db, trip_id, settlement_id)
+        await expense_service.delete_settlement(db, settlement, user.id)
+    except SettlementNotFound:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Settlement not found") from None
+    except NotTheSender:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Only the sender can undo this repayment"
+        ) from None

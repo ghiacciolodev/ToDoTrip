@@ -128,8 +128,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final members =
-        ref.watch(tripMembersProvider(widget.tripId)).value ?? const [];
+    final members = ref.watch(activeMembersProvider(widget.tripId));
 
     return SafeArea(
       child: AnimatedPadding(

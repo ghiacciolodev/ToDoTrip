@@ -53,6 +53,11 @@ class MemberPublic(BaseModel):
     role: MemberRole
     joined_at: datetime
 
+    # Set only for former members. They are listed so the client can still put a
+    # name on the expenses they took part in; anything that picks people — an
+    # assignee, a payer, a split — must use the ones where this is null.
+    left_at: datetime | None = None
+
 
 class InviteCreate(BaseModel):
     expires_in_hours: int | None = Field(default=None, ge=1, le=24 * 30)

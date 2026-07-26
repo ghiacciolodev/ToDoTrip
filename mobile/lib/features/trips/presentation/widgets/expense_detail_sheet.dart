@@ -8,6 +8,7 @@ import '../../../../core/providers.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
+import '../../data/trip_member.dart';
 import '../../providers.dart';
 import 'delete_actions.dart';
 
@@ -35,6 +36,24 @@ class _ExpenseDetailSheet extends ConsumerStatefulWidget {
 
 class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
   bool _deleting = false;
+
+  /// Names whoever a share belongs to, marking the ones who have left the trip.
+  ///
+  /// Their share stays in the ledger for good — deleting it would change what
+  /// everyone else owes — so it is worth saying why that name is not in the
+  /// group any more.
+  static String _nameFor(
+      Map<String, TripMember> lookup,
+      String userId,
+      String? myId,
+      ) {
+    if (userId == myId) return 'You';
+    final member = lookup[userId];
+    if (member == null) return 'Unknown';
+    return member.hasLeft
+        ? '${member.user.displayName} (left)'
+        : member.user.displayName;
+  }
 
   /// Same confirmation as the swipe and the long press on the row behind this
   /// sheet, so a delete reads identically wherever it is started from.
@@ -130,9 +149,7 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          share.userId == myId
-                              ? 'You'
-                              : lookup[share.userId]?.user.displayName ?? 'Unknown',
+                          _nameFor(lookup, share.userId, myId),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

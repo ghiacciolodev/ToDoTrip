@@ -11,7 +11,7 @@ from app.models.checklist import Checklist, ChecklistEntry
 from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
 from app.models.item import Item, ItemAssignee, ItemType
-from app.models.trip import MemberRole, Trip, TripMember
+from app.models.trip import MemberRole, Trip, TripMember, TripPastMember
 from app.models.user import User
 
 __all__ = [
@@ -29,5 +29,6 @@ __all__ = [
     "Settlement",
     "Trip",
     "TripMember",
+    "TripPastMember",
     "User",
 ]

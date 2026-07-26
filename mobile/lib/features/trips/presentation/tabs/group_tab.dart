@@ -11,6 +11,7 @@ import '../../data/trip.dart';
 import '../../data/trip_member.dart';
 import '../../providers.dart';
 import '../widgets/invite_sheet.dart';
+import '../widgets/member_actions.dart';
 
 /// Members, invites and the destructive actions for one trip.
 class GroupTab extends ConsumerWidget {
@@ -21,7 +22,9 @@ class GroupTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = ref.watch(tripProvider(tripId)).value;
-    final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
+    // Only who is still here: former members exist to name old expenses, not to
+    // be listed as part of the group.
+    final members = ref.watch(activeMembersProvider(tripId));
     final me = ref.watch(myMembershipProvider(tripId));
     final isOwner = me?.role == MemberRole.owner;
 
@@ -46,7 +49,15 @@ class GroupTab extends ConsumerWidget {
               children: [
                 for (final (index, member) in members.indexed) ...[
                   if (index > 0) const Divider(),
-                  _MemberRow(member: member, isMe: member.user.id == me?.user.id),
+                  _MemberRow(
+                    member: member,
+                    isMe: member.user.id == me?.user.id,
+                    // Nothing to offer a member looking at someone else, so the
+                    // row stays inert rather than opening an empty sheet.
+                    onTap: (isOwner || member.user.id == me?.user.id)
+                        ? () => _openActions(context, ref, trip, members, member)
+                        : null,
+                  ),
                 ],
               ],
             ),
@@ -76,42 +87,37 @@ class GroupTab extends ConsumerWidget {
             _DangerButton(
               icon: Icons.exit_to_app,
               label: 'Leave trip',
-              onPressed: () => _confirmLeave(context, ref, trip),
+              onPressed: () => confirmLeaveTrip(
+                context,
+                ref,
+                trip: trip,
+                memberCount: members.length,
+              ),
             ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmLeave(BuildContext context, WidgetRef ref, Trip trip) async {
-    final confirmed = await showAdaptiveDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: Text('Leave ${trip.name}?'),
-        content: const Text(
-          "You'll lose access to the plan and expenses. "
-              'Anything you already added stays with the group.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Leave', style: TextStyle(color: AppColors.terracotta)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
+  /// Opens the actions for one member. What it offers depends on who the caller
+  /// is and who they tapped, so the sheet decides and this only runs the choice.
+  Future<void> _openActions(
+      BuildContext context,
+      WidgetRef ref,
+      Trip trip,
+      List<TripMember> members,
+      TripMember member,
+      ) async {
+    final action = await showMemberActionsSheet(context, tripId, member.user.id);
+    if (action == null || !context.mounted) return;
 
-    try {
-      await ref.read(tripRepositoryProvider).leave(tripId);
-      ref.invalidate(tripsProvider);
-      if (context.mounted) context.go('/trips');
-    } on ApiException catch (e) {
-      if (context.mounted) _toast(context, e.message);
+    switch (action) {
+      case MemberAction.makeOwner:
+        await confirmMakeOwner(context, ref, tripId, member);
+      case MemberAction.remove:
+        await confirmRemoveMember(context, ref, tripId, member);
+      case MemberAction.leave:
+        await confirmLeaveTrip(context, ref, trip: trip, memberCount: members.length);
     }
   }
 
@@ -221,14 +227,18 @@ class _TripCard extends StatelessWidget {
 }
 
 class _MemberRow extends StatelessWidget {
-  const _MemberRow({required this.member, required this.isMe});
+  const _MemberRow({required this.member, required this.isMe, this.onTap});
 
   final TripMember member;
   final bool isMe;
 
+  /// Null when the caller has no action available on this person.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: onTap,
       leading: CircleAvatar(
         backgroundColor: avatarColorFor(member.user.id),
         child: Text(
@@ -255,7 +265,16 @@ class _MemberRow extends StatelessWidget {
         'Joined ${DateFormat('d MMM').format(member.joinedAt)}',
         style: const TextStyle(fontSize: 12),
       ),
-      trailing: member.role == MemberRole.owner ? const _OwnerBadge() : null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (member.role == MemberRole.owner) const _OwnerBadge(),
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.more_horiz, size: 20, color: AppColors.inkMuted),
+          ],
+        ],
+      ),
     );
   }
 }

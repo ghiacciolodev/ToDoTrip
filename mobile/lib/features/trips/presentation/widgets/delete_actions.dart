@@ -186,10 +186,19 @@ Future<bool> confirmDeleteExpense(
     String tripId,
     Expense expense,
     ) async {
+  // Repayments outlive the expense they were made against: whoever already paid
+  // their share of this one ends up owed it back, which looks like the balances
+  // going wrong on their own unless it is said here.
+  final hasRepayments =
+      (ref.read(settlementsProvider(tripId)).value ?? const []).isNotEmpty;
+
   final confirmed = await _confirm(
     context,
     title: 'Delete "${expense.description}"?',
-    message: "Everyone's balance will be recalculated.",
+    message: hasRepayments
+        ? 'This trip has recorded repayments. Deleting this expense will change '
+        "everyone's balance."
+        : "Everyone's balance will be recalculated.",
   );
   if (!confirmed) return false;
 

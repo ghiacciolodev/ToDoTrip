@@ -21,6 +21,14 @@ class SelfSettlement(Exception):
     """A member cannot repay themselves."""
 
 
+class SettlementNotFound(Exception):
+    """No such settlement inside this trip."""
+
+
+class NotTheSender(Exception):
+    """Only the member who recorded a repayment may take it back."""
+
+
 async def _member_ids(db: AsyncSession, trip_id: UUID) -> set[UUID]:
     result = await db.execute(select(TripMember.user_id).where(TripMember.trip_id == trip_id))
     return set(result.scalars().all())
@@ -98,6 +106,30 @@ async def create_settlement(
     return settlement
 
 
+async def get_settlement(db: AsyncSession, trip_id: UUID, settlement_id: UUID) -> Settlement:
+    """Both ids are matched: a settlement id alone must never cross trip boundaries."""
+    settlement = await db.scalar(
+        select(Settlement).where(Settlement.id == settlement_id, Settlement.trip_id == trip_id)
+    )
+    if settlement is None:
+        raise SettlementNotFound
+    return settlement
+
+
+async def delete_settlement(db: AsyncSession, settlement: Settlement, user_id: UUID) -> None:
+    """Take back a repayment, restoring the balances to what they were.
+
+    Only its sender may: the row is that person's claim to have paid, and the
+    same rule that stops anyone marking someone else's debt as settled has to
+    stop them unmarking it. Unlike expenses, which anyone can tidy, this is a
+    statement about one member's own money.
+    """
+    if settlement.from_user_id != user_id:
+        raise NotTheSender
+    await db.delete(settlement)
+    await db.commit()
+
+
 async def list_settlements(db: AsyncSession, trip_id: UUID) -> list[Settlement]:
     result = await db.execute(
         select(Settlement)
@@ -105,6 +137,19 @@ async def list_settlements(db: AsyncSession, trip_id: UUID) -> list[Settlement]:
         .order_by(Settlement.settled_at.desc())
     )
     return list(result.scalars().all())
+
+
+async def balance_for(db: AsyncSession, trip_id: UUID, user_id: UUID) -> int:
+    """One member's net position: positive means owed, negative means owing.
+
+    Derived from the same report the app reads, so "settled" can never mean one
+    thing to the membership rules and another on screen.
+    """
+    report = await get_balance_report(db, trip_id)
+    for entry in report["balances"]:
+        if entry["user_id"] == user_id:
+            return entry["balance_cents"]
+    return 0
 
 
 async def get_balance_report(db: AsyncSession, trip_id: UUID) -> dict:

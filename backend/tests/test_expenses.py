@@ -266,6 +266,48 @@ class TestBalance:
         response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
         assert all(b["balance_cents"] == 0 for b in response.json()["balances"])
 
+    async def test_deleting_one_expense_leaves_the_other_intact(
+        self, client: AsyncClient, three_members: dict
+    ):
+        """Separates a cascade bug from an orphaned settlement.
+
+        If this fails, deleting an expense is not taking its shares with it and
+        the balances are wrong for a much more serious reason.
+        """
+        g = three_members
+        first = await client.post(
+            f"{TRIPS}/{g['trip_id']}/expenses",
+            json={
+                "description": "Prima",
+                "amount_cents": 6000,
+                "paid_by": g["mario"],
+                "participants": [g["mario"], g["luca"]],
+            },
+            headers=g["mario_headers"],
+        )
+        await client.post(
+            f"{TRIPS}/{g['trip_id']}/expenses",
+            json={
+                "description": "Seconda",
+                "amount_cents": 2000,
+                "paid_by": g["luca"],
+                "participants": [g["mario"], g["luca"]],
+            },
+            headers=g["luca_headers"],
+        )
+        await client.delete(
+            f"{TRIPS}/{g['trip_id']}/expenses/{first.json()['id']}",
+            headers=g["mario_headers"],
+        )
+
+        response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
+        body = response.json()
+        balances = {b["user_id"]: b["balance_cents"] for b in body["balances"]}
+        # Only the second expense remains: Luca paid 20, Mario owes his half.
+        assert balances[g["luca"]] == 1000
+        assert balances[g["mario"]] == -1000
+        assert body["total_spent_cents"] == 2000
+
 
 class TestSettlement:
     async def test_settling_up_clears_the_debt(self, client: AsyncClient, three_members: dict):
@@ -323,6 +365,164 @@ class TestSettlement:
             headers=g["luca_headers"],
         )
         assert response.status_code == 422
+
+
+class TestSettlementOutlivesItsExpense:
+    """The behaviour behind "the balances went wrong after I deleted an expense".
+
+    Deleting an expense takes its shares with it, but not the repayments made
+    against it: the money really did change hands. The arithmetic is right and
+    the result is surprising, so it is pinned down here and surfaced in the app,
+    where repayments are now listed and can be undone.
+    """
+
+    async def test_the_repayment_survives_and_inverts_the_balance(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        expense = await client.post(
+            f"{TRIPS}/{g['trip_id']}/expenses",
+            json={
+                "description": "Cena",
+                "amount_cents": 6000,
+                "paid_by": g["mario"],
+                "participants": [g["mario"], g["luca"]],
+            },
+            headers=g["mario_headers"],
+        )
+        await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+        await client.delete(
+            f"{TRIPS}/{g['trip_id']}/expenses/{expense.json()['id']}",
+            headers=g["mario_headers"],
+        )
+
+        response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
+        body = response.json()
+        balances = {b["user_id"]: b["balance_cents"] for b in body["balances"]}
+        # Luca paid 30 for something that no longer exists, so he is owed it.
+        assert balances[g["luca"]] == 3000
+        assert balances[g["mario"]] == -3000
+        # And nothing was spent, which is what makes the figures look unexplained.
+        assert body["total_spent_cents"] == 0
+
+    async def test_undoing_the_repayment_clears_it(self, client: AsyncClient, three_members: dict):
+        """The way out of the state above."""
+        g = three_members
+        expense = await client.post(
+            f"{TRIPS}/{g['trip_id']}/expenses",
+            json={
+                "description": "Cena",
+                "amount_cents": 6000,
+                "paid_by": g["mario"],
+                "participants": [g["mario"], g["luca"]],
+            },
+            headers=g["mario_headers"],
+        )
+        settlement = await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+        await client.delete(
+            f"{TRIPS}/{g['trip_id']}/expenses/{expense.json()['id']}",
+            headers=g["mario_headers"],
+        )
+        await client.delete(
+            f"{TRIPS}/{g['trip_id']}/settlements/{settlement.json()['id']}",
+            headers=g["luca_headers"],
+        )
+
+        response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
+        assert all(b["balance_cents"] == 0 for b in response.json()["balances"])
+
+
+class TestUndoSettlement:
+    async def test_the_sender_can_undo(self, client: AsyncClient, three_members: dict):
+        g = three_members
+        await client.post(
+            f"{TRIPS}/{g['trip_id']}/expenses",
+            json={
+                "description": "Cena",
+                "amount_cents": 6000,
+                "paid_by": g["mario"],
+                "participants": [g["mario"], g["luca"]],
+            },
+            headers=g["mario_headers"],
+        )
+        settlement = await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+
+        undone = await client.delete(
+            f"{TRIPS}/{g['trip_id']}/settlements/{settlement.json()['id']}",
+            headers=g["luca_headers"],
+        )
+        assert undone.status_code == 204
+
+        # Back to the debt that existed before the repayment.
+        response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
+        balances = {b["user_id"]: b["balance_cents"] for b in response.json()["balances"]}
+        assert balances[g["luca"]] == -3000
+        assert balances[g["mario"]] == 3000
+        assert (
+            await client.get(f"{TRIPS}/{g['trip_id']}/settlements", headers=g["luca_headers"])
+        ).json() == []
+
+    async def test_the_recipient_cannot_undo(self, client: AsyncClient, three_members: dict):
+        """The same rule as recording one: nobody speaks for another's money."""
+        g = three_members
+        settlement = await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+        response = await client.delete(
+            f"{TRIPS}/{g['trip_id']}/settlements/{settlement.json()['id']}",
+            headers=g["mario_headers"],
+        )
+        assert response.status_code == 403
+
+    async def test_an_unrelated_member_cannot_undo(self, client: AsyncClient, three_members: dict):
+        g = three_members
+        settlement = await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+        response = await client.delete(
+            f"{TRIPS}/{g['trip_id']}/settlements/{settlement.json()['id']}",
+            headers=g["anna_headers"],
+        )
+        assert response.status_code == 403
+
+    async def test_unknown_settlement_is_404(self, client: AsyncClient, three_members: dict):
+        g = three_members
+        response = await client.delete(
+            f"{TRIPS}/{g['trip_id']}/settlements/{uuid4()}", headers=g["mario_headers"]
+        )
+        assert response.status_code == 404
+
+    async def test_a_settlement_id_does_not_cross_trips(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        settlement = await client.post(
+            f"{TRIPS}/{g['trip_id']}/settlements",
+            json={"to_user_id": g["mario"], "amount_cents": 3000},
+            headers=g["luca_headers"],
+        )
+        other_trip = await client.post(TRIPS, json={"name": "Altro"}, headers=g["luca_headers"])
+        response = await client.delete(
+            f"{TRIPS}/{other_trip.json()['id']}/settlements/{settlement.json()['id']}",
+            headers=g["luca_headers"],
+        )
+        assert response.status_code == 404
 
 
 class TestSuggestedTransfers:

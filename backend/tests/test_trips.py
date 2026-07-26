@@ -253,10 +253,9 @@ class TestMembers:
         gone = await client.get(f"{TRIPS}/{trip['id']}", headers=other_headers)
         assert gone.status_code == 404
 
-    async def test_owner_cannot_leave(self, client: AsyncClient, trip: dict, auth_headers: dict):
-        """The trip would be left with nobody able to manage it."""
-        response = await client.delete(f"{TRIPS}/{trip['id']}/members/me", headers=auth_headers)
-        assert response.status_code == 409
+    # Leaving as an owner, and every other membership rule, is covered in
+    # test_members.py: an owner alone deletes the trip, an owner with company
+    # has to hand it over first.
 
 
 class TestDelete:

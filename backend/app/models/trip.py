@@ -48,6 +48,45 @@ class Trip(Base, TimestampMixin):
     )
 
 
+class TripPastMember(Base):
+    """Someone who was in this trip and is not any more.
+
+    A separate table rather than a `left_at` column on TripMember: presence in
+    trip_members IS the authorization for everything in the app, and a nullable
+    flag would mean every one of those queries has to remember to filter on it.
+    One forgotten filter is a former member still reading the group's expenses.
+    Here the two questions stay apart — who may act, and who was ever here.
+
+    It exists because expenses outlive membership: the shares of someone who
+    left cannot be deleted without changing what everyone else owes, so their
+    name has to remain resolvable or the ledger shows "Unknown" next to real
+    amounts.
+    """
+
+    __tablename__ = "trip_past_members"
+
+    # One row per person per trip: someone who leaves twice has left once, most
+    # recently.
+    __table_args__ = (UniqueConstraint("trip_id", "user_id", name="uq_trip_past_member"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    trip_id: Mapped[UUID] = mapped_column(
+        ForeignKey("trips.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    # Kept so the API can describe a former member exactly like a current one.
+    role: Mapped[MemberRole] = mapped_column(
+        Enum(MemberRole, native_enum=False, length=20), default=MemberRole.MEMBER, nullable=False
+    )
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    left_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class TripMember(Base):
     """Join table between users and trips. Presence of a row IS the authorization."""
 

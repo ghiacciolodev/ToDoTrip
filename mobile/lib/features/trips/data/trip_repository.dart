@@ -86,12 +86,37 @@ class TripRepository {
     }
   }
 
+  /// Leaves the trip, or deletes it when the caller is the last member.
+  ///
+  /// A 409 carries a code: `owner_must_transfer` when the trip would be left
+  /// unmanaged, `outstanding_balance` when there is money open, with the amount
+  /// in the details.
   Future<void> leave(String tripId) async {
     try {
       await dio.delete('/trips/$tripId/members/me');
     } on DioException catch (e) {
-      // 409 means the caller is the owner: a trip must never be left without
-      // anyone able to manage it.
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Owner only. Fails with `outstanding_balance` if the member is not settled.
+  Future<void> removeMember(String tripId, String userId) async {
+    try {
+      await dio.delete('/trips/$tripId/members/$userId');
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Owner only. Returns the members with their new roles: the caller has just
+  /// stopped being the owner, and the UI has to reflect both changes at once.
+  Future<List<TripMember>> makeOwner(String tripId, String userId) async {
+    try {
+      final response = await dio.post('/trips/$tripId/members/$userId/owner');
+      return (response.data as List)
+          .map((json) => TripMember.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
       throw ApiException.from(e);
     }
   }

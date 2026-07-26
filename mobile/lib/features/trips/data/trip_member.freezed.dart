@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TripMember {
 
- User get user; MemberRole get role; DateTime get joinedAt;
+ User get user; MemberRole get role; DateTime get joinedAt; DateTime? get leftAt;
 /// Create a copy of TripMember
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $TripMemberCopyWith<TripMember> get copyWith => _$TripMemberCopyWithImpl<TripMem
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripMember&&(identical(other.user, user) || other.user == user)&&(identical(other.role, role) || other.role == role)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripMember&&(identical(other.user, user) || other.user == user)&&(identical(other.role, role) || other.role == role)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt)&&(identical(other.leftAt, leftAt) || other.leftAt == leftAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,user,role,joinedAt);
+int get hashCode => Object.hash(runtimeType,user,role,joinedAt,leftAt);
 
 @override
 String toString() {
-  return 'TripMember(user: $user, role: $role, joinedAt: $joinedAt)';
+  return 'TripMember(user: $user, role: $role, joinedAt: $joinedAt, leftAt: $leftAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $TripMemberCopyWith<$Res>  {
   factory $TripMemberCopyWith(TripMember value, $Res Function(TripMember) _then) = _$TripMemberCopyWithImpl;
 @useResult
 $Res call({
- User user, MemberRole role, DateTime joinedAt
+ User user, MemberRole role, DateTime joinedAt, DateTime? leftAt
 });
 
 
@@ -65,12 +65,13 @@ class _$TripMemberCopyWithImpl<$Res>
 
 /// Create a copy of TripMember
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? role = null,Object? joinedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? role = null,Object? joinedAt = null,Object? leftAt = freezed,}) {
   return _then(_self.copyWith(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as User,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as MemberRole,joinedAt: null == joinedAt ? _self.joinedAt : joinedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,leftAt: freezed == leftAt ? _self.leftAt : leftAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 /// Create a copy of TripMember
@@ -164,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( User user,  MemberRole role,  DateTime joinedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( User user,  MemberRole role,  DateTime joinedAt,  DateTime? leftAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TripMember() when $default != null:
-return $default(_that.user,_that.role,_that.joinedAt);case _:
+return $default(_that.user,_that.role,_that.joinedAt,_that.leftAt);case _:
   return orElse();
 
 }
@@ -185,10 +186,10 @@ return $default(_that.user,_that.role,_that.joinedAt);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( User user,  MemberRole role,  DateTime joinedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( User user,  MemberRole role,  DateTime joinedAt,  DateTime? leftAt)  $default,) {final _that = this;
 switch (_that) {
 case _TripMember():
-return $default(_that.user,_that.role,_that.joinedAt);case _:
+return $default(_that.user,_that.role,_that.joinedAt,_that.leftAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +206,10 @@ return $default(_that.user,_that.role,_that.joinedAt);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( User user,  MemberRole role,  DateTime joinedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( User user,  MemberRole role,  DateTime joinedAt,  DateTime? leftAt)?  $default,) {final _that = this;
 switch (_that) {
 case _TripMember() when $default != null:
-return $default(_that.user,_that.role,_that.joinedAt);case _:
+return $default(_that.user,_that.role,_that.joinedAt,_that.leftAt);case _:
   return null;
 
 }
@@ -219,13 +220,14 @@ return $default(_that.user,_that.role,_that.joinedAt);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _TripMember implements TripMember {
-  const _TripMember({required this.user, required this.role, required this.joinedAt});
+class _TripMember extends TripMember {
+  const _TripMember({required this.user, required this.role, required this.joinedAt, this.leftAt}): super._();
   factory _TripMember.fromJson(Map<String, dynamic> json) => _$TripMemberFromJson(json);
 
 @override final  User user;
 @override final  MemberRole role;
 @override final  DateTime joinedAt;
+@override final  DateTime? leftAt;
 
 /// Create a copy of TripMember
 /// with the given fields replaced by the non-null parameter values.
@@ -240,16 +242,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripMember&&(identical(other.user, user) || other.user == user)&&(identical(other.role, role) || other.role == role)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripMember&&(identical(other.user, user) || other.user == user)&&(identical(other.role, role) || other.role == role)&&(identical(other.joinedAt, joinedAt) || other.joinedAt == joinedAt)&&(identical(other.leftAt, leftAt) || other.leftAt == leftAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,user,role,joinedAt);
+int get hashCode => Object.hash(runtimeType,user,role,joinedAt,leftAt);
 
 @override
 String toString() {
-  return 'TripMember(user: $user, role: $role, joinedAt: $joinedAt)';
+  return 'TripMember(user: $user, role: $role, joinedAt: $joinedAt, leftAt: $leftAt)';
 }
 
 
@@ -260,7 +262,7 @@ abstract mixin class _$TripMemberCopyWith<$Res> implements $TripMemberCopyWith<$
   factory _$TripMemberCopyWith(_TripMember value, $Res Function(_TripMember) _then) = __$TripMemberCopyWithImpl;
 @override @useResult
 $Res call({
- User user, MemberRole role, DateTime joinedAt
+ User user, MemberRole role, DateTime joinedAt, DateTime? leftAt
 });
 
 
@@ -277,12 +279,13 @@ class __$TripMemberCopyWithImpl<$Res>
 
 /// Create a copy of TripMember
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? role = null,Object? joinedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? role = null,Object? joinedAt = null,Object? leftAt = freezed,}) {
   return _then(_TripMember(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as User,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as MemberRole,joinedAt: null == joinedAt ? _self.joinedAt : joinedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,leftAt: freezed == leftAt ? _self.leftAt : leftAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

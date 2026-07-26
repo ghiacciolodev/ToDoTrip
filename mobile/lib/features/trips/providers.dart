@@ -7,6 +7,7 @@ import 'data/trip_repository.dart';
 import 'data/invite.dart';
 import 'data/expense.dart';
 import 'data/expense_repository.dart';
+import 'data/settlement.dart';
 import 'data/item.dart';
 import 'data/item_repository.dart';
 import 'data/checklist.dart';
@@ -34,18 +35,38 @@ final tripProvider = FutureProvider.family<Trip, String>((ref, tripId) {
   return ref.watch(tripRepositoryProvider).byId(tripId);
 });
 
-/// Members of a trip.
+/// Everyone the trip knows about, including people who have left.
 ///
 /// Loaded once at the trip shell and shared by every tab: expenses show "paid
 /// by Luca", tasks show an assignee, balances show names — the API returns only
 /// UUIDs, and three tabs fetching the same list would mean three round trips
 /// and three unsynchronised spinners.
+///
+/// Former members are in here on purpose, so their name still resolves beside
+/// the expenses they took part in. Use [activeMembersProvider] wherever people
+/// are picked or counted.
 final tripMembersProvider =
 FutureProvider.family<List<TripMember>, String>((ref, tripId) {
   return ref.watch(tripRepositoryProvider).members(tripId);
 });
 
+/// Who is in the trip right now.
+///
+/// The list every screen that offers a choice must use: assigning a task to
+/// someone who left, or splitting a bill with them, is rejected by the API.
+final activeMembersProvider =
+Provider.family<List<TripMember>, String>((ref, tripId) {
+  final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
+  return [
+    for (final member in members)
+      if (!member.hasLeft) member,
+  ];
+});
+
 /// Members indexed by user id, for turning an id into a name at render time.
+///
+/// Built from the full list, former members included: that is the whole point of
+/// a lookup — an id from an old expense must still find a name.
 final memberLookupProvider =
 Provider.family<Map<String, TripMember>, String>((ref, tripId) {
   final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
@@ -67,8 +88,8 @@ final myMembershipProvider =
 Provider.family<TripMember?, String>((ref, tripId) {
   final userId = ref.watch(authProvider).value?.id;
   if (userId == null) return null;
-  final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
-  for (final member in members) {
+  // Active only: a former membership must not keep granting affordances.
+  for (final member in ref.watch(activeMembersProvider(tripId))) {
     if (member.user.id == userId) return member;
   }
   return null;
@@ -88,13 +109,25 @@ FutureProvider.family<BalanceReport, String>((ref, tripId) {
   return ref.watch(expenseRepositoryProvider).balance(tripId);
 });
 
+/// Repayments recorded between members.
+///
+/// Shown alongside the expenses because they move the balances just as much: a
+/// repayment that survives the expense it was made against is otherwise a change
+/// in the figures with nothing on screen to explain it.
+final settlementsProvider =
+FutureProvider.family<List<Settlement>, String>((ref, tripId) {
+  return ref.watch(expenseRepositoryProvider).listSettlements(tripId);
+});
+
 /// Refreshes everything money-related after a change.
 ///
-/// Expenses and balances are separate endpoints, so invalidating only the list
-/// leaves the balance card showing figures from before the change. Every caller
-/// that touches money goes through here rather than remembering both.
+/// Expenses, repayments and balances are three separate endpoints, so
+/// invalidating one leaves the others showing figures from before the change.
+/// Every caller that touches money goes through here rather than remembering
+/// all three.
 void invalidateMoney(WidgetRef ref, String tripId) {
   ref.invalidate(expensesProvider(tripId));
+  ref.invalidate(settlementsProvider(tripId));
   ref.invalidate(balanceProvider(tripId));
 }
 

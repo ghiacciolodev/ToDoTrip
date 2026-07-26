@@ -6,10 +6,12 @@ import '../../../../core/money.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
+import '../../data/settlement.dart';
 import '../../providers.dart';
 import '../widgets/delete_actions.dart';
 import '../widgets/expense_detail_sheet.dart';
 import '../widgets/settle_up_sheet.dart';
+import '../widgets/settlement_sheet.dart';
 
 class ExpensesTab extends ConsumerWidget {
   const ExpensesTab({super.key, required this.tripId});
@@ -29,6 +31,7 @@ class ExpensesTab extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, String myId) {
     final expenses = ref.watch(expensesProvider(tripId));
+    final settlements = ref.watch(settlementsProvider(tripId));
     final balance = ref.watch(balanceProvider(tripId));
     final list = expenses.value;
 
@@ -45,6 +48,15 @@ class ExpensesTab extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator.adaptive());
     }
 
+    // Expenses and repayments in one column: both move the balances, and a
+    // repayment shown nowhere is a figure that changes for no visible reason —
+    // most sharply after the expense it was made against has been deleted.
+    final entries = <_Entry>[
+      for (final expense in list) _ExpenseEntry(expense),
+      for (final settlement in settlements.value ?? const <Settlement>[])
+        _SettlementEntry(settlement),
+    ]..sort((a, b) => b.at.compareTo(a.at));
+
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -58,10 +70,10 @@ class ExpensesTab extends ConsumerWidget {
             ),
           ),
         ),
-        if (list.isEmpty)
+        if (entries.isEmpty)
           const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
         else
-          ..._buildGroupedList(context, ref, list, myId),
+          ..._buildGroupedList(context, ref, entries, myId),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
       ],
     );
@@ -72,14 +84,14 @@ class ExpensesTab extends ConsumerWidget {
   List<Widget> _buildGroupedList(
       BuildContext context,
       WidgetRef ref,
-      List<Expense> expenses,
+      List<_Entry> entries,
       String myId,
       ) {
-    final byDay = <DateTime, List<Expense>>{};
-    for (final expense in expenses) {
-      final local = expense.spentAt.toLocal();
+    final byDay = <DateTime, List<_Entry>>{};
+    for (final entry in entries) {
+      final local = entry.at.toLocal();
       final day = DateTime(local.year, local.month, local.day);
-      byDay.putIfAbsent(day, () => []).add(expense);
+      byDay.putIfAbsent(day, () => []).add(entry);
     }
 
     final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -96,11 +108,18 @@ class ExpensesTab extends ConsumerWidget {
               itemCount: byDay[day]!.length,
               itemBuilder: (context, index) => Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: _ExpenseRow(
-                  tripId: tripId,
-                  expense: byDay[day]![index],
-                  myId: myId,
-                ),
+                child: switch (byDay[day]![index]) {
+                  _ExpenseEntry(:final expense) => _ExpenseRow(
+                    tripId: tripId,
+                    expense: expense,
+                    myId: myId,
+                  ),
+                  _SettlementEntry(:final settlement) => _SettlementRow(
+                    tripId: tripId,
+                    settlement: settlement,
+                    myId: myId,
+                  ),
+                },
               ),
             ),
           ],
@@ -116,6 +135,33 @@ class ExpensesTab extends ConsumerWidget {
     if (difference == 1) return 'Yesterday';
     return DateFormat('EEEE d MMMM').format(day);
   }
+}
+
+/// One line of the money tab: something the trip spent, or money moved between
+/// two members to square up.
+sealed class _Entry {
+  const _Entry();
+
+  /// When it happened, which is what the single list is ordered by.
+  DateTime get at;
+}
+
+class _ExpenseEntry extends _Entry {
+  const _ExpenseEntry(this.expense);
+
+  final Expense expense;
+
+  @override
+  DateTime get at => expense.spentAt;
+}
+
+class _SettlementEntry extends _Entry {
+  const _SettlementEntry(this.settlement);
+
+  final Settlement settlement;
+
+  @override
+  DateTime get at => settlement.settledAt;
 }
 
 class _BalanceCard extends ConsumerWidget {
@@ -374,6 +420,90 @@ class _ExpenseRow extends ConsumerWidget {
     if (has(['bar', 'drink', 'beer', 'coffee', 'wine'])) return Icons.local_bar;
     if (has(['museum', 'tour', 'entry'])) return Icons.local_activity;
     return Icons.receipt_long;
+  }
+}
+
+/// A repayment, deliberately quieter than an expense.
+///
+/// No tinted icon and no bold amount: this is not something the trip spent, and
+/// reading it as a cost is exactly the confusion that makes the balances look
+/// wrong. Tapping opens the detail, where its sender — and only its sender — can
+/// undo it.
+class _SettlementRow extends ConsumerWidget {
+  const _SettlementRow({
+    required this.tripId,
+    required this.settlement,
+    required this.myId,
+  });
+
+  final String tripId;
+  final Settlement settlement;
+  final String myId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lookup = ref.watch(memberLookupProvider(tripId));
+
+    String name(String id, {required bool subject}) {
+      if (id == myId) return subject ? 'You' : 'you';
+      return lookup[id]?.user.displayName ?? 'Someone';
+    }
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showSettlementSheet(context, tripId, settlement),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                height: 44,
+                width: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Icon(
+                  Icons.swap_horiz,
+                  color: AppColors.inkMuted,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${name(settlement.fromUserId, subject: true)} paid '
+                          '${name(settlement.toUserId, subject: false)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Repayment',
+                      style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                Money(settlement.amountCents).formatted,
+                style: const TextStyle(
+                  color: AppColors.inkMuted,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

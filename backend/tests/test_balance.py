@@ -77,6 +77,21 @@ class TestBalances:
     def test_nothing_spent_means_nothing_owed(self):
         assert compute_balances([], []) == {}
 
+    def test_a_settlement_with_no_expense_left_reverses_it(self):
+        """What "the balances went wrong after I deleted an expense" really is.
+
+        Deleting an expense removes its shares but not the repayment made against
+        it: B genuinely handed A 10.00 for something that no longer exists, so B
+        is owed it back. Pinned here because the arithmetic is right and the
+        result looks inexplicable unless the repayment is visible.
+        """
+        assert compute_balances([], [(B, A, 1000)]) == {A: -1000, B: 1000}
+
+    def test_opposite_settlements_cancel_out(self):
+        """Two repayments in opposite directions leave no trace, which is why an
+        orphaned pair can hide in plain sight."""
+        assert compute_balances([], [(B, A, 1000), (A, B, 1000)]) == {A: 0, B: 0}
+
 
 class TestSimplify:
     def test_single_debt(self):

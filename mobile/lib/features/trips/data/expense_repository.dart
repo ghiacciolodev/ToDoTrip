@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/api_exception.dart';
 import 'expense.dart';
+import 'settlement.dart';
 
 class ExpenseRepository {
   ExpenseRepository({required this.dio});
@@ -87,6 +88,27 @@ class ExpenseRepository {
           if (note != null && note.isNotEmpty) 'note': note,
         },
       );
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  Future<List<Settlement>> listSettlements(String tripId) async {
+    try {
+      final response = await dio.get('/trips/$tripId/settlements');
+      return (response.data as List)
+          .map((json) => Settlement.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Only the member who recorded the repayment may undo it: the API answers 403
+  /// to everyone else.
+  Future<void> deleteSettlement(String tripId, String settlementId) async {
+    try {
+      await dio.delete('/trips/$tripId/settlements/$settlementId');
     } on DioException catch (e) {
       throw ApiException.from(e);
     }

@@ -40,7 +40,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     super.initState();
     // Defaults that are right most of the time: you paid, everyone shares.
     final myId = ref.read(authProvider).value?.id;
-    final members = ref.read(tripMembersProvider(widget.tripId)).value ?? const [];
+    final members = ref.read(activeMembersProvider(widget.tripId));
     _paidBy = myId;
     _participants = {for (final m in members) m.user.id};
   }
@@ -140,7 +140,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final members = ref.watch(tripMembersProvider(widget.tripId)).value ?? const [];
+    final members = ref.watch(activeMembersProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
     final even = _evenShares;
 
