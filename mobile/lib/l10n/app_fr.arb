@@ -1,8 +1,6 @@
 {
   "@@locale": "fr",
-
   "appTitle": "TodoTrip",
-
   "commonCancel": "Annuler",
   "commonDelete": "Supprimer",
   "commonRemove": "Retirer",
@@ -19,7 +17,6 @@
   "commonOwner": "Propriétaire",
   "commonMember": "Membre",
   "commonComingSoon": "Bientôt disponible",
-
   "errorGeneric": "Une erreur est survenue. Réessayez.",
   "errorSlowConnection": "Connexion lente. Réessayez.",
   "errorNoConnection": "Serveur inaccessible.",
@@ -30,7 +27,6 @@
   "errorNoMapsApp": "Aucune application de cartes pour l'ouvrir.",
   "errorNotAllowed": "Vous n'avez pas le droit de faire cela.",
   "errorNotFound": "Cela n'existe plus.",
-
   "authCreateAccount": "Créez votre compte",
   "authWelcomeBack": "Bon retour",
   "authTagline": "Organisez vos voyages avec vos amis",
@@ -48,22 +44,18 @@
   "authSignUp": "S'inscrire",
   "authSwitchToSignIn": "Déjà un compte ? Se connecter",
   "authSwitchToSignUp": "Pas de compte ? S'inscrire",
-
   "navTrips": "Voyages",
   "navAdd": "Ajouter",
   "navSettings": "Réglages",
-
   "tripsTitle": "Mes voyages",
   "tripsEmptyTitle": "Aucun voyage",
   "tripsEmptyBody": "Créez votre premier voyage, ou rejoignez-en\nun avec le code d'un ami.",
   "tripsEmptyAction": "Commencer",
-
   "addTripTitle": "Ajouter un voyage",
   "addTripCreate": "Créer un voyage",
   "addTripCreateBody": "Commencez à organiser et invitez vos amis",
   "addTripJoin": "Rejoindre avec un code",
   "addTripJoinBody": "Quelqu'un vous a partagé un code d'invitation",
-
   "tripNewTitle": "Nouveau voyage",
   "tripNameLabel": "Nom du voyage",
   "tripNameEmpty": "Donnez un nom à votre voyage",
@@ -78,23 +70,19 @@
   "tripDatesFrom": "À partir du {date}",
   "tripDatesUntil": "Jusqu'au {date}",
   "tripFallbackName": "Voyage",
-
   "tabCalendar": "Agenda",
   "tabTasks": "Tâches",
   "tabMoney": "Dépenses",
   "tabMap": "Carte",
   "tabGroup": "Groupe",
-
   "fabEvent": "Événement",
   "fabTask": "Tâche",
   "fabList": "Liste",
   "fabExpense": "Dépense",
-
   "calendarEmptyTitle": "Rien de prévu",
   "calendarEmptyBody": "Ajoutez les vols, les arrivées et\ntout ce qui a une heure.",
   "calendarToday": "AUJOURD'HUI",
   "calendarTomorrow": "DEMAIN",
-
   "tasksViewTodo": "À faire",
   "tasksViewLists": "Listes",
   "tasksEmptyTitle": "Rien à faire",
@@ -103,7 +91,6 @@
   "tasksOverdue": "En retard · {date}",
   "tasksDueToday": "Aujourd'hui, {time}",
   "tasksDueTomorrow": "Demain, {time}",
-
   "listsEmptyTitle": "Aucune liste",
   "listsEmptyBody": "Les courses, quoi emporter,\ndes endroits à essayer.",
   "listEmpty": "Vide",
@@ -116,7 +103,6 @@
   "listEntriesEmptyTitle": "Encore vide",
   "listEntriesEmptyBody": "Écrivez ci-dessous et touchez +.\nLe champ reste prêt pour la suivante.",
   "listAddItem": "Ajouter un élément",
-
   "itemNewEvent": "Nouvel événement",
   "itemNewTask": "Nouvelle tâche",
   "itemNewList": "Nouvelle liste",
@@ -132,7 +118,6 @@
   "itemAddEvent": "Ajouter l'événement",
   "itemAddTask": "Ajouter la tâche",
   "itemAddList": "Ajouter la liste",
-
   "moneyAllSettled": "Tout est réglé",
   "moneyYouAreOwed": "On vous doit",
   "moneyYouOwe": "Vous devez",
@@ -148,7 +133,6 @@
   "moneyPaidSomeone": "{payer} a payé {payee}",
   "moneyToday": "Aujourd'hui",
   "moneyYesterday": "Hier",
-
   "expenseNewTitle": "Nouvelle dépense",
   "expenseWhatFor": "Pour quoi ?",
   "expensePaidBy": "PAYÉ PAR",
@@ -165,7 +149,6 @@
   "expenseSuggestionTaxi": "Taxi",
   "expenseSuggestionHotel": "Hôtel",
   "expenseSuggestionDrinks": "Boissons",
-
   "settleTitle": "Régler les comptes",
   "settleBody": "Le plus simple pour tout solder :",
   "settleAllSquare": "Tout le monde est à jour.",
@@ -177,14 +160,12 @@
   "settleUndoing": "Annulation…",
   "settleOnlySenderCanUndo": "Seul {name} peut l'annuler.",
   "settleRepaymentTitle": "Remboursement",
-
   "groupPeopleCount": "{count, plural, =1{1 personne} other{{count} personnes}}",
   "groupInvitePeople": "Inviter des personnes",
   "groupDangerZone": "Zone sensible",
   "groupDeleteTrip": "Supprimer le voyage",
   "groupLeaveTrip": "Quitter le voyage",
   "groupJoined": "Arrivé le {date}",
-
   "inviteTitle": "Inviter des personnes",
   "inviteBody": "Partagez un code et n'importe qui peut rejoindre ce voyage.",
   "inviteCreate": "Créer un code d'invitation",
@@ -194,7 +175,6 @@
   "inviteCodeCopied": "Code copié",
   "inviteRevoke": "Révoquer ce code",
   "inviteCodeHint": "ABCD1234",
-
   "memberNoLongerHere": "Cette personne n'est plus dans le voyage.",
   "memberMakeOwner": "Nommer propriétaire",
   "memberMakeOwnerDetail": "Elle reprend le voyage, vous devenez membre.",
@@ -221,10 +201,8 @@
   "memberLeaveDeleteBody": "Vous êtes le dernier. En partant, ce voyage sera supprimé avec tout ce qu'il contient : dépenses, agenda, tâches et listes. C'est irréversible.",
   "memberLeaveDeleteAction": "Quitter et supprimer",
   "memberLeaveAction": "Quitter",
-
   "tripDeleteTitle": "Supprimer {trip} ?",
   "tripDeleteBody": "Cela supprime définitivement le programme, chaque dépense et les soldes de tous. C'est irréversible.",
-
   "deleteItemTitle": "Supprimer « {title} » ?",
   "deleteListTitle": "Supprimer « {name} » ?",
   "deleteListEmptyBody": "La liste est retirée pour tout le monde.",
@@ -233,7 +211,6 @@
   "deleteExpenseTitle": "Supprimer « {description} » ?",
   "deleteExpenseBody": "Les soldes de chacun seront recalculés.",
   "deleteExpenseWithRepayments": "Ce voyage contient des remboursements enregistrés. Supprimer cette dépense changera les soldes de tout le monde.",
-
   "mapShareOn": "Vous partagez votre position",
   "mapShareOff": "Partager ma position",
   "mapShareForegroundOnly": "Seulement quand cette carte est ouverte.",
@@ -251,7 +228,6 @@
   "mapGetDirections": "Itinéraire",
   "mapAppleMaps": "Apple Plans",
   "mapGoogleMaps": "Google Maps",
-
   "pinNewTitle": "Nouveau repère",
   "pinNameLabel": "Qu'y a-t-il ici ?",
   "pinNameHint": "Auberge Lisbonne",
@@ -268,7 +244,6 @@
   "pinCategoryParking": "Stationnement",
   "pinCategorySight": "À voir",
   "pinCategoryOther": "Autre",
-
   "settingsTitle": "Réglages",
   "settingsNotifications": "Notifications",
   "settingsPushNotifications": "Notifications push",
@@ -284,5 +259,20 @@
   "settingsPrivacyPolicy": "Politique de confidentialité",
   "settingsSignOut": "Se déconnecter",
   "settingsSignOutTitle": "Se déconnecter ?",
-  "settingsSignOutBody": "Il vous faudra votre e-mail et votre mot de passe pour revenir."
+  "settingsSignOutBody": "Il vous faudra votre e-mail et votre mot de passe pour revenir.",
+  "tripStageNow": "En cours",
+  "tripStageDayOf": "Jour {day} sur {total}",
+  "tripStageToday": "Commence aujourd'hui",
+  "tripStageTomorrow": "Demain",
+  "tripStageInDays": "Dans {days} jours",
+  "tripStageEnded": "Terminé",
+  "moneySettledShort": "Réglé",
+  "commonJustNow": "À l'instant",
+  "commonMinutesAgo": "{count, plural, =1{il y a 1 minute} other{il y a {count} minutes}}",
+  "commonHoursAgo": "{count, plural, =1{il y a 1 heure} other{il y a {count} heures}}",
+  "commonDaysAgo": "{count, plural, =1{il y a 1 jour} other{il y a {count} jours}}",
+  "tripIconLabel": "Icône",
+  "tripColorLabel": "Couleur",
+  "tripAddDescription": "Ajouter une description",
+  "tripDescriptionLabel": "Description"
 }

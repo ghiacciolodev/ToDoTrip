@@ -41,6 +41,16 @@ class Trip(Base, TimestampMixin):
     # ISO 4217 code. All expenses of a trip are reported in this currency.
     base_currency: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
 
+    # Symbolic keys, never code points or hex.
+    #
+    # A 0xe3af in a database is unreadable, breaks the day the icon font
+    # changes, and means nothing to a web client that has no Material font at
+    # all. The key-to-icon and key-to-colour maps live in the client, where the
+    # rendering does. Null means "not chosen": the client derives one from the
+    # trip id, the same way avatars already work, so no trip is ever grey.
+    icon: Mapped[str | None] = mapped_column(String(30))
+    color: Mapped[str | None] = mapped_column(String(30))
+
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     members: Mapped[list["TripMember"]] = relationship(

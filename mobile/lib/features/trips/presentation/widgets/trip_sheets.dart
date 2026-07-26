@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
+import '../../data/trip_identity.dart';
 import '../../providers.dart';
 
 /// Bottom sheets rather than dialogs: they read as native on both platforms,
@@ -75,14 +78,30 @@ class _CreateTripForm extends ConsumerStatefulWidget {
 class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
+  final _description = TextEditingController();
 
   DateTimeRange? _dates;
+  String? _icon;
+  late String _color;
+  bool _details = false;
   bool _busy = false;
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    // A colour is drawn rather than left blank so the preview is honest about
+    // what the card will look like, and so a list of trips stays varied for
+    // people who skip this step. The icon can stay unset: the skyline it falls
+    // back to is a neutral statement, while a random glyph would claim the trip
+    // is about mountains or sailing when nobody said so.
+    _color = tripColors.keys.elementAt(Random().nextInt(tripColors.length));
+  }
+
+  @override
   void dispose() {
     _name.dispose();
+    _description.dispose();
     super.dispose();
   }
 
@@ -114,8 +133,11 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
           .read(tripRepositoryProvider)
           .create(
             name: _name.text.trim(),
+            description: _description.text.trim(),
             startDate: _dates?.start,
             endDate: _dates?.end,
+            icon: _icon,
+            color: _color,
           );
       // Marks the list stale so it refetches; no manual cache surgery.
       ref.invalidate(tripsProvider);
@@ -142,7 +164,18 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // The card the trip will appear as, drawn while it is being filled
+          // in: picking an icon out of a grid means nothing until you see it in
+          // the shape it will actually take.
+          _Preview(
+            name: _name,
+            icon: _icon,
+            color: _color,
+            description: _description,
+          ),
+          const SizedBox(height: 16),
 
           TextFormField(
             controller: _name,
@@ -153,6 +186,47 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? l10n.tripNameEmpty : null,
           ),
+          const SizedBox(height: 16),
+
+          _PickerLabel(l10n.tripIconLabel),
+          const SizedBox(height: 8),
+          _IconPicker(
+            selected: _icon,
+            colour: tripColors[_color]!,
+            // Tapping the chosen one again clears it: the step stays skippable
+            // after the fact, not only before.
+            onPick: (key) => setState(() => _icon = _icon == key ? null : key),
+          ),
+          const SizedBox(height: 16),
+
+          _PickerLabel(l10n.tripColorLabel),
+          const SizedBox(height: 8),
+          _ColorPicker(
+            selected: _color,
+            onPick: (key) => setState(() => _color = key),
+          ),
+          const SizedBox(height: 16),
+
+          if (_details)
+            TextFormField(
+              controller: _description,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+              maxLength: 2000,
+              decoration: InputDecoration(
+                labelText: l10n.tripDescriptionLabel,
+                counterText: '',
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _details = true),
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(l10n.tripAddDescription),
+              ),
+            ),
           const SizedBox(height: 12),
 
           // Dates are optional on purpose: a trip is usually created before
@@ -202,6 +276,224 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
 
   static String _formatRange(DateTimeRange range) =>
       '${range.start.day}/${range.start.month} – ${range.end.day}/${range.end.month}';
+}
+
+/// The head of the card this trip is about to become.
+///
+/// Listens to the controllers directly rather than rebuilding the whole form on
+/// every keystroke: the name has to appear as it is typed, and the sheet holds
+/// two text fields, a date picker and twenty swatches.
+class _Preview extends StatelessWidget {
+  const _Preview({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+
+  final TextEditingController name;
+  final TextEditingController description;
+  final String? icon;
+  final String color;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final identity = TripIdentity.of(tripId: '', icon: icon, color: color);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        color: identity.colour.withValues(alpha: 0.10),
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+        child: Row(
+          children: [
+            Container(
+              height: 52,
+              width: 52,
+              decoration: BoxDecoration(
+                color: identity.colour,
+                shape: BoxShape.circle,
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  identity.icon,
+                  key: ValueKey(identity.icon.codePoint),
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: Listenable.merge([name, description]),
+                builder: (context, _) {
+                  final typed = name.text.trim();
+                  final blurb = description.text.trim();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        typed.isEmpty ? l10n.tripFallbackName : typed,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          // Greyed while it is still a placeholder, so nobody
+                          // reads "Trip" as a name they have already given.
+                          color: typed.isEmpty
+                              ? AppColors.inkMuted
+                              : AppColors.ink,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                      if (blurb.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          blurb,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.inkMuted,
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PickerLabel extends StatelessWidget {
+  const _PickerLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: AppColors.inkMuted,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+/// One scrolling row rather than a grid: twelve icons in a grid would push the
+/// name field and the button off a small screen.
+class _IconPicker extends StatelessWidget {
+  const _IconPicker({
+    required this.selected,
+    required this.colour,
+    required this.onPick,
+  });
+
+  final String? selected;
+  final Color colour;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: tripIcons.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final entry = tripIcons.entries.elementAt(index);
+          final chosen = entry.key == selected;
+          return Semantics(
+            selected: chosen,
+            button: true,
+            child: InkWell(
+              onTap: () => onPick(entry.key),
+              customBorder: const CircleBorder(),
+              child: Container(
+                height: 46,
+                width: 46,
+                decoration: BoxDecoration(
+                  color: chosen
+                      ? colour.withValues(alpha: 0.14)
+                      : AppColors.background,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: chosen ? colour : AppColors.border,
+                    width: chosen ? 2 : 1,
+                  ),
+                ),
+                child: Icon(
+                  entry.value,
+                  size: 22,
+                  color: chosen ? colour : AppColors.inkMuted,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The eight palette colours. Always one selected: unlike the icon there is no
+/// neutral colour to fall back to, so the choice is only ever changed.
+class _ColorPicker extends StatelessWidget {
+  const _ColorPicker({required this.selected, required this.onPick});
+
+  final String selected;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final entry in tripColors.entries)
+          Semantics(
+            selected: entry.key == selected,
+            button: true,
+            child: InkWell(
+              onTap: () => onPick(entry.key),
+              customBorder: const CircleBorder(),
+              child: Container(
+                height: 38,
+                width: 38,
+                decoration: BoxDecoration(
+                  color: entry.value,
+                  shape: BoxShape.circle,
+                  // A ring set off the swatch rather than a tick drawn on it:
+                  // a white tick disappears on the two lightest colours.
+                  border: Border.all(
+                    color: entry.key == selected
+                        ? AppColors.ink
+                        : Colors.transparent,
+                    width: 2,
+                    strokeAlign: BorderSide.strokeAlignOutside,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _JoinTripForm extends ConsumerStatefulWidget {

@@ -139,6 +139,57 @@ async def list_settlements(db: AsyncSession, trip_id: UUID) -> list[Settlement]:
     return list(result.scalars().all())
 
 
+async def balances_for_trips(
+    db: AsyncSession, trip_ids: list[UUID], user_id: UUID
+) -> dict[UUID, int | None]:
+    """One user's balance across many trips, in two queries for all of them.
+
+    Feeds the trips list, which would otherwise call get_balance_report once per
+    card. None means the trip has no expenses at all: that is a different
+    statement from "settled", and the card words the two differently.
+    """
+    if not trip_ids:
+        return {}
+
+    shares = (
+        await db.execute(
+            select(Expense.trip_id, Expense.paid_by, ExpenseShare.user_id, ExpenseShare.share_cents)
+            .join(ExpenseShare, ExpenseShare.expense_id == Expense.id)
+            .where(Expense.trip_id.in_(trip_ids))
+        )
+    ).all()
+
+    settlements = (
+        await db.execute(
+            select(
+                Settlement.trip_id,
+                Settlement.from_user_id,
+                Settlement.to_user_id,
+                Settlement.amount_cents,
+            ).where(Settlement.trip_id.in_(trip_ids))
+        )
+    ).all()
+
+    # Same arithmetic as compute_balances, narrowed to one person: what they
+    # fronted, minus what they owe, plus what they have already repaid.
+    balances: dict[UUID, int | None] = {}
+    for trip_id, paid_by, share_user, share_cents in shares:
+        current = balances.get(trip_id) or 0
+        if paid_by == user_id:
+            current += share_cents
+        if share_user == user_id:
+            current -= share_cents
+        balances[trip_id] = current
+
+    for trip_id, from_user, to_user, amount in settlements:
+        if user_id not in (from_user, to_user):
+            continue
+        current = balances.get(trip_id) or 0
+        balances[trip_id] = current + (amount if from_user == user_id else -amount)
+
+    return balances
+
+
 async def balance_for(db: AsyncSession, trip_id: UUID, user_id: UUID) -> int:
     """One member's net position: positive means owed, negative means owing.
 

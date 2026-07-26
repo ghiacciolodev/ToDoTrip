@@ -28,6 +28,8 @@ class TripRepository {
     String? description,
     DateTime? startDate,
     DateTime? endDate,
+    String? icon,
+    String? color,
   }) async {
     try {
       final response = await dio.post(
@@ -40,6 +42,10 @@ class TripRepository {
           // would be rejected, so only the calendar day is sent.
           if (startDate != null) 'start_date': _asDate(startDate),
           if (endDate != null) 'end_date': _asDate(endDate),
+          // Omitted rather than sent as null when the user skipped the step, so
+          // "not chosen" stays the server's own default.
+          'icon': ?icon,
+          'color': ?color,
         },
       );
       return Trip.fromJson(response.data as Map<String, dynamic>);

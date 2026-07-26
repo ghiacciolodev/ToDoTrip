@@ -1663,6 +1663,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'ll need your email and password to get back in.'**
   String get settingsSignOutBody;
+
+  /// Badge on a trip that is happening, with no end date
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get tripStageNow;
+
+  /// How far into a trip today is
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}'**
+  String tripStageDayOf(int day, int total);
+
+  /// Badge on a trip starting today
+  ///
+  /// In en, this message translates to:
+  /// **'Starts today'**
+  String get tripStageToday;
+
+  /// Badge on a trip starting tomorrow
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get tripStageTomorrow;
+
+  /// How long until a trip starts
+  ///
+  /// In en, this message translates to:
+  /// **'In {days} days'**
+  String tripStageInDays(int days);
+
+  /// Badge on a trip that is over
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get tripStageEnded;
+
+  /// Balance chip when the caller owes nothing and is owed nothing
+  ///
+  /// In en, this message translates to:
+  /// **'Settled'**
+  String get moneySettledShort;
+
+  /// Something that happened less than a minute ago
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get commonJustNow;
+
+  /// How long ago something happened, under an hour
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String commonMinutesAgo(int count);
+
+  /// How long ago something happened, under a day
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String commonHoursAgo(int count);
+
+  /// How long ago something happened, under a week
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String commonDaysAgo(int count);
+
+  /// Heading of the icon row when creating a trip
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get tripIconLabel;
+
+  /// Heading of the colour row when creating a trip
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get tripColorLabel;
+
+  /// Reveals the optional description field
+  ///
+  /// In en, this message translates to:
+  /// **'Add a description'**
+  String get tripAddDescription;
+
+  /// Label of the optional description field
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get tripDescriptionLabel;
 }
 
 class _AppLocalizationsDelegate

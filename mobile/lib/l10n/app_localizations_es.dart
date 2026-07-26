@@ -906,4 +906,77 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsSignOutBody =>
       'Necesitarás tu correo y contraseña para volver.';
+
+  @override
+  String get tripStageNow => 'En curso';
+
+  @override
+  String tripStageDayOf(int day, int total) {
+    return 'Día $day de $total';
+  }
+
+  @override
+  String get tripStageToday => 'Empieza hoy';
+
+  @override
+  String get tripStageTomorrow => 'Mañana';
+
+  @override
+  String tripStageInDays(int days) {
+    return 'En $days días';
+  }
+
+  @override
+  String get tripStageEnded => 'Terminado';
+
+  @override
+  String get moneySettledShort => 'En paz';
+
+  @override
+  String get commonJustNow => 'Ahora mismo';
+
+  @override
+  String commonMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hace $count minutos',
+      one: 'hace 1 minuto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commonHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hace $count horas',
+      one: 'hace 1 hora',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String commonDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'hace $count días',
+      one: 'hace 1 día',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripIconLabel => 'Icono';
+
+  @override
+  String get tripColorLabel => 'Color';
+
+  @override
+  String get tripAddDescription => 'Añadir una descripción';
+
+  @override
+  String get tripDescriptionLabel => 'Descripción';
 }

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
-import '../data/trip.dart';
 import '../providers.dart';
 import 'widgets/trip_card.dart';
 
@@ -47,10 +46,11 @@ class TripsScreen extends ConsumerWidget {
 
     if (list.isEmpty) return const _EmptyState();
 
+    // Already ordered by the server, most recently active first.
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: list.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (_, index) => TripCard(
         trip: list[index],
         // push, not go: the trip detail sits on top of the tab shell, so back
@@ -71,9 +71,11 @@ class _LoadingList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: 3,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (_, _) => Container(
-        height: 80,
+        // The height and shape of a real card, so nothing jumps when the data
+        // lands.
+        height: 118,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),

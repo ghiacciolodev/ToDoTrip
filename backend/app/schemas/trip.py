@@ -16,6 +16,11 @@ class TripCreate(BaseModel):
     end_date: date | None = None
     base_currency: str = Field(default="EUR", min_length=3, max_length=3)
 
+    # Symbolic keys the client understands; the server only stores them. Kept
+    # loose on purpose: adding a thirteenth icon must not need a backend change.
+    icon: str | None = Field(default=None, max_length=30)
+    color: str | None = Field(default=None, max_length=30)
+
     @model_validator(mode="after")
     def check_dates(self):
         # Enforced here rather than in the database so the client gets a clear
@@ -33,6 +38,8 @@ class TripUpdate(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     base_currency: str | None = Field(default=None, min_length=3, max_length=3)
+    icon: str | None = Field(default=None, max_length=30)
+    color: str | None = Field(default=None, max_length=30)
 
 
 class TripPublic(BaseModel):
@@ -44,8 +51,41 @@ class TripPublic(BaseModel):
     start_date: date | None
     end_date: date | None
     base_currency: str
+    icon: str | None
+    color: str | None
     created_by: UUID
     created_at: datetime
+
+
+class MemberPreview(BaseModel):
+    """Just enough of a member to draw an avatar."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    display_name: str
+
+
+class TripSummary(TripPublic):
+    """A trip as the list screen needs it.
+
+    The three extra fields exist so a list of ten trips is one request instead
+    of twenty-one: without them each card would have to fetch its own members
+    and its own balance, which is the classic N+1 and is felt immediately on a
+    phone. They are computed server-side, where the joins are cheap.
+    """
+
+    member_count: int
+    # The first few, oldest first, for the overlapping avatars on the card.
+    member_preview: list[MemberPreview]
+    # The signed-in caller's net position, or null when the trip has no
+    # expenses at all — "settled" and "nothing spent yet" are different things
+    # and the card says them differently.
+    my_balance_cents: int | None
+    # When anything last happened here. Never null: a trip with nothing in it
+    # falls back to its own row, so the card always has a line to show. The list
+    # arrives sorted by this, most recent first.
+    last_activity_at: datetime
 
 
 class MemberPublic(BaseModel):

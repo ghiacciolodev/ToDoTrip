@@ -3,16 +3,21 @@
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.codes import generate_invite_code
 from app.models import (
+    Checklist,
+    ChecklistEntry,
+    Expense,
     Invite,
     Item,
     ItemAssignee,
+    MapPin,
     MemberLocation,
     MemberRole,
+    Settlement,
     Trip,
     TripMember,
     TripPastMember,
@@ -22,6 +27,9 @@ from app.models import (
 # Membership and money are one rule, not two: nobody may walk away from a trip
 # with an open balance, so this module has to be able to ask what someone owes.
 from app.services import expense_service
+
+# How many avatars a trip card shows before collapsing into "+n".
+_PREVIEW_MEMBERS = 3
 
 
 class TripNotFound(Exception):
@@ -84,6 +92,103 @@ async def list_trips(db: AsyncSession, user_id: UUID) -> list[Trip]:
         .order_by(Trip.start_date.desc().nullslast(), Trip.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+async def last_activity(db: AsyncSession, trip_ids: list[UUID]) -> dict[UUID, datetime]:
+    """When something last happened in each trip.
+
+    "Activity" is anything a member would recognise as such: a plan entry added
+    or edited, an expense, a repayment, a list, a line ticked off it, a pin. The
+    trip's own row is one of the sources too, so a brand new empty trip has a
+    timestamp instead of a blank line — every trip always gets an answer.
+
+    One query for all of them: the union is grouped and reduced by the database,
+    which is the difference between one round trip and six per trip.
+    """
+    if not trip_ids:
+        return {}
+
+    sources = union_all(
+        # Covers creation and any later rename or change of dates.
+        select(Trip.id.label("trip_id"), Trip.updated_at.label("at")).where(Trip.id.in_(trip_ids)),
+        select(Item.trip_id, Item.updated_at).where(Item.trip_id.in_(trip_ids)),
+        select(Expense.trip_id, Expense.updated_at).where(Expense.trip_id.in_(trip_ids)),
+        select(Settlement.trip_id, Settlement.created_at).where(Settlement.trip_id.in_(trip_ids)),
+        select(MapPin.trip_id, MapPin.updated_at).where(MapPin.trip_id.in_(trip_ids)),
+        select(Checklist.trip_id, Checklist.updated_at).where(Checklist.trip_id.in_(trip_ids)),
+        # Entries have no updated_at, and ticking one is the most frequent thing
+        # anybody does in a trip: without this branch an actively used shopping
+        # list would read as untouched since the day it was written.
+        select(
+            Checklist.trip_id,
+            func.greatest(
+                ChecklistEntry.created_at,
+                func.coalesce(ChecklistEntry.checked_at, ChecklistEntry.created_at),
+            ),
+        )
+        .join(ChecklistEntry, ChecklistEntry.checklist_id == Checklist.id)
+        .where(Checklist.trip_id.in_(trip_ids)),
+    ).subquery()
+
+    rows = await db.execute(
+        select(sources.c.trip_id, func.max(sources.c.at)).group_by(sources.c.trip_id)
+    )
+    return {trip_id: at for trip_id, at in rows}
+
+
+async def list_trips_with_summary(db: AsyncSession, user_id: UUID) -> list[dict]:
+    """The trips list as one screen needs it, in a bounded number of queries.
+
+    Four round trips regardless of how many trips there are: the trips, then
+    every member of those trips, then every expense share and settlement, then
+    the last activity of each. The obvious alternative — let each card fetch its
+    own members and balance — is an N+1 that a phone feels the moment someone
+    has ten trips.
+
+    Balances are still derived, never stored; this only moves the same
+    arithmetic to where the rows already are.
+    """
+    trips = await list_trips(db, user_id)
+    if not trips:
+        return []
+    trip_ids = [trip.id for trip in trips]
+
+    members = (
+        await db.execute(
+            select(TripMember.trip_id, User.id, User.display_name, TripMember.joined_at)
+            .join(User, User.id == TripMember.user_id)
+            .where(TripMember.trip_id.in_(trip_ids))
+            .order_by(TripMember.joined_at)
+        )
+    ).all()
+
+    counts: dict[UUID, int] = {}
+    previews: dict[UUID, list[dict]] = {}
+    for trip_id, member_id, display_name, _ in members:
+        counts[trip_id] = counts.get(trip_id, 0) + 1
+        # Oldest first, capped: the card shows three avatars and a count.
+        preview = previews.setdefault(trip_id, [])
+        if len(preview) < _PREVIEW_MEMBERS:
+            preview.append({"id": member_id, "display_name": display_name})
+
+    balances = await expense_service.balances_for_trips(db, trip_ids, user_id)
+    activity = await last_activity(db, trip_ids)
+
+    rows = [
+        {
+            "trip": trip,
+            "member_count": counts.get(trip.id, 0),
+            "member_preview": previews.get(trip.id, []),
+            "my_balance_cents": balances.get(trip.id),
+            "last_activity_at": activity.get(trip.id, trip.updated_at),
+        }
+        for trip in trips
+    ]
+    # Most recently touched first: the list is a place people return to, and the
+    # trip they were just in is the one they want at the top — not the one whose
+    # departure date happens to be furthest out.
+    rows.sort(key=lambda row: row["last_activity_at"], reverse=True)
+    return rows
 
 
 async def get_membership(db: AsyncSession, trip_id: UUID, user_id: UUID) -> TripMember:

@@ -5,13 +5,12 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_messages.dart';
-import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/checklist.dart';
 import '../../data/item.dart';
-import '../../data/trip_member.dart';
 import '../../providers.dart';
 import '../checklist_screen.dart';
+import '../widgets/avatar_stack.dart';
 import '../widgets/delete_actions.dart';
 import '../widgets/tab_states.dart';
 
@@ -411,7 +410,15 @@ class _TaskCardState extends ConsumerState<_TaskCard> {
                 ),
                 if (assignees.isNotEmpty) ...[
                   const SizedBox(width: 10),
-                  _AvatarStack(members: assignees),
+                  AvatarStack(
+                    people: [
+                      for (final member in assignees)
+                        AvatarPerson(
+                          id: member.user.id,
+                          name: member.user.displayName,
+                        ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -506,79 +513,6 @@ class _Deadline extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Overlapping avatars, capped at three plus a count.
-///
-/// Overlap rather than a row: a shared chore should read as "these people" at a
-/// glance without stretching the row wider than the title.
-class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.members});
-
-  final List<TripMember> members;
-
-  static const _max = 3;
-  static const _size = 28.0;
-  static const _overlap = 9.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = members.take(_max).toList();
-    final extra = members.length - shown.length;
-    final count = shown.length + (extra > 0 ? 1 : 0);
-
-    return SizedBox(
-      height: _size,
-      width: _size + (count - 1) * (_size - _overlap),
-      child: Stack(
-        children: [
-          for (final (index, member) in shown.indexed)
-            Positioned(
-              left: index * (_size - _overlap),
-              child: _Bubble(
-                label: initialsFor(member.user.displayName),
-                colour: avatarColorFor(member.user.id),
-              ),
-            ),
-          if (extra > 0)
-            Positioned(
-              left: shown.length * (_size - _overlap),
-              child: _Bubble(label: '+$extra', colour: AppColors.inkMuted),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.label, required this.colour});
-
-  final String label;
-  final Color colour;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: _AvatarStack._size,
-      width: _AvatarStack._size,
-      decoration: BoxDecoration(
-        color: colour,
-        shape: BoxShape.circle,
-        // A ring in the card colour separates overlapping bubbles.
-        border: Border.all(color: AppColors.surface, width: 2),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
     );
   }
 }

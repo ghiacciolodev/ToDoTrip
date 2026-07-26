@@ -12,9 +12,11 @@ from app.schemas.trip import (
     InviteCreate,
     InvitePublic,
     JoinRequest,
+    MemberPreview,
     MemberPublic,
     TripCreate,
     TripPublic,
+    TripSummary,
     TripUpdate,
 )
 from app.services import trip_service
@@ -62,9 +64,24 @@ async def create_trip(payload: TripCreate, db: DbSession, user: CurrentUser):
     return await trip_service.create_trip(db, user.id, payload.model_dump())
 
 
-@router.get("", response_model=list[TripPublic])
+@router.get("", response_model=list[TripSummary])
 async def list_trips(db: DbSession, user: CurrentUser):
-    return await trip_service.list_trips(db, user.id)
+    """Every trip the caller belongs to, with what the list screen draws.
+
+    Member count, the first avatars, the caller's own balance and when the trip
+    was last touched travel with it, so ten cards cost one request rather than
+    twenty-one. Ordered by that last activity, most recent first.
+    """
+    return [
+        TripSummary(
+            **TripPublic.model_validate(row["trip"]).model_dump(),
+            member_count=row["member_count"],
+            member_preview=[MemberPreview(**m) for m in row["member_preview"]],
+            my_balance_cents=row["my_balance_cents"],
+            last_activity_at=row["last_activity_at"],
+        )
+        for row in await trip_service.list_trips_with_summary(db, user.id)
+    ]
 
 
 # Declared before the /{trip_id} routes so "join" is never parsed as an id.
