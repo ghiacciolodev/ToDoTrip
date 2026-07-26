@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
-import '../data/item.dart';
 import '../providers.dart';
 import 'add_expense_screen.dart';
+import 'tabs/calendar_tab.dart';
 import 'tabs/expenses_tab.dart';
 import 'tabs/group_tab.dart';
-import 'tabs/plan_tab.dart';
+import 'tabs/map_tab.dart';
+import 'tabs/tasks_tab.dart';
 import 'widgets/add_item_sheet.dart';
 
 /// Container for a single trip.
@@ -17,6 +18,10 @@ import 'widgets/add_item_sheet.dart';
 /// tabs here are views of one resource, not independent destinations, and this
 /// keeps each tab's scroll position without a second router hierarchy. The trip
 /// itself stays addressable at /trips/:tripId, which is what deep links need.
+///
+/// Every destination is one tap away: hiding one kind of content behind a
+/// switch inside another tab made the to-dos cost two taps and put two
+/// unrelated screens under one label.
 ///
 /// The trip and its members are awaited once, here, so every tab below can
 /// assume both are present.
@@ -32,9 +37,9 @@ class TripShell extends ConsumerStatefulWidget {
 class _TripShellState extends ConsumerState<TripShell> {
   int _index = 0;
 
-  /// Owned here rather than inside PlanTab so the action button can create
-  /// whichever kind of item is currently on screen.
-  ItemType _planView = ItemType.event;
+  /// Owned here rather than inside TasksTab so the action button can create
+  /// whichever kind of thing is currently on screen.
+  TasksView _tasksView = TasksView.todo;
 
   /// Throttles per tab, so flicking through the bar does not fire a burst of
   /// identical requests.
@@ -59,8 +64,12 @@ class _TripShellState extends ConsumerState<TripShell> {
       case 0:
         ref.invalidate(itemsProvider(widget.tripId));
       case 1:
-        invalidateMoney(ref, widget.tripId);
+        ref.invalidate(itemsProvider(widget.tripId));
+        ref.invalidate(checklistsProvider(widget.tripId));
       case 2:
+        invalidateMoney(ref, widget.tripId);
+      // The map has nothing to fetch yet.
+      case 4:
         ref.invalidate(tripProvider(widget.tripId));
         ref.invalidate(tripInvitesProvider(widget.tripId));
     }
@@ -100,12 +109,14 @@ class _TripShellState extends ConsumerState<TripShell> {
           _ => IndexedStack(
             index: _index,
             children: [
-              PlanTab(
+              CalendarTab(tripId: widget.tripId),
+              TasksTab(
                 tripId: widget.tripId,
-                view: _planView,
-                onViewChanged: (v) => setState(() => _planView = v),
+                view: _tasksView,
+                onViewChanged: (v) => setState(() => _tasksView = v),
               ),
               ExpensesTab(tripId: widget.tripId),
+              const MapTab(),
               GroupTab(tripId: widget.tripId),
             ],
           ),
@@ -113,7 +124,8 @@ class _TripShellState extends ConsumerState<TripShell> {
       ),
 
       // Contextual: one button that does the right thing for the tab in view.
-      // Group has no action button because its actions live inline in the cards.
+      // Map and Group have none, because they have nothing to create yet and
+      // their actions live inline in the cards.
       floatingActionButton: ready ? _buildFab() : null,
 
       // Colours, height and label styling come from navigationBarTheme.
@@ -124,12 +136,22 @@ class _TripShellState extends ConsumerState<TripShell> {
           NavigationDestination(
             icon: Icon(Icons.event_outlined),
             selectedIcon: Icon(Icons.event),
-            label: 'Plan',
+            label: 'Calendar',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.checklist_outlined),
+            selectedIcon: Icon(Icons.checklist),
+            label: 'Tasks',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
-            label: 'Expenses',
+            label: 'Money',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: 'Map',
           ),
           NavigationDestination(
             icon: Icon(Icons.people_outline),
@@ -144,11 +166,23 @@ class _TripShellState extends ConsumerState<TripShell> {
   Widget? _buildFab() {
     return switch (_index) {
       0 => FloatingActionButton.extended(
-        onPressed: () => showAddItemSheet(context, widget.tripId, _planView),
+        onPressed: () =>
+            showAddItemSheet(context, widget.tripId, AddKind.event),
         icon: const Icon(Icons.add),
-        label: Text(_planView == ItemType.event ? 'Event' : 'Task'),
+        label: const Text('Event'),
       ),
+      // Follows the segmented control above it: a task in the to-do view, a
+      // list in the lists view.
       1 => FloatingActionButton.extended(
+        onPressed: () => showAddItemSheet(
+          context,
+          widget.tripId,
+          _tasksView == TasksView.todo ? AddKind.task : AddKind.list,
+        ),
+        icon: const Icon(Icons.add),
+        label: Text(_tasksView == TasksView.todo ? 'Task' : 'List'),
+      ),
+      2 => FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AddExpenseScreen(tripId: widget.tripId),

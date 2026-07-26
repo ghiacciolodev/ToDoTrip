@@ -63,7 +63,7 @@ class TestCreate:
                 "type": "event",
                 "title": "X",
                 "starts_at": _at(1),
-                "assigned_to": str(uuid4()),
+                "assigned_to": [str(uuid4())],
             },
             headers=auth_headers,
         )
@@ -76,7 +76,7 @@ class TestCreate:
         outsider = await client.get("/api/v1/auth/me", headers=other_headers)
         response = await client.post(
             _items(trip["id"]),
-            json={"type": "task", "title": "X", "assigned_to": outsider.json()["id"]},
+            json={"type": "task", "title": "X", "assigned_to": [outsider.json()["id"]]},
             headers=auth_headers,
         )
         assert response.status_code == 422
@@ -93,7 +93,7 @@ class TestCreate:
         member = await client.get("/api/v1/auth/me", headers=other_headers)
         response = await client.post(
             _items(trip["id"]),
-            json={"type": "task", "title": "X", "assigned_to": member.json()["id"]},
+            json={"type": "task", "title": "X", "assigned_to": [member.json()["id"]]},
             headers=auth_headers,
         )
         assert response.status_code == 201

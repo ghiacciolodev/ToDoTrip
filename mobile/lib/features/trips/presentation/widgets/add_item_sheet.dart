@@ -8,25 +8,33 @@ import '../../../../core/theme/colors.dart';
 import '../../data/item.dart';
 import '../../providers.dart';
 
-/// Creates an event or a task. The type is fixed by the caller: the user picked
-/// it by choosing a tab, so asking again would be a redundant decision.
+/// What the sheet is being opened to create.
+///
+/// Lists are not items on the server, but they are created the same way and from
+/// the same button, so they share this form rather than a second one that would
+/// drift from it.
+enum AddKind { event, task, list }
+
+/// Creates an event, a task or a list. The kind is fixed by the caller: the user
+/// picked it by choosing a tab and a view, so asking again would be a redundant
+/// decision.
 Future<void> showAddItemSheet(
     BuildContext context,
     String tripId,
-    ItemType type,
+    AddKind kind,
     ) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _AddItemSheet(tripId: tripId, type: type),
+    builder: (_) => _AddItemSheet(tripId: tripId, kind: kind),
   );
 }
 
 class _AddItemSheet extends ConsumerStatefulWidget {
-  const _AddItemSheet({required this.tripId, required this.type});
+  const _AddItemSheet({required this.tripId, required this.kind});
 
   final String tripId;
-  final ItemType type;
+  final AddKind kind;
 
   @override
   ConsumerState<_AddItemSheet> createState() => _AddItemSheetState();
@@ -42,7 +50,8 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
   bool _busy = false;
   String? _error;
 
-  bool get _isEvent => widget.type == ItemType.event;
+  bool get _isEvent => widget.kind == AddKind.event;
+  bool get _isList => widget.kind == AddKind.list;
 
   @override
   void dispose() {
@@ -92,15 +101,23 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     });
 
     try {
-      await ref.read(itemRepositoryProvider).create(
-        tripId: widget.tripId,
-        type: widget.type,
-        title: _title.text.trim(),
-        location: _isEvent ? _location.text.trim() : null,
-        startsAt: _startsAt,
-        assignedTo: _isEvent ? const [] : _assignedTo.toList(),
-      );
-      ref.invalidate(itemsProvider(widget.tripId));
+      if (_isList) {
+        await ref.read(checklistRepositoryProvider).create(
+          tripId: widget.tripId,
+          name: _title.text.trim(),
+        );
+        ref.invalidate(checklistsProvider(widget.tripId));
+      } else {
+        await ref.read(itemRepositoryProvider).create(
+          tripId: widget.tripId,
+          type: _isEvent ? ItemType.event : ItemType.task,
+          title: _title.text.trim(),
+          location: _isEvent ? _location.text.trim() : null,
+          startsAt: _startsAt,
+          assignedTo: _isEvent ? const [] : _assignedTo.toList(),
+        );
+        ref.invalidate(itemsProvider(widget.tripId));
+      }
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -127,7 +144,11 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  _isEvent ? 'New event' : 'New task',
+                  switch (widget.kind) {
+                    AddKind.event => 'New event',
+                    AddKind.task => 'New task',
+                    AddKind.list => 'New list',
+                  },
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -137,13 +158,21 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                 TextField(
                   controller: _title,
                   textCapitalization: TextCapitalization.sentences,
+                  // A list is one field, so the keyboard can submit it.
+                  textInputAction:
+                  _isList ? TextInputAction.done : TextInputAction.next,
+                  onSubmitted: _isList ? (_) => _save() : null,
                   onChanged: (_) => setState(() => _error = null),
                   decoration: InputDecoration(
-                    labelText:
-                    _isEvent ? 'What is happening?' : 'What needs doing?',
+                    labelText: switch (widget.kind) {
+                      AddKind.event => 'What is happening?',
+                      AddKind.task => 'What needs doing?',
+                      AddKind.list => 'What is the list for?',
+                    },
+                    hintText: _isList ? 'Groceries' : null,
                   ),
                 ),
-                const SizedBox(height: 12),
+                if (!_isList) const SizedBox(height: 12),
 
                 if (_isEvent) ...[
                   OutlinedButton.icon(
@@ -165,7 +194,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                       prefixIcon: Icon(Icons.place_outlined, size: 20),
                     ),
                   ),
-                ] else ...[
+                ] else if (!_isList) ...[
                   // Optional deadline: most trip chores just need doing at some
                   // point, and forcing a date would make the form heavier for
                   // no gain.
@@ -291,7 +320,11 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2.4, color: Colors.white),
                   )
-                      : Text(_isEvent ? 'Add event' : 'Add task'),
+                      : Text(switch (widget.kind) {
+                    AddKind.event => 'Add event',
+                    AddKind.task => 'Add task',
+                    AddKind.list => 'Add list',
+                  }),
                 ),
               ],
             ),

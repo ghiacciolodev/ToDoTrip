@@ -7,6 +7,7 @@ produces an incomplete migration.
 
 from app.models.auth import RefreshToken
 from app.models.base import Base
+from app.models.checklist import Checklist, ChecklistEntry
 from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
 from app.models.item import Item, ItemAssignee, ItemType
@@ -15,6 +16,8 @@ from app.models.user import User
 
 __all__ = [
     "Base",
+    "Checklist",
+    "ChecklistEntry",
     "Expense",
     "ExpenseShare",
     "Invite",

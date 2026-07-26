@@ -7,6 +7,7 @@ import '../../../../core/providers.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
 import '../../providers.dart';
+import '../widgets/delete_actions.dart';
 import '../widgets/expense_detail_sheet.dart';
 import '../widgets/settle_up_sheet.dart';
 
@@ -272,41 +273,72 @@ class _ExpenseRow extends ConsumerWidget {
         : lookup[expense.paidBy]?.user.displayName ?? 'Someone';
     final myShare = expense.shareFor(myId);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => showExpenseDetailSheet(context, tripId, expense),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                height: 44,
-                width: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryTint,
-                  borderRadius: BorderRadius.circular(12),
+    return SwipeToDelete(
+      id: expense.id,
+      onDelete: () => confirmDeleteExpense(context, ref, tripId, expense),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => showExpenseDetailSheet(context, tripId, expense),
+          onLongPress: () =>
+              confirmDeleteExpense(context, ref, tripId, expense),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  height: 44,
+                  width: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _iconFor(expense.description),
+                    color: AppColors.primaryDark,
+                    size: 22,
+                  ),
                 ),
-                child: Icon(
-                  _iconFor(expense.description),
-                  color: AppColors.primaryDark,
-                  size: 22,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        expense.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Paid by $payer',
+                        style: const TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      expense.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      Money(expense.amountCents).formatted,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
                     ),
                     const SizedBox(height: 2),
+                    // "What it cost" and "what it costs me" are different
+                    // questions, and the second is the one people care about.
                     Text(
-                      'Paid by $payer',
+                      myShare == null
+                          ? 'not involved'
+                          : 'you: ${Money(myShare).formatted}',
                       style: const TextStyle(
                         color: AppColors.inkMuted,
                         fontSize: 12,
@@ -314,33 +346,8 @@ class _ExpenseRow extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    Money(expense.amountCents).formatted,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  // "What it cost" and "what it costs me" are different
-                  // questions, and the second is the one people care about.
-                  Text(
-                    myShare == null
-                        ? 'not involved'
-                        : 'you: ${Money(myShare).formatted}',
-                    style: const TextStyle(
-                      color: AppColors.inkMuted,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

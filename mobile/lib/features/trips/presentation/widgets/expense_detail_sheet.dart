@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/money.dart';
-import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
 import '../../providers.dart';
+import 'delete_actions.dart';
 
 Future<void> showExpenseDetailSheet(
     BuildContext context,
@@ -36,41 +36,18 @@ class _ExpenseDetailSheet extends ConsumerStatefulWidget {
 class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
   bool _deleting = false;
 
+  /// Same confirmation as the swipe and the long press on the row behind this
+  /// sheet, so a delete reads identically wherever it is started from.
   Future<void> _delete() async {
-    final confirmed = await showAdaptiveDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog.adaptive(
-        title: const Text('Delete this expense?'),
-        content: const Text("Everyone's balance will be recalculated."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete',
-                style: TextStyle(color: AppColors.terracotta)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
     setState(() => _deleting = true);
-    try {
-      await ref
-          .read(expenseRepositoryProvider)
-          .delete(widget.tripId, widget.expense.id);
-      invalidateMoney(ref, widget.tripId);
-      if (mounted) Navigator.of(context).pop();
-    } on ApiException catch (e) {
-      if (mounted) {
-        setState(() => _deleting = false);
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
-      }
+    final deleted =
+    await confirmDeleteExpense(context, ref, widget.tripId, widget.expense);
+    if (!mounted) return;
+    // Nothing left to show once it is gone.
+    if (deleted) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _deleting = false);
     }
   }
 

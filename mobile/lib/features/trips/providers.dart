@@ -9,6 +9,8 @@ import 'data/expense.dart';
 import 'data/expense_repository.dart';
 import 'data/item.dart';
 import 'data/item_repository.dart';
+import 'data/checklist.dart';
+import 'data/checklist_repository.dart';
 final tripRepositoryProvider = Provider<TripRepository>((ref) {
   return TripRepository(dio: ref.watch(dioProvider));
 });
@@ -106,4 +108,28 @@ final itemRepositoryProvider = Provider<ItemRepository>((ref) {
 /// segmented control is a filter over this list, not a separate resource.
 final itemsProvider = FutureProvider.family<List<Item>, String>((ref, tripId) {
   return ref.watch(itemRepositoryProvider).list(tripId);
+});
+
+final checklistRepositoryProvider = Provider<ChecklistRepository>((ref) {
+  return ChecklistRepository(dio: ref.watch(dioProvider));
+});
+
+/// The checklists of a trip, entries included.
+///
+/// The single source for both the cards and the screen a card opens: the API
+/// inlines the entries, so an open list stays in step with a refresh without a
+/// second provider to keep synchronised.
+final checklistsProvider =
+FutureProvider.family<List<Checklist>, String>((ref, tripId) {
+  return ref.watch(checklistRepositoryProvider).list(tripId);
+});
+
+/// One checklist, or null once it has been deleted — by anyone.
+final checklistProvider =
+Provider.family<Checklist?, ({String tripId, String checklistId})>((ref, key) {
+  final lists = ref.watch(checklistsProvider(key.tripId)).value ?? const [];
+  for (final list in lists) {
+    if (list.id == key.checklistId) return list;
+  }
+  return null;
 });

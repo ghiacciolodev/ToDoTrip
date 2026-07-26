@@ -1,0 +1,574 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/network/api_exception.dart';
+import '../../../../core/theme/avatar_color.dart';
+import '../../../../core/theme/colors.dart';
+import '../../data/checklist.dart';
+import '../../data/item.dart';
+import '../../data/trip_member.dart';
+import '../../providers.dart';
+import '../checklist_screen.dart';
+import '../widgets/delete_actions.dart';
+import '../widgets/tab_states.dart';
+
+/// The two kinds of thing left to do.
+enum TasksView { todo, lists }
+
+/// To-do and Lists.
+///
+/// To-do holds the trip's work: one line, assignable, with a deadline. Lists
+/// hold the throwaway kind — twenty items to tick off in a supermarket — which
+/// would drown the to-dos if the two shared one column.
+///
+/// The selected view is owned by the shell so the floating action button can
+/// create whichever kind is on screen.
+class TasksTab extends ConsumerWidget {
+  const TasksTab({
+    super.key,
+    required this.tripId,
+    required this.view,
+    required this.onViewChanged,
+  });
+
+  final String tripId;
+  final TasksView view;
+  final ValueChanged<TasksView> onViewChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(itemsProvider(tripId));
+        ref.invalidate(checklistsProvider(tripId));
+      },
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<TasksView>(
+                segments: const [
+                  ButtonSegment(
+                    value: TasksView.todo,
+                    label: Text('To-do'),
+                    icon: Icon(Icons.check_circle_outline, size: 18),
+                  ),
+                  ButtonSegment(
+                    value: TasksView.lists,
+                    label: Text('Lists'),
+                    icon: Icon(Icons.playlist_add_check, size: 18),
+                  ),
+                ],
+                selected: {view},
+                onSelectionChanged: (s) => onViewChanged(s.first),
+                showSelectedIcon: false,
+              ),
+            ),
+          ),
+          Expanded(
+            child: switch (view) {
+              TasksView.todo => _TodoView(tripId: tripId),
+              TasksView.lists => _ListsView(tripId: tripId),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodoView extends ConsumerWidget {
+  const _TodoView({required this.tripId});
+
+  final String tripId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(itemsProvider(tripId));
+    final list = items.value;
+
+    if (list == null) {
+      return items.hasError
+          ? ErrorState(
+        message: '${items.error}',
+        onRetry: () => ref.invalidate(itemsProvider(tripId)),
+      )
+          : const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    final tasks = list.where((i) => i.isTask).toList();
+    if (tasks.isEmpty) {
+      return const EmptyState(
+        icon: Icons.check_circle_outline,
+        title: 'Nothing to do yet',
+        subtitle: 'Book the hostel, buy sunscreen,\nsplit the driving.',
+      );
+    }
+
+    // Dated tasks first and soonest first; undated ones after. A deadline is
+    // the only ordering signal a to-do list has.
+    final open = tasks.where((t) => !t.isDone).toList()
+      ..sort((a, b) {
+        if (a.startsAt == null && b.startsAt == null) return 0;
+        if (a.startsAt == null) return 1;
+        if (b.startsAt == null) return -1;
+        return a.startsAt!.compareTo(b.startsAt!);
+      });
+    final done = tasks.where((t) => t.isDone).toList()
+      ..sort((a, b) => b.completedAt!.compareTo(a.completedAt!));
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      children: [
+        for (final task in open)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _TaskCard(tripId: tripId, item: task),
+          ),
+        // Completed work collapses out of the way rather than disappearing:
+        // seeing it ticked off is half the point of a shared list.
+        if (done.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              title: Text(
+                '${done.length} completed',
+                style: const TextStyle(fontSize: 14, color: AppColors.inkMuted),
+              ),
+              tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+              children: [
+                for (final task in done)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _TaskCard(tripId: tripId, item: task),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ListsView extends ConsumerWidget {
+  const _ListsView({required this.tripId});
+
+  final String tripId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lists = ref.watch(checklistsProvider(tripId));
+    final value = lists.value;
+
+    if (value == null) {
+      return lists.hasError
+          ? ErrorState(
+        message: '${lists.error}',
+        onRetry: () => ref.invalidate(checklistsProvider(tripId)),
+      )
+          : const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    if (value.isEmpty) {
+      return const EmptyState(
+        icon: Icons.playlist_add_check,
+        title: 'No lists yet',
+        subtitle: 'A shopping list, things to pack,\nplaces you want to try.',
+      );
+    }
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      itemCount: value.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (_, index) =>
+          _ChecklistCard(tripId: tripId, checklist: value[index]),
+    );
+  }
+}
+
+class _ChecklistCard extends ConsumerWidget {
+  const _ChecklistCard({required this.tripId, required this.checklist});
+
+  final String tripId;
+  final Checklist checklist;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final total = checklist.entries.length;
+    final left = total - checklist.checkedCount;
+    final complete = total > 0 && left == 0;
+
+    return SwipeToDelete(
+      id: checklist.id,
+      onDelete: () => confirmDeleteChecklist(context, ref, tripId, checklist),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChecklistScreen(
+                tripId: tripId,
+                checklistId: checklist.id,
+              ),
+            ),
+          ),
+          onLongPress: () =>
+              confirmDeleteChecklist(context, ref, tripId, checklist),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 44,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: complete
+                            ? AppColors.primary
+                            : AppColors.primaryTint,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        complete ? Icons.check : Icons.playlist_add_check,
+                        color: complete ? Colors.white : AppColors.primaryDark,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            checklist.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          // The number that matters while shopping is what is
+                          // still missing, not what is already in the basket.
+                          Text(
+                            switch ((total, left)) {
+                              (0, _) => 'Empty',
+                              (_, 0) => 'All done',
+                              (_, final n) => '$n left of $total',
+                            },
+                            style: TextStyle(
+                              color: complete
+                                  ? AppColors.primaryDark
+                                  : AppColors.inkMuted,
+                              fontSize: 13,
+                              fontWeight:
+                              complete ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.inkMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+                if (total > 0) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: checklist.progress,
+                      minHeight: 5,
+                      backgroundColor: AppColors.border,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskCard extends ConsumerStatefulWidget {
+  const _TaskCard({required this.tripId, required this.item});
+
+  final String tripId;
+  final Item item;
+
+  @override
+  ConsumerState<_TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends ConsumerState<_TaskCard> {
+  late bool _done = widget.item.isDone;
+  bool _busy = false;
+
+  @override
+  void didUpdateWidget(covariant _TaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Someone else ticked it off: follow the server, unless our own request is
+    // still in flight and would be overwritten by data that predates it.
+    if (!_busy && widget.item.isDone != _done) {
+      _done = widget.item.isDone;
+    }
+  }
+
+  Future<void> _toggle() async {
+    if (_busy) return;
+    // Flipped locally first: a checkbox that waits for a round trip feels
+    // broken. Reverted below if the call fails.
+    setState(() {
+      _done = !_done;
+      _busy = true;
+    });
+
+    try {
+      await ref.read(itemRepositoryProvider).setCompleted(
+        tripId: widget.tripId,
+        itemId: widget.item.id,
+        done: _done,
+      );
+      ref.invalidate(itemsProvider(widget.tripId));
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _done = !_done);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final lookup = ref.watch(memberLookupProvider(widget.tripId));
+    final assignees = [
+      for (final id in item.assignees)
+        if (lookup[id] case final member?) member,
+    ];
+
+    return SwipeToDelete(
+      id: item.id,
+      onDelete: () => confirmDeleteItem(context, ref, widget.tripId, item),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _toggle,
+          onLongPress: () =>
+              confirmDeleteItem(context, ref, widget.tripId, item),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              children: [
+                _Tick(done: _done, onTap: _toggle),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          decoration: _done ? TextDecoration.lineThrough : null,
+                          decorationColor: AppColors.inkMuted,
+                          color: _done ? AppColors.inkMuted : AppColors.ink,
+                        ),
+                      ),
+                      if (item.startsAt != null && !_done) ...[
+                        const SizedBox(height: 5),
+                        _Deadline(at: item.startsAt!.toLocal()),
+                      ],
+                    ],
+                  ),
+                ),
+                if (assignees.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  _AvatarStack(members: assignees),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A round tick instead of a Material checkbox.
+///
+/// Softer next to the rounded cards, and it animates between the two states so
+/// the optimistic flip is visible as a change rather than a repaint.
+class _Tick extends StatelessWidget {
+  const _Tick({required this.done, required this.onTap});
+
+  final bool done;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onTap,
+      // Keeps the finger target at the 48dp minimum even though the ring drawn
+      // is half that.
+      radius: 24,
+      containedInkWell: false,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 24,
+          width: 24,
+          decoration: BoxDecoration(
+            color: done ? AppColors.primary : Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: done ? AppColors.primary : AppColors.inkMuted,
+              width: 1.6,
+            ),
+          ),
+          child: done
+              ? const Icon(Icons.check, size: 16, color: Colors.white)
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// When a task is due, in the words people actually use.
+///
+/// Turns terracotta once it is late, with the word "Overdue" next to it: colour
+/// alone carries no meaning for roughly 8% of men.
+class _Deadline extends StatelessWidget {
+  const _Deadline({required this.at});
+
+  final DateTime at;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(at.year, at.month, at.day);
+    final days = day.difference(today).inDays;
+    final late = at.isBefore(now);
+
+    final label = switch (days) {
+      _ when late => 'Overdue · ${DateFormat('d MMM').format(at)}',
+      0 => 'Today, ${DateFormat('HH:mm').format(at)}',
+      1 => 'Tomorrow, ${DateFormat('HH:mm').format(at)}',
+      _ => DateFormat('EEE d MMM, HH:mm').format(at),
+    };
+    final colour = late ? AppColors.terracotta : AppColors.inkMuted;
+
+    return Row(
+      children: [
+        Icon(late ? Icons.error_outline : Icons.schedule,
+            size: 13, color: colour),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: colour,
+            fontSize: 12,
+            fontWeight: late ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Overlapping avatars, capped at three plus a count.
+///
+/// Overlap rather than a row: a shared chore should read as "these people" at a
+/// glance without stretching the row wider than the title.
+class _AvatarStack extends StatelessWidget {
+  const _AvatarStack({required this.members});
+
+  final List<TripMember> members;
+
+  static const _max = 3;
+  static const _size = 28.0;
+  static const _overlap = 9.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = members.take(_max).toList();
+    final extra = members.length - shown.length;
+    final count = shown.length + (extra > 0 ? 1 : 0);
+
+    return SizedBox(
+      height: _size,
+      width: _size + (count - 1) * (_size - _overlap),
+      child: Stack(
+        children: [
+          for (final (index, member) in shown.indexed)
+            Positioned(
+              left: index * (_size - _overlap),
+              child: _Bubble(
+                label: initialsFor(member.user.displayName),
+                colour: avatarColorFor(member.user.id),
+              ),
+            ),
+          if (extra > 0)
+            Positioned(
+              left: shown.length * (_size - _overlap),
+              child: _Bubble(label: '+$extra', colour: AppColors.inkMuted),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Bubble extends StatelessWidget {
+  const _Bubble({required this.label, required this.colour});
+
+  final String label;
+  final Color colour;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _AvatarStack._size,
+      width: _AvatarStack._size,
+      decoration: BoxDecoration(
+        color: colour,
+        shape: BoxShape.circle,
+        // A ring in the card colour separates overlapping bubbles.
+        border: Border.all(color: AppColors.surface, width: 2),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
