@@ -46,8 +46,7 @@ abstract class Checklist with _$Checklist {
   int get checkedCount => entries.where((e) => e.isChecked).length;
 
   /// Empty reads as "not started", never as done.
-  double get progress =>
-      entries.isEmpty ? 0 : checkedCount / entries.length;
+  double get progress => entries.isEmpty ? 0 : checkedCount / entries.length;
 
   factory Checklist.fromJson(Map<String, dynamic> json) =>
       _$ChecklistFromJson(json);

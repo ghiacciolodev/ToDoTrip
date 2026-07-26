@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/checklist.dart';
 import '../../data/expense.dart';
@@ -75,11 +77,11 @@ class _DeleteBackground extends StatelessWidget {
 
 /// Shared confirmation dialog. Returns true only on an explicit confirm.
 Future<bool> _confirm(
-    BuildContext context, {
-      required String title,
-      String? message,
-      String action = 'Delete',
-    }) async {
+  BuildContext context, {
+  required String title,
+  String? message,
+  required String action,
+}) async {
   final confirmed = await showAdaptiveDialog<bool>(
     context: context,
     builder: (context) => AlertDialog.adaptive(
@@ -88,7 +90,7 @@ Future<bool> _confirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
@@ -111,36 +113,42 @@ void _toast(BuildContext context, String message) {
 
 /// An event or a to-do.
 Future<void> confirmDeleteItem(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    Item item,
-    ) async {
-  if (!await _confirm(context, title: 'Delete "${item.title}"?')) return;
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  Item item,
+) async {
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await _confirm(
+    context,
+    title: l10n.deleteItemTitle(item.title),
+    action: l10n.commonDelete,
+  );
+  if (!confirmed) return;
 
   try {
     await ref.read(itemRepositoryProvider).delete(tripId, item.id);
     ref.invalidate(itemsProvider(tripId));
   } on ApiException catch (e) {
-    if (context.mounted) _toast(context, e.message);
+    if (context.mounted) _toast(context, friendlyError(context, e));
   }
 }
 
 /// A list, entries included.
 Future<void> confirmDeleteChecklist(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    Checklist checklist,
-    ) async {
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  Checklist checklist,
+) async {
+  final l10n = AppLocalizations.of(context);
   final count = checklist.entries.length;
   final confirmed = await _confirm(
     context,
-    title: 'Delete "${checklist.name}"?',
+    title: l10n.deleteListTitle(checklist.name),
     // Names what is lost and for whom: this removes other people's lines too.
-    message: count == 0
-        ? 'The list is removed for everyone.'
-        : 'Its $count ${count == 1 ? 'item' : 'items'} go with it, for everyone.',
+    message: count == 0 ? l10n.deleteListEmptyBody : l10n.deleteListBody(count),
+    action: l10n.commonDelete,
   );
   if (!confirmed) return;
 
@@ -148,44 +156,48 @@ Future<void> confirmDeleteChecklist(
     await ref.read(checklistRepositoryProvider).delete(tripId, checklist.id);
     ref.invalidate(checklistsProvider(tripId));
   } on ApiException catch (e) {
-    if (context.mounted) _toast(context, e.message);
+    if (context.mounted) _toast(context, friendlyError(context, e));
   }
 }
 
 /// One line of a list.
 Future<void> confirmDeleteEntry(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    ChecklistEntry entry,
-    ) async {
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  ChecklistEntry entry,
+) async {
+  final l10n = AppLocalizations.of(context);
   final confirmed = await _confirm(
     context,
-    title: 'Remove "${entry.text}"?',
-    action: 'Remove',
+    title: l10n.deleteEntryTitle(entry.text),
+    action: l10n.commonRemove,
   );
   if (!confirmed) return;
 
   try {
-    await ref.read(checklistRepositoryProvider).deleteEntry(
-      tripId: tripId,
-      checklistId: entry.checklistId,
-      entryId: entry.id,
-    );
+    await ref
+        .read(checklistRepositoryProvider)
+        .deleteEntry(
+          tripId: tripId,
+          checklistId: entry.checklistId,
+          entryId: entry.id,
+        );
     ref.invalidate(checklistsProvider(tripId));
   } on ApiException catch (e) {
-    if (context.mounted) _toast(context, e.message);
+    if (context.mounted) _toast(context, friendlyError(context, e));
   }
 }
 
 /// An expense. Resolves to true when it was actually deleted, so a detail sheet
 /// showing it can close itself.
 Future<bool> confirmDeleteExpense(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    Expense expense,
-    ) async {
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  Expense expense,
+) async {
+  final l10n = AppLocalizations.of(context);
   // Repayments outlive the expense they were made against: whoever already paid
   // their share of this one ends up owed it back, which looks like the balances
   // going wrong on their own unless it is said here.
@@ -194,11 +206,11 @@ Future<bool> confirmDeleteExpense(
 
   final confirmed = await _confirm(
     context,
-    title: 'Delete "${expense.description}"?',
+    title: l10n.deleteExpenseTitle(expense.description),
+    action: l10n.commonDelete,
     message: hasRepayments
-        ? 'This trip has recorded repayments. Deleting this expense will change '
-        "everyone's balance."
-        : "Everyone's balance will be recalculated.",
+        ? l10n.deleteExpenseWithRepayments
+        : l10n.deleteExpenseBody,
   );
   if (!confirmed) return false;
 
@@ -207,7 +219,7 @@ Future<bool> confirmDeleteExpense(
     invalidateMoney(ref, tripId);
     return true;
   } on ApiException catch (e) {
-    if (context.mounted) _toast(context, e.message);
+    if (context.mounted) _toast(context, friendlyError(context, e));
     return false;
   }
 }

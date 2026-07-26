@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
@@ -24,7 +25,7 @@ class AddScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add a trip')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).addTripTitle)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -36,15 +37,15 @@ class AddScreen extends StatelessWidget {
                 children: [
                   _ActionCard(
                     icon: Icons.add_location_alt_outlined,
-                    title: 'Create a trip',
-                    subtitle: 'Start planning and invite your friends',
+                    title: AppLocalizations.of(context).addTripCreate,
+                    subtitle: AppLocalizations.of(context).addTripCreateBody,
                     onTap: () => _create(context),
                   ),
                   const SizedBox(height: 16),
                   _ActionCard(
                     icon: Icons.qr_code_2_outlined,
-                    title: 'Join with a code',
-                    subtitle: 'Someone shared an invite code with you',
+                    title: AppLocalizations.of(context).addTripJoin,
+                    subtitle: AppLocalizations.of(context).addTripJoinBody,
                     onTap: () => _join(context),
                   ),
                 ],

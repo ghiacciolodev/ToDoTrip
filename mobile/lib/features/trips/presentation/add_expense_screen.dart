@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/money.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_messages.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/avatar_color.dart';
 import '../../../core/theme/colors.dart';
@@ -68,7 +70,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     // Leftover cents go to the payer first, mirroring the backend's rule.
     ids.sort((a, b) => (a == _paidBy ? 0 : 1).compareTo(b == _paidBy ? 0 : 1));
     return {
-      for (final (index, id) in ids.indexed) id: base + (index < remainder ? 1 : 0),
+      for (final (index, id) in ids.indexed)
+        id: base + (index < remainder ? 1 : 0),
     };
   }
 
@@ -121,18 +124,20 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     });
 
     try {
-      await ref.read(expenseRepositoryProvider).create(
-        tripId: widget.tripId,
-        description: _description.text.trim(),
-        amountCents: _total.cents,
-        paidBy: _paidBy!,
-        participants: _participants.toList(),
-        shares: _customSplit ? _customSharesCents : null,
-      );
+      await ref
+          .read(expenseRepositoryProvider)
+          .create(
+            tripId: widget.tripId,
+            description: _description.text.trim(),
+            amountCents: _total.cents,
+            paidBy: _paidBy!,
+            participants: _participants.toList(),
+            shares: _customSplit ? _customSharesCents : null,
+          );
       invalidateMoney(ref, widget.tripId);
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -140,13 +145,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final members = ref.watch(activeMembersProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
     final even = _evenShares;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New expense'),
+        title: Text(l10n.expenseNewTitle),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
@@ -160,7 +166,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             // to type, and everything below is a refinement of it.
             TextField(
               controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
               ],
@@ -191,7 +199,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               controller: _description,
               textCapitalization: TextCapitalization.sentences,
               onChanged: (_) => setState(() => _error = null),
-              decoration: const InputDecoration(labelText: 'What for?'),
+              decoration: InputDecoration(labelText: l10n.expenseWhatFor),
             ),
             const SizedBox(height: 10),
 
@@ -200,12 +208,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             Wrap(
               spacing: 8,
               children: [
-                for (final suggestion in const [
-                  'Dinner',
-                  'Groceries',
-                  'Taxi',
-                  'Hotel',
-                  'Drinks',
+                for (final suggestion in [
+                  l10n.expenseSuggestionExamples,
+                  l10n.expenseSuggestionGroceries,
+                  l10n.expenseSuggestionTaxi,
+                  l10n.expenseSuggestionHotel,
+                  l10n.expenseSuggestionDrinks,
                 ])
                   ActionChip(
                     label: Text(suggestion),
@@ -224,7 +232,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             ),
             const SizedBox(height: 24),
 
-            const _Label('PAID BY'),
+            _Label(l10n.expensePaidBy),
             // RadioGroup owns the selection now; the tiles below only declare
             // their value.
             RadioGroup<String>(
@@ -240,7 +248,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                         dense: true,
                         activeColor: AppColors.primary,
                         title: Text(
-                          member.user.id == myId ? 'You' : member.user.displayName,
+                          member.user.id == myId
+                              ? 'You'
+                              : member.user.displayName,
                         ),
                       ),
                     ],
@@ -252,7 +262,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
             Row(
               children: [
-                const Expanded(child: _Label('SPLIT BETWEEN')),
+                Expanded(child: _Label(l10n.expenseSplitBetween)),
                 TextButton(
                   onPressed: () {
                     if (_customSplit) {
@@ -262,7 +272,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     }
                   },
                   child: Text(
-                    _customSplit ? 'Split equally' : 'Custom amounts',
+                    _customSplit
+                        ? l10n.expenseSplitEqually
+                        : l10n.expenseCustomAmounts,
                     style: const TextStyle(
                       color: AppColors.primaryDark,
                       fontSize: 13,
@@ -278,7 +290,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                   for (final (index, member) in members.indexed) ...[
                     if (index > 0) const Divider(height: 1),
                     _ParticipantRow(
-                      name: member.user.id == myId ? 'You' : member.user.displayName,
+                      name: member.user.id == myId
+                          ? 'You'
+                          : member.user.displayName,
                       userId: member.user.id,
                       selected: _participants.contains(member.user.id),
                       onToggle: () => _toggleParticipant(member.user.id),
@@ -299,8 +313,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Remaining',
-                      style: TextStyle(color: AppColors.inkMuted)),
+                  Text(
+                    l10n.expenseRemaining,
+                    style: TextStyle(color: AppColors.inkMuted),
+                  ),
                   Text(
                     Money(_remainingCents).formatted,
                     style: TextStyle(
@@ -320,8 +336,11 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.error_outline,
-                      size: 18, color: AppColors.terracotta),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 18,
+                    color: AppColors.terracotta,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -342,12 +361,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               onPressed: (_canSave && !_busy) ? _save : null,
               child: _busy
                   ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.4, color: Colors.white),
-              )
-                  : const Text('Save expense'),
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l10n.expenseSave),
             ),
           ],
         ),
@@ -391,7 +412,9 @@ class _ParticipantRow extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 13,
-            backgroundColor: selected ? avatarColorFor(userId) : AppColors.border,
+            backgroundColor: selected
+                ? avatarColorFor(userId)
+                : AppColors.border,
             child: Text(
               initialsFor(name),
               style: TextStyle(
@@ -419,31 +442,34 @@ class _ParticipantRow extends StatelessWidget {
             ? null
             : customSplit
             ? TextField(
-          controller: controller,
-          keyboardType:
-          const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          onChanged: (_) => onCustomChanged(),
-          textAlign: TextAlign.end,
-          decoration: const InputDecoration(
-            isDense: true,
-            prefixText: '€',
-            contentPadding:
-            EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          ),
-          style: const TextStyle(fontSize: 14),
-        )
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                ],
+                onChanged: (_) => onCustomChanged(),
+                textAlign: TextAlign.end,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  prefixText: '€',
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14),
+              )
             : Text(
-          evenShare == null ? '—' : Money(evenShare!).formatted,
-          textAlign: TextAlign.end,
-          style: const TextStyle(
-            color: AppColors.inkMuted,
-            fontSize: 13,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
+                evenShare == null ? '—' : Money(evenShare!).formatted,
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  color: AppColors.inkMuted,
+                  fontSize: 13,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
       ),
     );
   }

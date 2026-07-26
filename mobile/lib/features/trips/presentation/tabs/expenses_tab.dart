@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -82,11 +83,11 @@ class ExpensesTab extends ConsumerWidget {
   /// Groups by day with a sticky header, which is how people recall spending:
   /// "what did we pay for on Tuesday", not "expense number 14".
   List<Widget> _buildGroupedList(
-      BuildContext context,
-      WidgetRef ref,
-      List<_Entry> entries,
-      String myId,
-      ) {
+    BuildContext context,
+    WidgetRef ref,
+    List<_Entry> entries,
+    String myId,
+  ) {
     final byDay = <DateTime, List<_Entry>>{};
     for (final entry in entries) {
       final local = entry.at.toLocal();
@@ -102,7 +103,7 @@ class ExpensesTab extends ConsumerWidget {
           slivers: [
             SliverPersistentHeader(
               pinned: true,
-              delegate: _DayHeaderDelegate(label: _dayLabel(day)),
+              delegate: _DayHeaderDelegate(label: _dayLabel(context, day)),
             ),
             SliverList.builder(
               itemCount: byDay[day]!.length,
@@ -127,12 +128,13 @@ class ExpensesTab extends ConsumerWidget {
     ];
   }
 
-  static String _dayLabel(DateTime day) {
+  static String _dayLabel(BuildContext context, DateTime day) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final difference = today.difference(day).inDays;
-    if (difference == 0) return 'Today';
-    if (difference == 1) return 'Yesterday';
+    if (difference == 0) return l10n.moneyToday;
+    if (difference == 1) return l10n.moneyYesterday;
     return DateFormat('EEEE d MMMM').format(day);
   }
 }
@@ -192,10 +194,11 @@ class _BalanceCard extends ConsumerWidget {
 
     // Wording plus sign plus colour: red and green alone carry no meaning for
     // roughly 8% of men.
+    final l10n = AppLocalizations.of(context);
     final (label, colour) = switch (mine.cents) {
-      0 => ('All settled', AppColors.inkMuted),
-      > 0 => ('You are owed', AppColors.primaryDark),
-      _ => ('You owe', AppColors.terracotta),
+      0 => (l10n.moneyAllSettled, AppColors.inkMuted),
+      > 0 => (l10n.moneyYouAreOwed, AppColors.primaryDark),
+      _ => (l10n.moneyYouOwe, AppColors.terracotta),
     };
 
     return Card(
@@ -217,14 +220,14 @@ class _BalanceCard extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Trip total ${total.formatted}',
+              l10n.moneyTripTotal(total.formatted),
               style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
             ),
             if (hasDebts) ...[
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => showSettleUpSheet(context, tripId),
-                child: const Text('Settle up'),
+                child: Text(l10n.moneySettleUp),
               ),
             ],
             if (report!.balances.length > 1) ...[
@@ -258,8 +261,8 @@ class _EveryoneBalance extends ConsumerWidget {
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        title: const Text(
-          "Everyone's balance",
+        title: Text(
+          AppLocalizations.of(context).moneyEveryonesBalance,
           style: TextStyle(fontSize: 14, color: AppColors.inkMuted),
         ),
         tilePadding: EdgeInsets.zero,
@@ -273,8 +276,9 @@ class _EveryoneBalance extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       entry.userId == myId
-                          ? 'You'
-                          : lookup[entry.userId]?.user.displayName ?? 'Unknown',
+                          ? AppLocalizations.of(context).commonYou
+                          : lookup[entry.userId]?.user.displayName ??
+                                AppLocalizations.of(context).commonUnknown,
                       style: const TextStyle(fontSize: 14),
                     ),
                   ),
@@ -314,9 +318,10 @@ class _ExpenseRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lookup = ref.watch(memberLookupProvider(tripId));
+    final l10n = AppLocalizations.of(context);
     final payer = expense.paidBy == myId
-        ? 'You'
-        : lookup[expense.paidBy]?.user.displayName ?? 'Someone';
+        ? l10n.commonYou
+        : lookup[expense.paidBy]?.user.displayName ?? l10n.commonSomeone;
     final myShare = expense.shareFor(myId);
 
     return SwipeToDelete(
@@ -358,7 +363,7 @@ class _ExpenseRow extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Paid by $payer',
+                        l10n.moneyPaidBy(payer),
                         style: const TextStyle(
                           color: AppColors.inkMuted,
                           fontSize: 12,
@@ -383,8 +388,8 @@ class _ExpenseRow extends ConsumerWidget {
                     // questions, and the second is the one people care about.
                     Text(
                       myShare == null
-                          ? 'not involved'
-                          : 'you: ${Money(myShare).formatted}',
+                          ? l10n.moneyNotInvolved
+                          : l10n.moneyYourShare(Money(myShare).formatted),
                       style: const TextStyle(
                         color: AppColors.inkMuted,
                         fontSize: 12,
@@ -444,9 +449,11 @@ class _SettlementRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lookup = ref.watch(memberLookupProvider(tripId));
 
+    final l10n = AppLocalizations.of(context);
+
     String name(String id, {required bool subject}) {
-      if (id == myId) return subject ? 'You' : 'you';
-      return lookup[id]?.user.displayName ?? 'Someone';
+      if (id == myId) return subject ? l10n.commonYou : l10n.commonYouLower;
+      return lookup[id]?.user.displayName ?? l10n.commonSomeone;
     }
 
     return Card(
@@ -477,15 +484,17 @@ class _SettlementRow extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${name(settlement.fromUserId, subject: true)} paid '
-                          '${name(settlement.toUserId, subject: false)}',
+                      l10n.moneyPaidSomeone(
+                        name(settlement.fromUserId, subject: true),
+                        name(settlement.toUserId, subject: false),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'Repayment',
+                    Text(
+                      l10n.moneyRepayment,
                       style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
                     ),
                   ],
@@ -519,7 +528,11 @@ class _DayHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 40;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
       color: AppColors.background,
       alignment: Alignment.centerLeft,
@@ -559,9 +572,9 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'No expenses yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           const Text(
@@ -602,7 +615,7 @@ class _ErrorState extends StatelessWidget {
               const SizedBox(height: 20),
               OutlinedButton(
                 onPressed: onRetry,
-                child: const Text('Try again'),
+                child: Text(AppLocalizations.of(context).commonTryAgain),
               ),
             ],
           ),

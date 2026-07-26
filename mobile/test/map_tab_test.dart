@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/core/providers.dart';
 import 'package:todotrip/features/auth/data/user.dart';
 import 'package:todotrip/features/trips/data/map_pin.dart';
@@ -39,7 +40,12 @@ void main() {
   );
 
   TripMember member(String id, String name) => TripMember(
-    user: User(id: id, email: '$id@test.it', displayName: name, createdAt: DateTime(2026)),
+    user: User(
+      id: id,
+      email: '$id@test.it',
+      displayName: name,
+      createdAt: DateTime(2026),
+    ),
     role: MemberRole.member,
     joinedAt: DateTime(2026),
   );
@@ -72,13 +78,17 @@ void main() {
       ProviderScope(
         overrides: [
           authProvider.overrideWith(() => _FakeAuth(me)),
-          mapRepositoryProvider.overrideWithValue(_FakeMapRepository(locations)),
+          mapRepositoryProvider.overrideWithValue(
+            _FakeMapRepository(locations),
+          ),
           mapPinsProvider('t').overrideWith((ref) async => pins),
           tripMembersProvider('t').overrideWith(
             (ref) async => [member('mario', 'Mario'), member('luca', 'Luca')],
           ),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: MapTab(tripId: 't', isVisible: true)),
         ),
       ),
@@ -98,7 +108,9 @@ void main() {
     expect(find.byType(MemberMarker), findsOne);
   });
 
-  testWidgets('my own position is not duplicated as a member marker', (tester) async {
+  testWidgets('my own position is not duplicated as a member marker', (
+    tester,
+  ) async {
     /// My avatar comes from the device, not from the list of who is sharing, so
     /// an echo of my own position must not draw a second one.
     await pump(tester, locations: [locationOf('mario')]);
@@ -106,7 +118,9 @@ void main() {
     expect(find.byType(MemberMarker), findsNothing);
   });
 
-  testWidgets('people are avatars, mine ringed to tell it apart', (tester) async {
+  testWidgets('people are avatars, mine ringed to tell it apart', (
+    tester,
+  ) async {
     await pump(tester, locations: [locationOf('luca')]);
 
     final marker = tester.widget<MemberMarker>(find.byType(MemberMarker));
@@ -114,7 +128,9 @@ void main() {
     expect(marker.isMe, isFalse);
   });
 
-  testWidgets('leaving the map without sharing tells the server nothing', (tester) async {
+  testWidgets('leaving the map without sharing tells the server nothing', (
+    tester,
+  ) async {
     /// Stopping used to fire a DELETE on every dispose, even when the switch
     /// had never been touched.
     await pump(tester);

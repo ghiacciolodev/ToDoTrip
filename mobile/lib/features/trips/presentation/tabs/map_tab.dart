@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cache/flutter_map_cache.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -88,7 +89,8 @@ class _MapTabState extends ConsumerState<MapTab>
     if (_sharing) return;
 
     final permission = await Geolocator.checkPermission();
-    final granted = permission == LocationPermission.always ||
+    final granted =
+        permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse;
     if (!granted || !await Geolocator.isLocationServiceEnabled()) return;
 
@@ -102,7 +104,9 @@ class _MapTabState extends ConsumerState<MapTab>
       // Then a real reading corrects it, which is what makes the dot move on a
       // device that has been sitting still since the app last ran.
       final fix = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+        ),
       );
       if (!mounted || _sharing) return;
       _myPoint.value = LatLng(fix.latitude, fix.longitude);
@@ -148,7 +152,9 @@ class _MapTabState extends ConsumerState<MapTab>
   /// websocket keeps them current.
   Future<void> _loadLocations() async {
     try {
-      final locations = await ref.read(mapRepositoryProvider).locations(widget.tripId);
+      final locations = await ref
+          .read(mapRepositoryProvider)
+          .locations(widget.tripId);
       if (!mounted) return;
       ref.read(memberLocationsProvider(widget.tripId)).value = {
         for (final location in locations) location.userId: location,
@@ -209,7 +215,8 @@ class _MapTabState extends ConsumerState<MapTab>
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
         }
-        final position = await Geolocator.getLastKnownPosition() ??
+        final position =
+            await Geolocator.getLastKnownPosition() ??
             await Geolocator.getCurrentPosition();
         point = LatLng(position.latitude, position.longitude);
         if (!mounted) return;
@@ -232,7 +239,10 @@ class _MapTabState extends ConsumerState<MapTab>
   void _fitEveryone() {
     // Framing the group is a deliberate look elsewhere, so stop following.
     _following = false;
-    final locations = ref.read(memberLocationsProvider(widget.tripId)).value.values;
+    final locations = ref
+        .read(memberLocationsProvider(widget.tripId))
+        .value
+        .values;
     final points = [
       for (final location in locations) location.point,
       ?_myPoint.value,
@@ -268,7 +278,8 @@ class _MapTabState extends ConsumerState<MapTab>
             // requests are wasted.
             minZoom: 3,
             maxZoom: 18,
-            onLongPress: (_, point) => showCreatePinSheet(context, widget.tripId, point),
+            onLongPress: (_, point) =>
+                showCreatePinSheet(context, widget.tripId, point),
             onPositionChanged: _onCameraMoved,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
@@ -381,7 +392,8 @@ class _MemberLayer extends ConsumerWidget {
                 height: 36,
                 child: RepaintBoundary(
                   child: GestureDetector(
-                    onTap: () => showMemberLocationSheet(context, tripId, location),
+                    onTap: () =>
+                        showMemberLocationSheet(context, tripId, location),
                     child: MemberMarker(
                       initials: initialsFor(
                         lookup[location.userId]?.user.displayName ?? '?',
@@ -469,6 +481,7 @@ class _SharingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Positioned(
       top: 12,
       left: 12,
@@ -489,14 +502,14 @@ class _SharingBar extends StatelessWidget {
                     Icon(
                       sharing ? Icons.location_on : Icons.location_off_outlined,
                       size: 20,
-                      color: sharing ? AppColors.primaryDark : AppColors.inkMuted,
+                      color: sharing
+                          ? AppColors.primaryDark
+                          : AppColors.inkMuted,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        sharing
-                            ? "You're sharing your location"
-                            : 'Share my location',
+                        sharing ? l10n.mapShareOn : l10n.mapShareOff,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -508,17 +521,25 @@ class _SharingBar extends StatelessWidget {
                   ],
                 ),
                 if (sharing)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 30, right: 8, bottom: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 30,
+                      right: 8,
+                      bottom: 4,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Only while this map is open.',
-                        style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
+                        l10n.mapShareForegroundOnly,
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
-                if (blocked != null && !sharing) _BlockedNotice(blocked: blocked!),
+                if (blocked != null && !sharing)
+                  _BlockedNotice(blocked: blocked!),
               ],
             ),
           ),
@@ -536,15 +557,13 @@ class _BlockedNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (message, action) = switch (blocked) {
-      LocationBlock.servicesOff => (
-      'Location is switched off on this device.',
-      null,
-      ),
-      LocationBlock.denied => ('Location permission was refused.', null),
+      LocationBlock.servicesOff => (l10n.mapServicesOff, null),
+      LocationBlock.denied => (l10n.mapPermissionDenied, null),
       LocationBlock.deniedForever => (
-      'Location is blocked for TodoTrip.',
-      'Open settings',
+        l10n.mapPermissionBlocked,
+        l10n.mapOpenSettings,
       ),
     };
 
@@ -584,13 +603,13 @@ class _MapButtons extends StatelessWidget {
         children: [
           _RoundButton(
             icon: Icons.people_outline,
-            tooltip: 'Fit everyone',
+            tooltip: AppLocalizations.of(context).mapFitEveryone,
             onPressed: onFitEveryone,
           ),
           const SizedBox(height: 10),
           _RoundButton(
             icon: Icons.my_location,
-            tooltip: 'Centre on me',
+            tooltip: AppLocalizations.of(context).mapCentreOnMe,
             onPressed: onCentreOnMe,
           ),
         ],
@@ -647,13 +666,16 @@ class _EmptyHint extends ConsumerWidget {
           child: IgnorePointer(
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Long-press anywhere to drop a pin.',
+                child: Text(
+                  AppLocalizations.of(context).mapEmptyHint,
                   style: TextStyle(color: AppColors.inkMuted, fontSize: 13),
                 ),
               ),

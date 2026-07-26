@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/features/trips/data/checklist.dart';
 import 'package:todotrip/features/trips/presentation/checklist_screen.dart';
 import 'package:todotrip/features/trips/providers.dart';
@@ -18,10 +19,10 @@ void main() {
   Future<void> pump(WidgetTester tester, List<Checklist> lists) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          checklistsProvider('t').overrideWith((ref) async => lists),
-        ],
-        child: const MaterialApp(
+        overrides: [checklistsProvider('t').overrideWith((ref) async => lists)],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: ChecklistScreen(tripId: 't', checklistId: 'c1'),
         ),
       ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/money.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/settlement.dart';
@@ -15,10 +17,10 @@ import '../../providers.dart';
 /// stayed in the balances for good, and after the matching expense was deleted it
 /// became a figure with nothing on screen behind it.
 Future<void> showSettlementSheet(
-    BuildContext context,
-    String tripId,
-    Settlement settlement,
-    ) {
+  BuildContext context,
+  String tripId,
+  Settlement settlement,
+) {
   return showModalBottomSheet(
     context: context,
     builder: (_) => _SettlementSheet(tripId: tripId, settlement: settlement),
@@ -39,21 +41,23 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
   bool _busy = false;
 
   Future<void> _undo() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showAdaptiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
-        title: const Text('Undo this repayment?'),
-        content: const Text(
-          "Everyone's balance goes back to what it was before it was recorded.",
-        ),
+        title: Text(l10n.settleUndoTitle),
+        content: Text(l10n.settleUndoBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Undo', style: TextStyle(color: AppColors.terracotta)),
+            child: Text(
+              l10n.commonUndo,
+              style: const TextStyle(color: AppColors.terracotta),
+            ),
           ),
         ],
       ),
@@ -72,7 +76,7 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
         setState(() => _busy = false);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
+          ..showSnackBar(SnackBar(content: Text(friendlyError(context, e))));
       }
     }
   }
@@ -80,30 +84,32 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
   @override
   Widget build(BuildContext context) {
     final settlement = widget.settlement;
+    final l10n = AppLocalizations.of(context);
     final lookup = ref.watch(memberLookupProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
 
     String name(String id) => id == myId
-        ? 'You'
-        : lookup[id]?.user.displayName ?? 'Someone';
+        ? l10n.commonYou
+        : lookup[id]?.user.displayName ?? l10n.commonSomeone;
 
     return SafeArea(
-      child: Padding
-        (
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Repayment',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              l10n.settleRepaymentTitle,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
-              DateFormat('EEEE d MMMM, HH:mm').format(settlement.settledAt.toLocal()),
+              DateFormat(
+                'EEEE d MMMM, HH:mm',
+              ).format(settlement.settledAt.toLocal()),
               style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
             ),
             const SizedBox(height: 20),
@@ -132,7 +138,10 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
                 child: Text(
                   settlement.note!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.inkMuted, height: 1.4),
+                  style: const TextStyle(
+                    color: AppColors.inkMuted,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
@@ -144,17 +153,21 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
               OutlinedButton.icon(
                 onPressed: _busy ? null : _undo,
                 icon: const Icon(Icons.undo, size: 20),
-                label: Text(_busy ? 'Undoing…' : 'Undo this repayment'),
+                label: Text(_busy ? l10n.settleUndoing : l10n.settleUndoAction),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                   foregroundColor: AppColors.terracotta,
-                  side: BorderSide(color: AppColors.terracotta.withValues(alpha: 0.4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: BorderSide(
+                    color: AppColors.terracotta.withValues(alpha: 0.4),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               )
             else
               Text(
-                'Only ${name(settlement.fromUserId).toLowerCase()} can undo this.',
+                l10n.settleOnlySenderCanUndo(name(settlement.fromUserId)),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
               ),

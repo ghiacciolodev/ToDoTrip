@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_messages.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/colors.dart';
-
-/// Turns an API failure into copy a user can act on.
-///
-/// The backend answers "Invalid credentials" for both a wrong password and an
-/// unknown email, deliberately, so that responses cannot be used to discover
-/// which addresses are registered. The wording here preserves that ambiguity.
-String _friendlyError(Object error) {
-  if (error is! ApiException) return 'Something went wrong. Please try again.';
-
-  return switch (error.statusCode) {
-    401 => 'Incorrect email or password',
-    409 => 'This email is already registered',
-    422 => error.fieldErrors?.values.firstOrNull ?? 'Please check the details you entered',
-    _ => error.message,
-  };
-}
+import '../../../l10n/app_localizations.dart';
 
 /// Sign in and sign up on one screen.
 ///
@@ -76,7 +61,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
       // On success the router redirects and this widget is disposed.
     } catch (error) {
-      if (mounted) setState(() => _error = _friendlyError(error));
+      if (mounted) setState(() => _error = friendlyError(context, error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -95,6 +80,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -111,15 +97,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     const _Logo(),
                     const SizedBox(height: 40),
                     Text(
-                      _isRegistering ? 'Create your account' : 'Welcome back',
+                      _isRegistering
+                          ? l10n.authCreateAccount
+                          : l10n.authWelcomeBack,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Plan trips together with your friends',
+                    Text(
+                      l10n.authTagline,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.inkMuted),
                     ),
@@ -130,10 +117,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         controller: _displayName,
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(labelText: 'Name'),
+                        decoration: InputDecoration(
+                          labelText: l10n.authNameLabel,
+                        ),
                         onChanged: (_) => _clearError(),
-                        validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Enter your name' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? l10n.authNameEmpty
+                            : null,
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -143,14 +133,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(labelText: 'Email'),
+                      decoration: InputDecoration(
+                        labelText: l10n.authEmailLabel,
+                      ),
                       // Cleared on edit: the banner refers to the previous
                       // attempt, and stale errors read as broken UI.
                       onChanged: (_) => _clearError(),
                       validator: (v) {
                         final value = v?.trim() ?? '';
-                        if (value.isEmpty) return 'Enter your email';
-                        if (!value.contains('@')) return 'Enter a valid email';
+                        if (value.isEmpty) return l10n.authEmailEmpty;
+                        if (!value.contains('@')) return l10n.authEmailInvalid;
                         return null;
                       },
                     ),
@@ -163,9 +155,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       onFieldSubmitted: (_) => _busy ? null : _submit(),
                       onChanged: (_) => _clearError(),
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: l10n.authPasswordLabel,
                         suffixIcon: IconButton(
-                          tooltip: _obscure ? 'Show password' : 'Hide password',
+                          tooltip: _obscure
+                              ? l10n.authShowPassword
+                              : l10n.authHidePassword,
                           icon: Icon(
                             _obscure ? Icons.visibility_off : Icons.visibility,
                           ),
@@ -173,11 +167,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Enter your password';
+                        if (v == null || v.isEmpty) {
+                          return l10n.authPasswordEmpty;
+                        }
                         // Mirrors the backend's minimum, so a rejection never
                         // costs a round trip.
                         if (_isRegistering && v.length < 8) {
-                          return 'At least 8 characters';
+                          return l10n.authPasswordTooShort;
                         }
                         return null;
                       },
@@ -194,14 +190,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       onPressed: _busy ? null : _submit,
                       child: _busy
                           ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        ),
-                      )
-                          : Text(_isRegistering ? 'Sign up' : 'Sign in'),
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              _isRegistering
+                                  ? l10n.authSignUp
+                                  : l10n.authSignIn,
+                            ),
                     ),
                     const SizedBox(height: 16),
 
@@ -209,8 +209,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       onPressed: _busy ? null : _toggleMode,
                       child: Text(
                         _isRegistering
-                            ? 'Already have an account? Sign in'
-                            : "Don't have an account? Sign up",
+                            ? l10n.authSwitchToSignIn
+                            : l10n.authSwitchToSignUp,
                         style: const TextStyle(color: AppColors.primaryDark),
                       ),
                     ),
@@ -246,7 +246,11 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, size: 20, color: AppColors.terracotta),
+          const Icon(
+            Icons.error_outline,
+            size: 20,
+            color: AppColors.terracotta,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -278,7 +282,11 @@ class _Logo extends StatelessWidget {
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(Icons.luggage_outlined, color: Colors.white, size: 38),
+          child: const Icon(
+            Icons.luggage_outlined,
+            color: Colors.white,
+            size: 38,
+          ),
         ),
         const SizedBox(height: 16),
         Text(

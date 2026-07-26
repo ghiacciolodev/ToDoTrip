@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/checklist.dart';
@@ -50,16 +52,16 @@ class TasksTab extends ConsumerWidget {
             child: SizedBox(
               width: double.infinity,
               child: SegmentedButton<TasksView>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: TasksView.todo,
-                    label: Text('To-do'),
-                    icon: Icon(Icons.check_circle_outline, size: 18),
+                    label: Text(AppLocalizations.of(context).tasksViewTodo),
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
                   ),
                   ButtonSegment(
                     value: TasksView.lists,
-                    label: Text('Lists'),
-                    icon: Icon(Icons.playlist_add_check, size: 18),
+                    label: Text(AppLocalizations.of(context).tasksViewLists),
+                    icon: const Icon(Icons.playlist_add_check, size: 18),
                   ),
                 ],
                 selected: {view},
@@ -93,18 +95,19 @@ class _TodoView extends ConsumerWidget {
     if (list == null) {
       return items.hasError
           ? ErrorState(
-        message: '${items.error}',
-        onRetry: () => ref.invalidate(itemsProvider(tripId)),
-      )
+              message: '${items.error}',
+              onRetry: () => ref.invalidate(itemsProvider(tripId)),
+            )
           : const Center(child: CircularProgressIndicator.adaptive());
     }
 
     final tasks = list.where((i) => i.isTask).toList();
     if (tasks.isEmpty) {
-      return const EmptyState(
+      final l10n = AppLocalizations.of(context);
+      return EmptyState(
         icon: Icons.check_circle_outline,
-        title: 'Nothing to do yet',
-        subtitle: 'Book the hostel, buy sunscreen,\nsplit the driving.',
+        title: l10n.tasksEmptyTitle,
+        subtitle: l10n.tasksEmptyBody,
       );
     }
 
@@ -137,7 +140,7 @@ class _TodoView extends ConsumerWidget {
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               title: Text(
-                '${done.length} completed',
+                AppLocalizations.of(context).tasksCompletedCount(done.length),
                 style: const TextStyle(fontSize: 14, color: AppColors.inkMuted),
               ),
               tilePadding: const EdgeInsets.symmetric(horizontal: 4),
@@ -169,17 +172,18 @@ class _ListsView extends ConsumerWidget {
     if (value == null) {
       return lists.hasError
           ? ErrorState(
-        message: '${lists.error}',
-        onRetry: () => ref.invalidate(checklistsProvider(tripId)),
-      )
+              message: '${lists.error}',
+              onRetry: () => ref.invalidate(checklistsProvider(tripId)),
+            )
           : const Center(child: CircularProgressIndicator.adaptive());
     }
 
     if (value.isEmpty) {
-      return const EmptyState(
+      final l10n = AppLocalizations.of(context);
+      return EmptyState(
         icon: Icons.playlist_add_check,
-        title: 'No lists yet',
-        subtitle: 'A shopping list, things to pack,\nplaces you want to try.',
+        title: l10n.listsEmptyTitle,
+        subtitle: l10n.listsEmptyBody,
       );
     }
 
@@ -202,6 +206,7 @@ class _ChecklistCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final total = checklist.entries.length;
     final left = total - checklist.checkedCount;
     final complete = total > 0 && left == 0;
@@ -214,10 +219,8 @@ class _ChecklistCard extends ConsumerWidget {
         child: InkWell(
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => ChecklistScreen(
-                tripId: tripId,
-                checklistId: checklist.id,
-              ),
+              builder: (_) =>
+                  ChecklistScreen(tripId: tripId, checklistId: checklist.id),
             ),
           ),
           onLongPress: () =>
@@ -262,17 +265,18 @@ class _ChecklistCard extends ConsumerWidget {
                           // still missing, not what is already in the basket.
                           Text(
                             switch ((total, left)) {
-                              (0, _) => 'Empty',
-                              (_, 0) => 'All done',
-                              (_, final n) => '$n left of $total',
+                              (0, _) => l10n.listEmpty,
+                              (_, 0) => l10n.listAllDone,
+                              (_, final n) => l10n.listLeftOf(n, total),
                             },
                             style: TextStyle(
                               color: complete
                                   ? AppColors.primaryDark
                                   : AppColors.inkMuted,
                               fontSize: 13,
-                              fontWeight:
-                              complete ? FontWeight.w600 : FontWeight.w400,
+                              fontWeight: complete
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                             ),
                           ),
                         ],
@@ -340,18 +344,20 @@ class _TaskCardState extends ConsumerState<_TaskCard> {
     });
 
     try {
-      await ref.read(itemRepositoryProvider).setCompleted(
-        tripId: widget.tripId,
-        itemId: widget.item.id,
-        done: _done,
-      );
+      await ref
+          .read(itemRepositoryProvider)
+          .setCompleted(
+            tripId: widget.tripId,
+            itemId: widget.item.id,
+            done: _done,
+          );
       ref.invalidate(itemsProvider(widget.tripId));
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _done = !_done);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
+          ..showSnackBar(SnackBar(content: Text(friendlyError(context, e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -474,18 +480,22 @@ class _Deadline extends StatelessWidget {
     final days = day.difference(today).inDays;
     final late = at.isBefore(now);
 
+    final l10n = AppLocalizations.of(context);
     final label = switch (days) {
-      _ when late => 'Overdue · ${DateFormat('d MMM').format(at)}',
-      0 => 'Today, ${DateFormat('HH:mm').format(at)}',
-      1 => 'Tomorrow, ${DateFormat('HH:mm').format(at)}',
+      _ when late => l10n.tasksOverdue(DateFormat('d MMM').format(at)),
+      0 => l10n.tasksDueToday(DateFormat('HH:mm').format(at)),
+      1 => l10n.tasksDueTomorrow(DateFormat('HH:mm').format(at)),
       _ => DateFormat('EEE d MMM, HH:mm').format(at),
     };
     final colour = late ? AppColors.terracotta : AppColors.inkMuted;
 
     return Row(
       children: [
-        Icon(late ? Icons.error_outline : Icons.schedule,
-            size: 13, color: colour),
+        Icon(
+          late ? Icons.error_outline : Icons.schedule,
+          size: 13,
+          color: colour,
+        ),
         const SizedBox(width: 4),
         Text(
           label,

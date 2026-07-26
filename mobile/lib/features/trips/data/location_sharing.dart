@@ -69,13 +69,11 @@ class LocationSharer {
     }
 
     await _subscription?.cancel();
-    _subscription = Geolocator.getPositionStream(locationSettings: _settings).listen(
-      (position) {
-        onFix(position);
-        unawaited(_publish(position));
-      },
-      onError: (_) {},
-    );
+    _subscription = Geolocator.getPositionStream(locationSettings: _settings)
+        .listen((position) {
+          onFix(position);
+          unawaited(_publish(position));
+        }, onError: (_) {});
     return null;
   }
 

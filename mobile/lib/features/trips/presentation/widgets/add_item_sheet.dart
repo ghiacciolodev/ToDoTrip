@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/item.dart';
@@ -19,10 +21,10 @@ enum AddKind { event, task, list }
 /// picked it by choosing a tab and a view, so asking again would be a redundant
 /// decision.
 Future<void> showAddItemSheet(
-    BuildContext context,
-    String tripId,
-    AddKind kind,
-    ) {
+  BuildContext context,
+  String tripId,
+  AddKind kind,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -86,8 +88,13 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     if (time == null || !mounted) return;
 
     setState(() {
-      _startsAt =
-          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _startsAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
       _error = null;
     });
   }
@@ -102,25 +109,26 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
 
     try {
       if (_isList) {
-        await ref.read(checklistRepositoryProvider).create(
-          tripId: widget.tripId,
-          name: _title.text.trim(),
-        );
+        await ref
+            .read(checklistRepositoryProvider)
+            .create(tripId: widget.tripId, name: _title.text.trim());
         ref.invalidate(checklistsProvider(widget.tripId));
       } else {
-        await ref.read(itemRepositoryProvider).create(
-          tripId: widget.tripId,
-          type: _isEvent ? ItemType.event : ItemType.task,
-          title: _title.text.trim(),
-          location: _isEvent ? _location.text.trim() : null,
-          startsAt: _startsAt,
-          assignedTo: _isEvent ? const [] : _assignedTo.toList(),
-        );
+        await ref
+            .read(itemRepositoryProvider)
+            .create(
+              tripId: widget.tripId,
+              type: _isEvent ? ItemType.event : ItemType.task,
+              title: _title.text.trim(),
+              location: _isEvent ? _location.text.trim() : null,
+              startsAt: _startsAt,
+              assignedTo: _isEvent ? const [] : _assignedTo.toList(),
+            );
         ref.invalidate(itemsProvider(widget.tripId));
       }
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -128,13 +136,16 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final members = ref.watch(activeMembersProvider(widget.tripId));
 
     return SafeArea(
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -144,13 +155,13 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
               children: [
                 Text(
                   switch (widget.kind) {
-                    AddKind.event => 'New event',
-                    AddKind.task => 'New task',
-                    AddKind.list => 'New list',
+                    AddKind.event => l10n.itemNewEvent,
+                    AddKind.task => l10n.itemNewTask,
+                    AddKind.list => l10n.itemNewList,
                   },
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 20),
 
@@ -158,17 +169,18 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   controller: _title,
                   textCapitalization: TextCapitalization.sentences,
                   // A list is one field, so the keyboard can submit it.
-                  textInputAction:
-                  _isList ? TextInputAction.done : TextInputAction.next,
+                  textInputAction: _isList
+                      ? TextInputAction.done
+                      : TextInputAction.next,
                   onSubmitted: _isList ? (_) => _save() : null,
                   onChanged: (_) => setState(() => _error = null),
                   decoration: InputDecoration(
                     labelText: switch (widget.kind) {
-                      AddKind.event => 'What is happening?',
-                      AddKind.task => 'What needs doing?',
-                      AddKind.list => 'What is the list for?',
+                      AddKind.event => l10n.itemEventLabel,
+                      AddKind.task => l10n.itemTaskLabel,
+                      AddKind.list => l10n.itemListLabel,
                     },
-                    hintText: _isList ? 'Groceries' : null,
+                    hintText: _isList ? l10n.itemListHint : null,
                   ),
                 ),
                 if (!_isList) const SizedBox(height: 12),
@@ -179,7 +191,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                     icon: const Icon(Icons.schedule, size: 18),
                     label: Text(
                       _startsAt == null
-                          ? 'Pick a date and time'
+                          ? l10n.itemPickDateTime
                           : DateFormat('EEE d MMM, HH:mm').format(_startsAt!),
                     ),
                     style: _outlinedStyle(active: _startsAt != null),
@@ -188,8 +200,8 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   TextField(
                     controller: _location,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Where? (optional)',
+                    decoration: InputDecoration(
+                      labelText: l10n.itemWhereOptional,
                       prefixIcon: Icon(Icons.place_outlined, size: 20),
                     ),
                   ),
@@ -202,7 +214,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                     icon: const Icon(Icons.schedule, size: 18),
                     label: Text(
                       _startsAt == null
-                          ? 'Add a deadline (optional)'
+                          ? l10n.itemAddDeadline
                           : DateFormat('EEE d MMM, HH:mm').format(_startsAt!),
                     ),
                     style: _outlinedStyle(active: _startsAt != null),
@@ -212,8 +224,8 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () => setState(() => _startsAt = null),
-                        child: const Text(
-                          'Clear',
+                        child: Text(
+                          l10n.commonClear,
                           style: TextStyle(color: AppColors.inkMuted),
                         ),
                       ),
@@ -221,10 +233,10 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'ASSIGN TO',
-                          style: TextStyle(
+                          l10n.itemAssignTo,
+                          style: const TextStyle(
                             color: AppColors.inkMuted,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -280,8 +292,8 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   ),
                   if (_assignedTo.isEmpty) ...[
                     const SizedBox(height: 8),
-                    const Text(
-                      'Leave empty and anyone can pick it up.',
+                    Text(
+                      l10n.itemAssignHint,
                       style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
                     ),
                   ],
@@ -292,8 +304,11 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 18, color: AppColors.terracotta),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        color: AppColors.terracotta,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -314,16 +329,18 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                   onPressed: (_canSave && !_busy) ? _save : null,
                   child: _busy
                       ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.4, color: Colors.white),
-                  )
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(switch (widget.kind) {
-                    AddKind.event => 'Add event',
-                    AddKind.task => 'Add task',
-                    AddKind.list => 'Add list',
-                  }),
+                          AddKind.event => l10n.itemAddEvent,
+                          AddKind.task => l10n.itemAddTask,
+                          AddKind.list => l10n.itemAddList,
+                        }),
                 ),
               ],
             ),

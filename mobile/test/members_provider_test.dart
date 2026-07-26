@@ -9,7 +9,12 @@ import 'package:todotrip/features/trips/providers.dart';
 /// be assigned.
 void main() {
   TripMember member(String id, {DateTime? leftAt}) => TripMember(
-    user: User(id: id, email: '$id@test.it', displayName: id, createdAt: DateTime(2026)),
+    user: User(
+      id: id,
+      email: '$id@test.it',
+      displayName: id,
+      createdAt: DateTime(2026),
+    ),
     role: MemberRole.member,
     joinedAt: DateTime(2026),
     leftAt: leftAt,
@@ -17,7 +22,9 @@ void main() {
 
   Future<ProviderContainer> containerWith(List<TripMember> members) async {
     final container = ProviderContainer(
-      overrides: [tripMembersProvider('t').overrideWith((ref) async => members)],
+      overrides: [
+        tripMembersProvider('t').overrideWith((ref) async => members),
+      ],
     );
     addTearDown(container.dispose);
     await container.read(tripMembersProvider('t').future);
@@ -30,10 +37,9 @@ void main() {
       member('giulia', leftAt: DateTime(2026, 7, 20)),
     ]);
 
-    expect(
-      container.read(activeMembersProvider('t')).map((m) => m.user.id),
-      ['luca'],
-    );
+    expect(container.read(activeMembersProvider('t')).map((m) => m.user.id), [
+      'luca',
+    ]);
   });
 
   test('the lookup still resolves someone who has gone', () async {

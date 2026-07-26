@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/money.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
@@ -36,17 +37,19 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
   Future<void> _markPaid(TransferSuggestion transfer) async {
     setState(() => _settling = transfer.toUserId);
     try {
-      await ref.read(expenseRepositoryProvider).settle(
-        tripId: widget.tripId,
-        toUserId: transfer.toUserId,
-        amountCents: transfer.amountCents,
-      );
+      await ref
+          .read(expenseRepositoryProvider)
+          .settle(
+            tripId: widget.tripId,
+            toUserId: transfer.toUserId,
+            amountCents: transfer.amountCents,
+          );
       invalidateMoney(ref, widget.tripId);
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
+          ..showSnackBar(SnackBar(content: Text(friendlyError(context, e))));
       }
     } finally {
       if (mounted) setState(() => _settling = null);
@@ -55,12 +58,15 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final report = ref.watch(balanceProvider(widget.tripId)).value;
     final lookup = ref.watch(memberLookupProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
 
-    final transfers = report?.suggestedTransfers ?? const <TransferSuggestion>[];
-    final expenseCount = ref.watch(expensesProvider(widget.tripId)).value?.length ?? 0;
+    final transfers =
+        report?.suggestedTransfers ?? const <TransferSuggestion>[];
+    final expenseCount =
+        ref.watch(expensesProvider(widget.tripId)).value?.length ?? 0;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -71,25 +77,25 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Settle up',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                l10n.settleTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'The simplest way to clear everything:',
+              Text(
+                l10n.settleBody,
                 style: TextStyle(color: AppColors.inkMuted),
               ),
               const SizedBox(height: 20),
 
               if (transfers.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Text(
-                      'Everyone is square.',
-                      style: TextStyle(color: AppColors.inkMuted),
+                      l10n.settleAllSquare,
+                      style: const TextStyle(color: AppColors.inkMuted),
                     ),
                   ),
                 )
@@ -97,11 +103,13 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                 for (final transfer in transfers) ...[
                   _TransferRow(
                     from: transfer.fromUserId == myId
-                        ? 'You'
-                        : lookup[transfer.fromUserId]?.user.displayName ?? 'Someone',
+                        ? l10n.commonYou
+                        : lookup[transfer.fromUserId]?.user.displayName ??
+                              l10n.commonSomeone,
                     to: transfer.toUserId == myId
-                        ? 'you'
-                        : lookup[transfer.toUserId]?.user.displayName ?? 'someone',
+                        ? l10n.commonYouLower
+                        : lookup[transfer.toUserId]?.user.displayName ??
+                              l10n.commonSomeoneLower,
                     amount: Money(transfer.amountCents),
                     // Only the sender can record a repayment: the API takes the
                     // payer from the token, so nobody can settle on someone
@@ -117,8 +125,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                 // The plain-language version of what the algorithm just did.
                 if (expenseCount > transfers.length)
                   Text(
-                    '${transfers.length} ${transfers.length == 1 ? 'payment' : 'payments'} '
-                        'instead of $expenseCount',
+                    l10n.settleSummary(transfers.length, expenseCount),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: AppColors.inkMuted,
@@ -152,6 +159,7 @@ class _TransferRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -175,8 +183,11 @@ class _TransferRow extends StatelessWidget {
                     ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.arrow_forward,
-                          size: 16, color: AppColors.inkMuted),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: AppColors.inkMuted,
+                      ),
                     ),
                     Flexible(
                       child: Text(
@@ -203,15 +214,19 @@ class _TransferRow extends StatelessWidget {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: busy ? null : onMarkPaid,
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+              ),
               child: busy
                   ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.4, color: Colors.white),
-              )
-                  : const Text('Mark as paid'),
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(l10n.settleMarkAsPaid),
             ),
           ],
         ],

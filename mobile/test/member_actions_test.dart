@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/features/auth/data/user.dart';
 import 'package:todotrip/features/trips/data/trip_member.dart';
 import 'package:todotrip/features/trips/presentation/widgets/member_actions.dart';
@@ -11,7 +12,12 @@ import 'package:todotrip/features/trips/providers.dart';
 /// reject, so every combination is pinned down here.
 void main() {
   TripMember member(String id, String name, MemberRole role) => TripMember(
-    user: User(id: id, email: '$id@test.it', displayName: name, createdAt: DateTime(2026)),
+    user: User(
+      id: id,
+      email: '$id@test.it',
+      displayName: name,
+      createdAt: DateTime(2026),
+    ),
     role: role,
     joinedAt: DateTime(2026),
   );
@@ -33,6 +39,8 @@ void main() {
           myMembershipProvider('t').overrideWithValue(me),
         ],
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
@@ -78,11 +86,16 @@ void main() {
     expect(find.text('Leave trip'), findsOne);
   });
 
-  testWidgets('the last member leaves and takes the trip with them', (tester) async {
+  testWidgets('the last member leaves and takes the trip with them', (
+    tester,
+  ) async {
     await open(tester, members: [owner], me: owner, target: owner);
 
     expect(find.text('Leave and delete trip'), findsOne);
-    expect(find.text("You're the only one left, so the trip goes too."), findsOne);
+    expect(
+      find.text("You're the only one left, so the trip goes too."),
+      findsOne,
+    );
   });
 
   testWidgets('a plain member can leave', (tester) async {
@@ -92,7 +105,9 @@ void main() {
     expect(find.text('Make owner'), findsNothing);
   });
 
-  testWidgets('someone removed while the sheet opens is reported', (tester) async {
+  testWidgets('someone removed while the sheet opens is reported', (
+    tester,
+  ) async {
     await open(tester, members: [owner], me: owner, target: plain);
 
     expect(find.text('This person is no longer in the trip.'), findsOne);
@@ -101,8 +116,11 @@ void main() {
   testWidgets('a former member is not offered any action', (tester) async {
     /// They stay in the list so old expenses can name them; there is nothing
     /// left to do to them.
-    final left = member('u3', 'Giulia', MemberRole.member)
-        .copyWith(leftAt: DateTime(2026, 7, 20));
+    final left = member(
+      'u3',
+      'Giulia',
+      MemberRole.member,
+    ).copyWith(leftAt: DateTime(2026, 7, 20));
     await open(tester, members: [owner, left], me: owner, target: left);
 
     expect(find.text('This person is no longer in the trip.'), findsOne);

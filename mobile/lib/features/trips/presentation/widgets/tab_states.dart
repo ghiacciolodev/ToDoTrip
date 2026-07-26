@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 
 import '../../../../core/theme/colors.dart';
 
@@ -63,11 +64,7 @@ class EmptyState extends StatelessWidget {
 }
 
 class ErrorState extends StatelessWidget {
-  const ErrorState({
-    super.key,
-    required this.message,
-    required this.onRetry,
-  });
+  const ErrorState({super.key, required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -89,7 +86,10 @@ class ErrorState extends StatelessWidget {
                 style: const TextStyle(color: AppColors.inkMuted),
               ),
               const SizedBox(height: 20),
-              OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: Text(AppLocalizations.of(context).commonTryAgain),
+              ),
             ],
           ),
         ),

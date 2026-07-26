@@ -6,7 +6,11 @@ import 'package:flutter/material.dart';
 /// the app refetches at the moments a user would expect data to be current:
 /// reopening the app, and switching to a tab.
 class RefreshOnResume extends StatefulWidget {
-  const RefreshOnResume({super.key, required this.onResume, required this.child});
+  const RefreshOnResume({
+    super.key,
+    required this.onResume,
+    required this.child,
+  });
 
   final VoidCallback onResume;
   final Widget child;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/colors.dart';
@@ -27,8 +28,11 @@ class TripCard extends StatelessWidget {
                   color: AppColors.primaryTint,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.luggage_outlined,
-                    color: AppColors.primaryDark, size: 24),
+                child: const Icon(
+                  Icons.luggage_outlined,
+                  color: AppColors.primaryDark,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -45,7 +49,7 @@ class TripCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      _dateRange(trip),
+                      _dateRange(context, trip),
                       style: const TextStyle(
                         color: AppColors.inkMuted,
                         fontSize: 13,
@@ -64,10 +68,11 @@ class TripCard extends StatelessWidget {
 
   /// Collapses the range when both dates fall in the same month: "12 – 18 Aug"
   /// rather than "12 Aug – 18 Aug".
-  static String _dateRange(Trip trip) {
+  static String _dateRange(BuildContext context, Trip trip) {
+    final l10n = AppLocalizations.of(context);
     final start = trip.startDate;
     final end = trip.endDate;
-    if (start == null && end == null) return 'No dates yet';
+    if (start == null && end == null) return l10n.tripNoDates;
 
     final dayMonth = DateFormat('d MMM');
     final full = DateFormat('d MMM y');
@@ -78,7 +83,7 @@ class TripCard extends StatelessWidget {
       }
       return '${dayMonth.format(start)} – ${full.format(end)}';
     }
-    if (start != null) return 'From ${full.format(start)}';
-    return 'Until ${full.format(end!)}';
+    if (start != null) return l10n.tripDatesFrom(full.format(start));
+    return l10n.tripDatesUntil(full.format(end!));
   }
 }

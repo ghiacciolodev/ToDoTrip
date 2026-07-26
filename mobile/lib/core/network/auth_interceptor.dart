@@ -33,9 +33,9 @@ class AuthInterceptor extends Interceptor {
 
   @override
   Future<void> onRequest(
-      RequestOptions options,
-      RequestInterceptorHandler handler,
-      ) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (options.extra[skipAuth] != true) {
       final token = await storage.readAccess();
       if (token != null) {
@@ -47,11 +47,12 @@ class AuthInterceptor extends Interceptor {
 
   @override
   Future<void> onError(
-      DioException err,
-      ErrorInterceptorHandler handler,
-      ) async {
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     final options = err.requestOptions;
-    final retryable = err.response?.statusCode == 401 &&
+    final retryable =
+        err.response?.statusCode == 401 &&
         options.extra[skipAuth] != true &&
         options.extra[_retried] != true;
 

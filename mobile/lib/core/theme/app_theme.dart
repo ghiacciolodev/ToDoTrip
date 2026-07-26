@@ -13,16 +13,17 @@ abstract final class AppTheme {
   static ThemeData get light {
     // fromSeed harmonises the seed into something slightly different, so the
     // brand colour is put back explicitly.
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      onPrimary: Colors.white,
-      surface: AppColors.surface,
-      onSurface: AppColors.ink,
-      error: AppColors.terracotta,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: Colors.white,
+          surface: AppColors.surface,
+          onSurface: AppColors.ink,
+          error: AppColors.terracotta,
+        );
 
     final textTheme = GoogleFonts.interTextTheme().apply(
       bodyColor: AppColors.ink,
@@ -66,15 +67,23 @@ abstract final class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: _inputBorder(AppColors.border),
         enabledBorder: _inputBorder(AppColors.border),
         focusedBorder: _inputBorder(AppColors.primary, width: 1.6),
@@ -128,7 +137,7 @@ abstract final class AppTheme {
         height: 64,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
-              (states) => GoogleFonts.inter(
+          (states) => GoogleFonts.inter(
             fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
@@ -139,7 +148,7 @@ abstract final class AppTheme {
           ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
-              (states) => IconThemeData(
+          (states) => IconThemeData(
             size: 22,
             color: states.contains(WidgetState.selected)
                 ? AppColors.primaryDark
@@ -155,7 +164,10 @@ abstract final class AppTheme {
           selectedForegroundColor: AppColors.primaryDark,
           foregroundColor: AppColors.inkMuted,
           side: const BorderSide(color: AppColors.border),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),

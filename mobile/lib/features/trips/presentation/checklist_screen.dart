@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/error_messages.dart';
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
 import '../data/checklist.dart';
@@ -54,16 +56,18 @@ class _ChecklistScreenState extends ConsumerState<ChecklistScreen> {
     setState(() => _busy = true);
 
     try {
-      await ref.read(checklistRepositoryProvider).addEntry(
-        tripId: widget.tripId,
-        checklistId: widget.checklistId,
-        text: text,
-      );
+      await ref
+          .read(checklistRepositoryProvider)
+          .addEntry(
+            tripId: widget.tripId,
+            checklistId: widget.checklistId,
+            text: text,
+          );
       _refresh();
     } on ApiException catch (e) {
       if (mounted) {
         _text.text = text;
-        _toast(e.message);
+        _toast(friendlyError(context, e));
       }
     } finally {
       if (mounted) {
@@ -82,22 +86,26 @@ class _ChecklistScreenState extends ConsumerState<ChecklistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final lists = ref.watch(checklistsProvider(widget.tripId));
     final checklist = ref.watch(
-      checklistProvider((tripId: widget.tripId, checklistId: widget.checklistId)),
+      checklistProvider((
+        tripId: widget.tripId,
+        checklistId: widget.checklistId,
+      )),
     );
 
     // Null with data loaded means someone else deleted the list while it was
     // open; null while loading is just the first fetch.
     if (checklist == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('List')),
+        appBar: AppBar(title: Text(l10n.listTitle)),
         body: lists.hasValue
-            ? const EmptyState(
-          icon: Icons.playlist_remove,
-          title: 'This list is gone',
-          subtitle: 'Someone in the group deleted it.',
-        )
+            ? EmptyState(
+                icon: Icons.playlist_remove,
+                title: l10n.listGoneTitle,
+                subtitle: l10n.listGoneBody,
+              )
             : const Center(child: CircularProgressIndicator.adaptive()),
       );
     }
@@ -109,8 +117,11 @@ class _ChecklistScreenState extends ConsumerState<ChecklistScreen> {
             Text(checklist.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(
               checklist.entries.isEmpty
-                  ? 'Empty'
-                  : '${checklist.checkedCount} of ${checklist.entries.length}',
+                  ? l10n.listEmpty
+                  : l10n.listProgress(
+                      checklist.checkedCount,
+                      checklist.entries.length,
+                    ),
               style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
             ),
           ],
@@ -143,10 +154,11 @@ class _Entries extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (checklist.entries.isEmpty) {
-      return const EmptyState(
+      final l10n = AppLocalizations.of(context);
+      return EmptyState(
         icon: Icons.check_box_outlined,
-        title: 'Nothing on it yet',
-        subtitle: 'Type below and tap +.\nThe field stays ready for the next one.',
+        title: l10n.listEntriesEmptyTitle,
+        subtitle: l10n.listEntriesEmptyBody,
       );
     }
 
@@ -200,17 +212,19 @@ class _EntryRowState extends ConsumerState<_EntryRow> {
     });
 
     try {
-      await ref.read(checklistRepositoryProvider).setChecked(
-        tripId: widget.tripId,
-        checklistId: widget.entry.checklistId,
-        entryId: widget.entry.id,
-        checked: _checked,
-      );
+      await ref
+          .read(checklistRepositoryProvider)
+          .setChecked(
+            tripId: widget.tripId,
+            checklistId: widget.entry.checklistId,
+            entryId: widget.entry.id,
+            checked: _checked,
+          );
       ref.invalidate(checklistsProvider(widget.tripId));
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _checked = !_checked);
-        _toast(context, e.message);
+        _toast(context, friendlyError(context, e));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -253,8 +267,9 @@ class _EntryRowState extends ConsumerState<_EntryRow> {
                       widget.entry.text,
                       style: TextStyle(
                         fontSize: 15,
-                        decoration:
-                        _checked ? TextDecoration.lineThrough : null,
+                        decoration: _checked
+                            ? TextDecoration.lineThrough
+                            : null,
                         decorationColor: AppColors.inkMuted,
                         color: _checked ? AppColors.inkMuted : AppColors.ink,
                       ),
@@ -306,10 +321,12 @@ class _Composer extends StatelessWidget {
                   // dictated list never needs the screen to be touched.
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => onSubmit(),
-                  decoration: const InputDecoration(
-                    hintText: 'Add an item',
-                    contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context).listAddItem,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),

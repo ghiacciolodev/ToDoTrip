@@ -42,7 +42,8 @@ abstract class Expense with _$Expense {
     return null;
   }
 
-  factory Expense.fromJson(Map<String, dynamic> json) => _$ExpenseFromJson(json);
+  factory Expense.fromJson(Map<String, dynamic> json) =>
+      _$ExpenseFromJson(json);
 }
 
 @freezed

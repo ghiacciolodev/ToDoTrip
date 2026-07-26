@@ -11,6 +11,8 @@ dependencies:
   dio_cache_interceptor: ^4.0.7
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   flutter_map: ^8.3.1
   flutter_map_cache: ^2.1.0
   flutter_map_marker_cluster: ^8.2.2
@@ -20,10 +22,11 @@ dependencies:
   geolocator: ^14.0.3
   go_router: ^17.3.0
   google_fonts: ^8.2.0
-  intl: ^0.20.3
+  intl: ^0.20.2
   json_annotation: ^4.12.0
   latlong2: ^0.9.1
   riverpod_annotation: ^4.0.3
+  shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
 
 dev_dependencies:
@@ -37,3 +40,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Builds AppLocalizations from the ARB files in lib/l10n on every build.
+  generate: true

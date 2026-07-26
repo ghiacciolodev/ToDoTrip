@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/invite.dart';
 import '../../providers.dart';
@@ -33,7 +35,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
       await ref.read(tripRepositoryProvider).createInvite(widget.tripId);
       ref.invalidate(tripInvitesProvider(widget.tripId));
     } on ApiException catch (e) {
-      if (mounted) _toast(e.message);
+      if (mounted) _toast(friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _creating = false);
     }
@@ -41,10 +43,12 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
 
   Future<void> _revoke(Invite invite) async {
     try {
-      await ref.read(tripRepositoryProvider).revokeInvite(widget.tripId, invite.id);
+      await ref
+          .read(tripRepositoryProvider)
+          .revokeInvite(widget.tripId, invite.id);
       ref.invalidate(tripInvitesProvider(widget.tripId));
     } on ApiException catch (e) {
-      if (mounted) _toast(e.message);
+      if (mounted) _toast(friendlyError(context, e));
     }
   }
 
@@ -56,8 +60,11 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final invites = ref.watch(tripInvitesProvider(widget.tripId));
-    final active = (invites.value ?? const <Invite>[]).where((i) => i.isActive).toList();
+    final active = (invites.value ?? const <Invite>[])
+        .where((i) => i.isActive)
+        .toList();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -68,35 +75,39 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Invite people',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                l10n.inviteTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Share a code and anyone can join this trip.',
+              Text(
+                l10n.inviteBody,
                 style: TextStyle(color: AppColors.inkMuted),
               ),
               const SizedBox(height: 24),
 
               if (invites.isLoading)
-                const Center(child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator.adaptive(),
-                ))
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator.adaptive(),
+                  ),
+                )
               else if (active.isEmpty)
                 FilledButton.icon(
                   onPressed: _creating ? null : _createCode,
                   icon: _creating
                       ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.4, color: Colors.white),
-                  )
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.add, size: 20),
-                  label: const Text('Create an invite code'),
+                  label: Text(l10n.inviteCreate),
                 )
               else
                 for (final invite in active) ...[
@@ -109,8 +120,10 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
                 TextButton.icon(
                   onPressed: _creating ? null : _createCode,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New code'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.primaryDark),
+                  label: Text(l10n.inviteNewCode),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                  ),
                 ),
               ],
             ],
@@ -129,6 +142,7 @@ class _CodeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -152,8 +166,8 @@ class _CodeCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             invite.usesCount == 0
-                ? 'Not used yet'
-                : 'Used ${invite.usesCount} ${invite.usesCount == 1 ? 'time' : 'times'}',
+                ? l10n.inviteNotUsedYet
+                : l10n.inviteUsedCount(invite.usesCount),
             style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
           ),
           const SizedBox(height: 16),
@@ -165,10 +179,12 @@ class _CodeCard extends StatelessWidget {
                     Clipboard.setData(ClipboardData(text: invite.code));
                     ScaffoldMessenger.of(context)
                       ..hideCurrentSnackBar()
-                      ..showSnackBar(const SnackBar(content: Text('Code copied')));
+                      ..showSnackBar(
+                        SnackBar(content: Text(l10n.inviteCodeCopied)),
+                      );
                   },
                   icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('Copy'),
+                  label: Text(l10n.commonCopy),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(46),
                   ),
@@ -179,12 +195,14 @@ class _CodeCard extends StatelessWidget {
               // killable.
               IconButton.outlined(
                 onPressed: onRevoke,
-                tooltip: 'Revoke this code',
+                tooltip: l10n.inviteRevoke,
                 icon: const Icon(Icons.link_off, size: 20),
                 style: IconButton.styleFrom(
                   minimumSize: const Size(46, 46),
                   foregroundColor: AppColors.terracotta,
-                  side: BorderSide(color: AppColors.terracotta.withValues(alpha: 0.4)),
+                  side: BorderSide(
+                    color: AppColors.terracotta.withValues(alpha: 0.4),
+                  ),
                 ),
               ),
             ],

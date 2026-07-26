@@ -86,8 +86,9 @@ class TripEventsChannel with WidgetsBindingObserver {
       final token = await storage.readAccess();
       if (token == null || _disposed) return;
 
-      final socket =
-      await WebSocket.connect('${AppConfig.wsBaseUrl}/trips/$tripId/events');
+      final socket = await WebSocket.connect(
+        '${AppConfig.wsBaseUrl}/trips/$tripId/events',
+      );
       // Keeps proxies and NAT routers from reaping the connection as idle.
       socket.pingInterval = const Duration(seconds: 30);
       _socket = socket;

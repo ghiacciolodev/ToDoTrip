@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/money.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/trip.dart';
@@ -23,10 +25,10 @@ enum MemberAction { makeOwner, remove, leave }
 /// Only the choice: the confirmations and the requests run in the caller's
 /// context, which survives the sheet closing and can still navigate afterwards.
 Future<MemberAction?> showMemberActionsSheet(
-    BuildContext context,
-    String tripId,
-    String userId,
-    ) {
+  BuildContext context,
+  String tripId,
+  String userId,
+) {
   return showModalBottomSheet<MemberAction>(
     context: context,
     builder: (_) => _MemberActionsSheet(tripId: tripId, userId: userId),
@@ -41,6 +43,7 @@ class _MemberActionsSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final members = ref.watch(activeMembersProvider(tripId));
     final me = ref.watch(myMembershipProvider(tripId));
 
@@ -51,13 +54,13 @@ class _MemberActionsSheet extends ConsumerWidget {
 
     // Removed by someone else while the sheet was opening.
     if (target == null || me == null) {
-      return const _Sheet(
+      return _Sheet(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'This person is no longer in the trip.',
-              style: TextStyle(color: AppColors.inkMuted),
+              l10n.memberNoLongerHere,
+              style: const TextStyle(color: AppColors.inkMuted),
             ),
           ),
         ],
@@ -78,25 +81,27 @@ class _MemberActionsSheet extends ConsumerWidget {
         if (iAmOwner && !isMe) ...[
           _ActionRow(
             icon: Icons.workspace_premium_outlined,
-            label: 'Make owner',
-            detail: 'They take over the trip, you become a member.',
+            label: l10n.memberMakeOwner,
+            detail: l10n.memberMakeOwnerDetail,
             onTap: () => Navigator.of(context).pop(MemberAction.makeOwner),
           ),
           _ActionRow(
             icon: Icons.person_remove_outlined,
-            label: 'Remove from trip',
-            detail: 'They lose access immediately.',
+            label: l10n.memberRemove,
+            detail: l10n.memberRemoveDetail,
             destructive: true,
             onTap: () => Navigator.of(context).pop(MemberAction.remove),
           ),
         ] else if (isMe) ...[
           _ActionRow(
             icon: Icons.exit_to_app,
-            label: members.length == 1 ? 'Leave and delete trip' : 'Leave trip',
+            label: members.length == 1
+                ? l10n.memberLeaveAndDelete
+                : l10n.groupLeaveTrip,
             detail: blockedByOwnership
-                ? "You're the owner. Make someone else the owner first."
+                ? l10n.memberLeaveBlocked
                 : members.length == 1
-                ? "You're the only one left, so the trip goes too."
+                ? l10n.memberLeaveLastOne
                 : null,
             destructive: true,
             onTap: blockedByOwnership
@@ -104,11 +109,11 @@ class _MemberActionsSheet extends ConsumerWidget {
                 : () => Navigator.of(context).pop(MemberAction.leave),
           ),
         ] else
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Only the owner can manage members.',
-              style: TextStyle(color: AppColors.inkMuted),
+              l10n.memberOwnerOnly,
+              style: const TextStyle(color: AppColors.inkMuted),
             ),
           ),
       ],
@@ -144,13 +149,17 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         CircleAvatar(
           backgroundColor: avatarColorFor(member.user.id),
           child: Text(
             initialsFor(member.user.displayName),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -159,15 +168,19 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isMe ? '${member.user.displayName} (you)' : member.user.displayName,
+                isMe
+                    ? '${member.user.displayName} (you)'
+                    : member.user.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               Text(
-                member.role == MemberRole.owner ? 'Owner' : 'Member',
+                member.role == MemberRole.owner
+                    ? l10n.commonOwner
+                    : l10n.commonMember,
                 style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
               ),
             ],
@@ -248,12 +261,12 @@ class _ActionRow extends StatelessWidget {
 }
 
 Future<bool> _confirm(
-    BuildContext context, {
-      required String title,
-      required String message,
-      required String action,
-      bool destructive = true,
-    }) async {
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String action,
+  bool destructive = true,
+}) async {
   final confirmed = await showAdaptiveDialog<bool>(
     context: context,
     builder: (context) => AlertDialog.adaptive(
@@ -262,7 +275,7 @@ Future<bool> _confirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
@@ -301,11 +314,11 @@ Future<void> _explain(BuildContext context, String title, String message) {
 /// Turns an `outstanding_balance` conflict into the sentence the user needs:
 /// who, how much, and which direction.
 String _balanceMessage(
-    ApiException error, {
-      required String name,
-      required bool isYou,
-      required String action,
-    }) {
+  ApiException error, {
+  required String name,
+  required bool isYou,
+  required String action,
+}) {
   final cents = (error.details?['balance_cents'] as num?)?.toInt() ?? 0;
   final amount = Money(cents.abs()).formatted;
   final owing = cents < 0;
@@ -324,20 +337,22 @@ void _toast(BuildContext context, String message) {
 }
 
 Future<void> confirmMakeOwner(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    TripMember target,
-    ) async {
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  TripMember target,
+) async {
+  final l10n = AppLocalizations.of(context);
   final name = target.user.displayName;
   final confirmed = await _confirm(
     context,
-    title: 'Make $name the owner?',
+    title: l10n.memberMakeOwnerTitle(name),
     // Says what is given up, not just what is granted: this is one-way unless
     // the new owner hands it back.
-    message: '$name will be able to invite people, remove members and delete '
+    message:
+        '$name will be able to invite people, remove members and delete '
         'the trip. You become a regular member, and only $name can give it back.',
-    action: 'Make owner',
+    action: l10n.memberMakeOwner,
     destructive: false,
   );
   if (!confirmed || !context.mounted) return;
@@ -346,23 +361,25 @@ Future<void> confirmMakeOwner(
     await ref.read(tripRepositoryProvider).makeOwner(tripId, target.user.id);
     ref.invalidate(tripMembersProvider(tripId));
   } on ApiException catch (e) {
-    if (context.mounted) _toast(context, e.message);
+    if (context.mounted) _toast(context, friendlyError(context, e));
   }
 }
 
 Future<void> confirmRemoveMember(
-    BuildContext context,
-    WidgetRef ref,
-    String tripId,
-    TripMember target,
-    ) async {
+  BuildContext context,
+  WidgetRef ref,
+  String tripId,
+  TripMember target,
+) async {
+  final l10n = AppLocalizations.of(context);
   final name = target.user.displayName;
   final confirmed = await _confirm(
     context,
-    title: 'Remove $name?',
-    message: 'They lose access to this trip immediately. What they added stays: '
+    title: l10n.memberRemoveTitle(name),
+    message:
+        'They lose access to this trip immediately. What they added stays: '
         'expenses, tasks and everyone else’s balances are untouched.',
-    action: 'Remove',
+    action: l10n.commonRemove,
   );
   if (!confirmed || !context.mounted) return;
 
@@ -376,33 +393,36 @@ Future<void> confirmRemoveMember(
     if (e.code == 'outstanding_balance') {
       await _explain(
         context,
-        'Not settled up',
+        l10n.memberNotSettledTitle,
         _balanceMessage(e, name: name, isYou: false, action: 'removing them'),
       );
     } else {
-      _toast(context, e.message);
+      _toast(context, friendlyError(context, e));
     }
   }
 }
 
 /// Leaves the trip — or deletes it, when the caller is the last member.
 Future<void> confirmLeaveTrip(
-    BuildContext context,
-    WidgetRef ref, {
-      required Trip trip,
-      required int memberCount,
-    }) async {
+  BuildContext context,
+  WidgetRef ref, {
+  required Trip trip,
+  required int memberCount,
+}) async {
+  final l10n = AppLocalizations.of(context);
   final alone = memberCount <= 1;
   final confirmed = await _confirm(
     context,
-    title: alone ? 'Leave and delete ${trip.name}?' : 'Leave ${trip.name}?',
+    title: alone
+        ? l10n.memberLeaveDeleteTitle(trip.name)
+        : l10n.memberLeaveTitle(trip.name),
     message: alone
         ? "You're the only one left. Leaving will delete this trip and "
-        'everything in it: expenses, calendar, tasks and lists. '
-        'It cannot be undone.'
+              'everything in it: expenses, calendar, tasks and lists. '
+              'It cannot be undone.'
         : "You'll lose access to the plan and expenses. Anything you already "
-        'added stays with the group.',
-    action: alone ? 'Leave and delete' : 'Leave',
+              'added stays with the group.',
+    action: alone ? l10n.memberLeaveDeleteAction : l10n.memberLeaveAction,
   );
   if (!confirmed || !context.mounted) return;
 
@@ -416,18 +436,18 @@ Future<void> confirmLeaveTrip(
       case 'outstanding_balance':
         await _explain(
           context,
-          'Not settled up',
+          l10n.memberNotSettledTitle,
           _balanceMessage(e, name: 'You', isYou: true, action: 'leaving'),
         );
       case 'owner_must_transfer':
         await _explain(
           context,
-          "You're the owner",
+          l10n.memberOwnerTitle,
           'Make someone else the owner before leaving, so the group keeps '
-              'someone who can manage the trip.',
+          'someone who can manage the trip.',
         );
       default:
-        _toast(context, e.message);
+        _toast(context, friendlyError(context, e));
     }
   }
 }

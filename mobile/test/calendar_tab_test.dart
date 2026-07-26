@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/features/trips/data/item.dart';
 import 'package:todotrip/features/trips/presentation/tabs/calendar_tab.dart';
 import 'package:todotrip/features/trips/providers.dart';
@@ -22,10 +23,12 @@ void main() {
   Future<void> pump(WidgetTester tester, List<Item> items) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          itemsProvider('t').overrideWith((ref) async => items),
-        ],
-        child: const MaterialApp(home: Scaffold(body: CalendarTab(tripId: 't'))),
+        overrides: [itemsProvider('t').overrideWith((ref) async => items)],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: CalendarTab(tripId: 't')),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -33,14 +36,19 @@ void main() {
 
   testWidgets('shows an event', (tester) async {
     await pump(tester, [
-      event(title: 'Volo per Lisbona', at: DateTime.now().add(const Duration(days: 3))),
+      event(
+        title: 'Volo per Lisbona',
+        at: DateTime.now().add(const Duration(days: 3)),
+      ),
     ]);
 
     expect(tester.takeException(), isNull);
     expect(find.text('Volo per Lisbona'), findsOne);
   });
 
-  testWidgets('shows the empty state when there are only tasks', (tester) async {
+  testWidgets('shows the empty state when there are only tasks', (
+    tester,
+  ) async {
     await pump(tester, [
       Item(
         id: 'i1',

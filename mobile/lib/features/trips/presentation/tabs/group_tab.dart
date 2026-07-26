@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
@@ -21,6 +23,7 @@ class GroupTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final trip = ref.watch(tripProvider(tripId)).value;
     // Only who is still here: former members exist to name old expenses, not to
     // be listed as part of the group.
@@ -42,7 +45,7 @@ class GroupTab extends ConsumerWidget {
           _TripCard(trip: trip),
           const SizedBox(height: 24),
 
-          _SectionLabel('${members.length} ${members.length == 1 ? 'person' : 'people'}'),
+          _SectionLabel(l10n.groupPeopleCount(members.length)),
           Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -55,7 +58,8 @@ class GroupTab extends ConsumerWidget {
                     // Nothing to offer a member looking at someone else, so the
                     // row stays inert rather than opening an empty sheet.
                     onTap: (isOwner || member.user.id == me?.user.id)
-                        ? () => _openActions(context, ref, trip, members, member)
+                        ? () =>
+                              _openActions(context, ref, trip, members, member)
                         : null,
                   ),
                 ],
@@ -68,25 +72,25 @@ class GroupTab extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => showInviteSheet(context, tripId),
               icon: const Icon(Icons.person_add_alt, size: 20),
-              label: const Text('Invite people'),
+              label: Text(l10n.groupInvitePeople),
             ),
           ],
 
           const SizedBox(height: 40),
-          const _SectionLabel('Danger zone'),
+          _SectionLabel(l10n.groupDangerZone),
           // Owners are shown Delete instead of Leave: the backend rejects an
           // owner leaving with 409, and a button that always fails is worse
           // than no button.
           if (isOwner)
             _DangerButton(
               icon: Icons.delete_outline,
-              label: 'Delete trip',
+              label: l10n.groupDeleteTrip,
               onPressed: () => _confirmDelete(context, ref, trip),
             )
           else
             _DangerButton(
               icon: Icons.exit_to_app,
-              label: 'Leave trip',
+              label: l10n.groupLeaveTrip,
               onPressed: () => confirmLeaveTrip(
                 context,
                 ref,
@@ -102,13 +106,17 @@ class GroupTab extends ConsumerWidget {
   /// Opens the actions for one member. What it offers depends on who the caller
   /// is and who they tapped, so the sheet decides and this only runs the choice.
   Future<void> _openActions(
-      BuildContext context,
-      WidgetRef ref,
-      Trip trip,
-      List<TripMember> members,
-      TripMember member,
-      ) async {
-    final action = await showMemberActionsSheet(context, tripId, member.user.id);
+    BuildContext context,
+    WidgetRef ref,
+    Trip trip,
+    List<TripMember> members,
+    TripMember member,
+  ) async {
+    final action = await showMemberActionsSheet(
+      context,
+      tripId,
+      member.user.id,
+    );
     if (action == null || !context.mounted) return;
 
     switch (action) {
@@ -117,29 +125,39 @@ class GroupTab extends ConsumerWidget {
       case MemberAction.remove:
         await confirmRemoveMember(context, ref, tripId, member);
       case MemberAction.leave:
-        await confirmLeaveTrip(context, ref, trip: trip, memberCount: members.length);
+        await confirmLeaveTrip(
+          context,
+          ref,
+          trip: trip,
+          memberCount: members.length,
+        );
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Trip trip) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Trip trip,
+  ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showAdaptiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
-        title: Text('Delete ${trip.name}?'),
+        title: Text(l10n.tripDeleteTitle(trip.name)),
         // Names what is lost, and for whom: this destroys other people's
         // expense history, not just the caller's.
-        content: const Text(
-          'This permanently deletes the plan, every expense and everyone\u2019s '
-              'balances. It cannot be undone.',
-        ),
+        content: Text(l10n.tripDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.terracotta)),
+            child: Text(
+              l10n.commonDelete,
+              style: const TextStyle(color: AppColors.terracotta),
+            ),
           ),
         ],
       ),
@@ -151,7 +169,7 @@ class GroupTab extends ConsumerWidget {
       ref.invalidate(tripsProvider);
       if (context.mounted) context.go('/trips');
     } on ApiException catch (e) {
-      if (context.mounted) _toast(context, e.message);
+      if (context.mounted) _toast(context, friendlyError(context, e));
     }
   }
 
@@ -177,27 +195,39 @@ class _TripCard extends StatelessWidget {
           children: [
             Text(
               trip.name,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined,
-                    size: 15, color: AppColors.inkMuted),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 15,
+                  color: AppColors.inkMuted,
+                ),
                 const SizedBox(width: 6),
                 Text(
-                  _dates(trip),
-                  style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                  _dates(context, trip),
+                  style: const TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(Icons.payments_outlined,
-                    size: 15, color: AppColors.inkMuted),
+                const Icon(
+                  Icons.payments_outlined,
+                  size: 15,
+                  color: AppColors.inkMuted,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   trip.baseCurrency,
-                  style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -214,11 +244,13 @@ class _TripCard extends StatelessWidget {
     );
   }
 
-  static String _dates(Trip trip) {
+  static String _dates(BuildContext context, Trip trip) {
     final full = DateFormat('d MMM y');
     final start = trip.startDate;
     final end = trip.endDate;
-    if (start == null && end == null) return 'No dates yet';
+    if (start == null && end == null) {
+      return AppLocalizations.of(context).tripNoDates;
+    }
     if (start != null && end != null) {
       return '${DateFormat('d MMM').format(start)} – ${full.format(end)}';
     }
@@ -243,7 +275,10 @@ class _MemberRow extends StatelessWidget {
         backgroundColor: avatarColorFor(member.user.id),
         child: Text(
           initialsFor(member.user.displayName),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       title: Row(
@@ -257,12 +292,17 @@ class _MemberRow extends StatelessWidget {
           ),
           if (isMe) ...[
             const SizedBox(width: 6),
-            const Text('(you)', style: TextStyle(color: AppColors.inkMuted, fontSize: 13)),
+            const Text(
+              '(you)',
+              style: TextStyle(color: AppColors.inkMuted, fontSize: 13),
+            ),
           ],
         ],
       ),
       subtitle: Text(
-        'Joined ${DateFormat('d MMM').format(member.joinedAt)}',
+        AppLocalizations.of(
+          context,
+        ).groupJoined(DateFormat('d MMM').format(member.joinedAt)),
         style: const TextStyle(fontSize: 12),
       ),
       trailing: Row(
@@ -290,8 +330,8 @@ class _OwnerBadge extends StatelessWidget {
         color: AppColors.primaryTint,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        'Owner',
+      child: Text(
+        AppLocalizations.of(context).commonOwner,
         style: TextStyle(
           color: AppColors.primaryDark,
           fontSize: 12,

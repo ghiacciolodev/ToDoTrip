@@ -22,5 +22,6 @@ String initialsFor(String name) {
   final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
   if (parts.isEmpty) return '?';
   if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-  return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+  return (parts.first.characters.first + parts.last.characters.first)
+      .toUpperCase();
 }

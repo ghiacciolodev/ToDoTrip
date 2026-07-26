@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/core/providers.dart';
 import 'package:todotrip/features/auth/data/user.dart';
 import 'package:todotrip/features/trips/data/expense.dart';
@@ -30,7 +31,12 @@ void main() {
   );
 
   TripMember member(String id, String name) => TripMember(
-    user: User(id: id, email: '$id@test.it', displayName: name, createdAt: DateTime(2026)),
+    user: User(
+      id: id,
+      email: '$id@test.it',
+      displayName: name,
+      createdAt: DateTime(2026),
+    ),
     role: MemberRole.member,
     joinedAt: DateTime(2026),
   );
@@ -82,7 +88,11 @@ void main() {
             (ref) async => [member('mario', 'Mario'), member('luca', 'Luca')],
           ),
         ],
-        child: const MaterialApp(home: Scaffold(body: ExpensesTab(tripId: 't'))),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: ExpensesTab(tripId: 't')),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -97,7 +107,9 @@ void main() {
     expect(find.text('Repayment'), findsOne);
   });
 
-  testWidgets('a repayment left without its expense is still visible', (tester) async {
+  testWidgets('a repayment left without its expense is still visible', (
+    tester,
+  ) async {
     /// The reported bug: the expense is gone, the repayment is not, and the
     /// balances move with nothing on screen behind them.
     await pump(tester, expenses: [], settlements: [repayment]);

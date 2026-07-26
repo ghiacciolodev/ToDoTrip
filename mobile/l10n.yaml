@@ -1,0 +1,6 @@
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+# Non-nullable getter: every screen needs the strings, so a missing delegate
+# should fail loudly at development time rather than render blanks.
+nullable-getter: false

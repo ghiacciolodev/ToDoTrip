@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -36,13 +37,15 @@ enum PinCategory {
     _ => name,
   };
 
-  String get label => switch (this) {
-    PinCategory.lodging => 'Lodging',
-    PinCategory.food => 'Food',
-    PinCategory.meetingPoint => 'Meeting point',
-    PinCategory.parking => 'Parking',
-    PinCategory.sight => 'Sight',
-    PinCategory.other => 'Other',
+  /// Takes the strings rather than reaching for a BuildContext: a model has no
+  /// business knowing about the widget tree.
+  String label(AppLocalizations l10n) => switch (this) {
+    PinCategory.lodging => l10n.pinCategoryLodging,
+    PinCategory.food => l10n.pinCategoryFood,
+    PinCategory.meetingPoint => l10n.pinCategoryMeetingPoint,
+    PinCategory.parking => l10n.pinCategoryParking,
+    PinCategory.sight => l10n.pinCategorySight,
+    PinCategory.other => l10n.pinCategoryOther,
   };
 }
 

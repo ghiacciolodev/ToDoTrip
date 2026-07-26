@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
 import '../../providers.dart';
 
@@ -49,7 +51,9 @@ class _SheetShell extends StatelessWidget {
         // smoothly instead of snapping.
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -106,16 +110,18 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
     });
 
     try {
-      await ref.read(tripRepositoryProvider).create(
-        name: _name.text.trim(),
-        startDate: _dates?.start,
-        endDate: _dates?.end,
-      );
+      await ref
+          .read(tripRepositoryProvider)
+          .create(
+            name: _name.text.trim(),
+            startDate: _dates?.start,
+            endDate: _dates?.end,
+          );
       // Marks the list stale so it refetches; no manual cache surgery.
       ref.invalidate(tripsProvider);
       if (mounted) Navigator.of(context).pop(true);
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -123,6 +129,7 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -130,10 +137,10 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'New trip',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            l10n.tripNewTitle,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 20),
 
@@ -142,9 +149,9 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _busy ? null : _submit(),
-            decoration: const InputDecoration(labelText: 'Trip name'),
+            decoration: InputDecoration(labelText: l10n.tripNameLabel),
             validator: (v) =>
-            (v == null || v.trim().isEmpty) ? 'Give your trip a name' : null,
+                (v == null || v.trim().isEmpty) ? l10n.tripNameEmpty : null,
           ),
           const SizedBox(height: 12),
 
@@ -154,7 +161,7 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
             onPressed: _busy ? null : _pickDates,
             icon: const Icon(Icons.calendar_today_outlined, size: 18),
             label: Text(
-              _dates == null ? 'Add dates (optional)' : _formatRange(_dates!),
+              _dates == null ? l10n.tripAddDates : _formatRange(_dates!),
             ),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
@@ -171,8 +178,8 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _busy ? null : () => setState(() => _dates = null),
-                child: const Text(
-                  'Clear dates',
+                child: Text(
+                  l10n.tripClearDates,
                   style: TextStyle(color: AppColors.inkMuted),
                 ),
               ),
@@ -186,7 +193,7 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy ? null : _submit,
-            child: _busy ? const _ButtonSpinner() : const Text('Create trip'),
+            child: _busy ? const _ButtonSpinner() : Text(l10n.tripCreate),
           ),
         ],
       ),
@@ -217,9 +224,10 @@ class _JoinTripFormState extends ConsumerState<_JoinTripForm> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     final code = _code.text.trim();
     if (code.isEmpty) {
-      setState(() => _error = 'Enter the code you were given');
+      setState(() => _error = l10n.tripJoinCodeEmpty);
       return;
     }
 
@@ -237,9 +245,11 @@ class _JoinTripFormState extends ConsumerState<_JoinTripForm> {
       if (mounted) {
         // The API answers 400 for unknown, revoked, expired and exhausted
         // codes alike; the user can act on all four the same way.
-        setState(() => _error = e.statusCode == 400
-            ? 'That code is invalid or has expired'
-            : e.message);
+        setState(
+          () => _error = e.statusCode == 400
+              ? l10n.errorInvalidCode
+              : friendlyError(context, e),
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -248,21 +258,19 @@ class _JoinTripFormState extends ConsumerState<_JoinTripForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Join a trip',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          l10n.tripJoinTitle,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Enter the code a friend shared with you',
-          style: TextStyle(color: AppColors.inkMuted),
-        ),
+        Text(l10n.tripJoinBody, style: TextStyle(color: AppColors.inkMuted)),
         const SizedBox(height: 20),
 
         TextField(
@@ -282,8 +290,8 @@ class _JoinTripFormState extends ConsumerState<_JoinTripForm> {
             letterSpacing: 6,
           ),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(
-            hintText: 'ABCD1234',
+          decoration: InputDecoration(
+            hintText: l10n.inviteCodeHint,
             counterText: '',
           ),
         ),
@@ -296,7 +304,7 @@ class _JoinTripFormState extends ConsumerState<_JoinTripForm> {
         const SizedBox(height: 20),
         FilledButton(
           onPressed: _busy ? null : _submit,
-          child: _busy ? const _ButtonSpinner() : const Text('Join'),
+          child: _busy ? const _ButtonSpinner() : Text(l10n.tripJoin),
         ),
       ],
     );

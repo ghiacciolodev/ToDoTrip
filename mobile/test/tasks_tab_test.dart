@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todotrip/l10n/app_localizations.dart';
 import 'package:todotrip/features/trips/data/checklist.dart';
 import 'package:todotrip/features/trips/data/item.dart';
 import 'package:todotrip/features/trips/presentation/tabs/tasks_tab.dart';
@@ -44,6 +45,8 @@ void main() {
           tripMembersProvider('t').overrideWith((ref) async => []),
         ],
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: TasksTab(tripId: 't', view: view, onViewChanged: (_) {}),
           ),

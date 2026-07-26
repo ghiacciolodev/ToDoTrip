@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/locale_provider.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
@@ -22,20 +24,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _expenseAlerts = true;
 
   Future<void> _confirmSignOut() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showAdaptiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
-        title: const Text('Sign out?'),
-        content: const Text("You'll need your email and password to get back in."),
+        title: Text(l10n.settingsSignOutTitle),
+        content: Text(l10n.settingsSignOutBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sign out',
-                style: TextStyle(color: AppColors.terracotta)),
+            child: Text(
+              l10n.settingsSignOut,
+              style: const TextStyle(color: AppColors.terracotta),
+            ),
           ),
         ],
       ),
@@ -48,74 +53,88 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final user = ref.watch(authProvider).value;
+    final selected = ref.watch(localeProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          if (user != null) _ProfileCard(name: user.displayName, email: user.email),
+          if (user != null)
+            _ProfileCard(name: user.displayName, email: user.email),
           const SizedBox(height: 24),
 
-          const _SectionLabel('Notifications'),
+          _SectionLabel(l10n.settingsNotifications),
           _SettingsGroup(
             children: [
               SwitchListTile.adaptive(
                 value: _pushNotifications,
                 onChanged: (v) => setState(() => _pushNotifications = v),
-                title: const Text('Push notifications'),
-                subtitle: const Text('Trip updates and new tasks'),
+                title: Text(l10n.settingsPushNotifications),
+                subtitle: Text(l10n.settingsPushNotificationsBody),
                 activeThumbColor: AppColors.primary,
               ),
               const Divider(),
               SwitchListTile.adaptive(
                 value: _expenseAlerts,
                 onChanged: (v) => setState(() => _expenseAlerts = v),
-                title: const Text('Expense alerts'),
-                subtitle: const Text('When someone adds an expense'),
+                title: Text(l10n.settingsExpenseAlerts),
+                subtitle: Text(l10n.settingsExpenseAlertsBody),
                 activeThumbColor: AppColors.primary,
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          const _SectionLabel('Preferences'),
+          _SectionLabel(l10n.settingsPreferences),
           _SettingsGroup(
             children: [
               ListTile(
                 leading: const Icon(Icons.language_outlined),
-                title: const Text('Language'),
-                trailing: const Text('English',
-                    style: TextStyle(color: AppColors.inkMuted)),
-                onTap: () => _showComingSoon(context),
+                title: Text(l10n.settingsLanguage),
+                trailing: Text(
+                  selected == null
+                      ? l10n.settingsLanguageSystem
+                      : languageName(selected.languageCode),
+                  style: const TextStyle(color: AppColors.inkMuted),
+                ),
+                onTap: _pickLanguage,
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.euro_outlined),
-                title: const Text('Default currency'),
-                trailing:
-                const Text('EUR', style: TextStyle(color: AppColors.inkMuted)),
+                title: Text(l10n.settingsDefaultCurrency),
+                trailing: const Text(
+                  'EUR',
+                  style: TextStyle(color: AppColors.inkMuted),
+                ),
                 onTap: () => _showComingSoon(context),
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          const _SectionLabel('About'),
+          _SectionLabel(l10n.settingsAbout),
           _SettingsGroup(
             children: [
               ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('Version'),
-                trailing: const Text('0.1.0',
-                    style: TextStyle(color: AppColors.inkMuted)),
+                title: Text(l10n.settingsVersion),
+                trailing: const Text(
+                  '0.1.0',
+                  style: TextStyle(color: AppColors.inkMuted),
+                ),
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.description_outlined),
-                title: const Text('Privacy policy'),
-                trailing: const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+                title: Text(l10n.settingsPrivacyPolicy),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.inkMuted,
+                ),
                 onTap: () => _showComingSoon(context),
               ),
             ],
@@ -125,12 +144,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           OutlinedButton.icon(
             onPressed: _confirmSignOut,
             icon: const Icon(Icons.logout, size: 20),
-            label: const Text('Sign out'),
+            label: Text(l10n.settingsSignOut),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               foregroundColor: AppColors.terracotta,
-              side: BorderSide(color: AppColors.terracotta.withValues(alpha: 0.4)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              side: BorderSide(
+                color: AppColors.terracotta.withValues(alpha: 0.4),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ],
@@ -138,10 +161,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Lets the reader pick a language, or hand the choice back to the system.
+  ///
+  /// "System" is the default and stays first: a phone set to Italian should open
+  /// in Italian without anyone choosing. The override is for people whose device
+  /// language is not the one they read comfortably, which is common on shared or
+  /// second-hand phones.
+  Future<void> _pickLanguage() async {
+    final l10n = AppLocalizations.of(context);
+    final current = ref.read(localeProvider).value;
+
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: RadioGroup<String>(
+          groupValue: current?.languageCode ?? 'system',
+          onChanged: (value) => Navigator.of(context).pop(value),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              RadioListTile<String>(
+                value: 'system',
+                title: Text(l10n.settingsLanguageSystem),
+                activeColor: AppColors.primary,
+              ),
+              for (final code in supportedLanguages)
+                RadioListTile<String>(
+                  value: code,
+                  // Each language names itself: someone looking for their own
+                  // language recognises "Deutsch", not "German".
+                  title: Text(languageName(code)),
+                  activeColor: AppColors.primary,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == null) return;
+
+    await ref
+        .read(localeProvider.notifier)
+        .select(choice == 'system' ? null : Locale(choice));
+  }
+
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Coming soon')));
+      ..showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).commonComingSoon)),
+      );
   }
 }
 
@@ -184,7 +253,10 @@ class _ProfileCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     email,
-                    style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                    style: const TextStyle(
+                      color: AppColors.inkMuted,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),

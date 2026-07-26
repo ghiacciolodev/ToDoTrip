@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/map_pin.dart';
@@ -14,7 +16,11 @@ import 'directions.dart';
 ///
 /// Long-press is the gesture everyone already tries on a map, so it needs no
 /// button and no mode to enter first.
-Future<void> showCreatePinSheet(BuildContext context, String tripId, LatLng point) {
+Future<void> showCreatePinSheet(
+  BuildContext context,
+  String tripId,
+  LatLng point,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -58,18 +64,20 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
     });
 
     try {
-      await ref.read(mapRepositoryProvider).createPin(
-        tripId: widget.tripId,
-        name: name,
-        latitude: widget.point.latitude,
-        longitude: widget.point.longitude,
-        category: _category,
-        description: _description.text.trim(),
-      );
+      await ref
+          .read(mapRepositoryProvider)
+          .createPin(
+            tripId: widget.tripId,
+            name: name,
+            latitude: widget.point.latitude,
+            longitude: widget.point.longitude,
+            category: _category,
+            description: _description.text.trim(),
+          );
       ref.invalidate(mapPinsProvider(widget.tripId));
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _error = friendlyError(context, e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -77,11 +85,14 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: AnimatedPadding(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -90,15 +101,18 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'New pin',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  l10n.pinNewTitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _coordinates(widget.point),
-                  style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.inkMuted,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -108,15 +122,15 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                   onChanged: (_) {
                     if (_error != null) setState(() => _error = null);
                   },
-                  decoration: const InputDecoration(
-                    labelText: 'What is here?',
-                    hintText: 'Hostel Lisboa',
+                  decoration: InputDecoration(
+                    labelText: l10n.pinNameLabel,
+                    hintText: l10n.pinNameHint,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                const Text(
-                  'CATEGORY',
+                Text(
+                  l10n.pinCategoryLabel,
                   style: TextStyle(
                     color: AppColors.inkMuted,
                     fontSize: 12,
@@ -138,7 +152,7 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                               ? AppColors.primaryDark
                               : AppColors.inkMuted,
                         ),
-                        label: Text(category.label),
+                        label: Text(category.label(l10n)),
                         selected: _category == category,
                         onSelected: (_) => setState(() => _category = category),
                         selectedColor: AppColors.primaryTint,
@@ -153,9 +167,7 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                   controller: _description,
                   textCapitalization: TextCapitalization.sentences,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                  ),
+                  decoration: InputDecoration(labelText: l10n.pinNotesLabel),
                 ),
 
                 if (_error != null) ...[
@@ -163,7 +175,11 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.error_outline, size: 18, color: AppColors.terracotta),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        color: AppColors.terracotta,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -184,12 +200,14 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                   onPressed: _busy ? null : _save,
                   child: _busy
                       ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.4, color: Colors.white),
-                  )
-                      : const Text('Drop pin'),
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(l10n.pinDrop),
                 ),
               ],
             ),
@@ -215,19 +233,23 @@ class _PinSheet extends ConsumerWidget {
   final MapPin pin;
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showAdaptiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
-        title: Text('Delete "${pin.name}"?'),
-        content: const Text('It disappears from the map for everyone.'),
+        title: Text(l10n.pinDeleteTitle(pin.name)),
+        content: Text(l10n.pinDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.terracotta)),
+            child: Text(
+              l10n.commonDelete,
+              style: const TextStyle(color: AppColors.terracotta),
+            ),
           ),
         ],
       ),
@@ -242,13 +264,14 @@ class _PinSheet extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
+          ..showSnackBar(SnackBar(content: Text(friendlyError(context, e))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final lookup = ref.watch(memberLookupProvider(tripId));
     final author = lookup[pin.createdBy]?.user.displayName;
 
@@ -279,13 +302,15 @@ class _PinSheet extends ConsumerWidget {
                         pin.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       Text(
-                        pin.category.label,
-                        style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                        pin.category.label(l10n),
+                        style: const TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -302,7 +327,10 @@ class _PinSheet extends ConsumerWidget {
             Text(
               author == null
                   ? _coordinates(pin.point)
-                  : 'Added by $author · ${DateFormat('d MMM').format(pin.createdAt.toLocal())}',
+                  : l10n.pinAddedBy(
+                      author,
+                      DateFormat('d MMM').format(pin.createdAt.toLocal()),
+                    ),
               style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
             ),
 
@@ -315,14 +343,16 @@ class _PinSheet extends ConsumerWidget {
                 label: pin.name,
               ),
               icon: const Icon(Icons.directions, size: 20),
-              label: const Text('Get directions'),
+              label: Text(l10n.mapGetDirections),
             ),
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: () => _delete(context, ref),
               icon: const Icon(Icons.delete_outline, size: 20),
-              label: const Text('Delete pin'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.terracotta),
+              label: Text(l10n.pinDelete),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.terracotta,
+              ),
             ),
           ],
         ),
@@ -333,10 +363,10 @@ class _PinSheet extends ConsumerWidget {
 
 /// A member's live position: how fresh it is, and how to reach them.
 Future<void> showMemberLocationSheet(
-    BuildContext context,
-    String tripId,
-    MemberLocation location,
-    ) {
+  BuildContext context,
+  String tripId,
+  MemberLocation location,
+) {
   return showModalBottomSheet(
     context: context,
     builder: (_) => _MemberLocationSheet(tripId: tripId, location: location),
@@ -351,6 +381,7 @@ class _MemberLocationSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final member = ref.watch(memberLookupProvider(tripId))[location.userId];
     final name = member?.user.displayName ?? 'Someone';
 
@@ -367,7 +398,10 @@ class _MemberLocationSheet extends ConsumerWidget {
                   backgroundColor: avatarColorFor(location.userId),
                   child: Text(
                     initialsFor(name),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -377,13 +411,15 @@ class _MemberLocationSheet extends ConsumerWidget {
                     children: [
                       Text(
                         name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       Text(
-                        _freshness(location.updatedAt),
-                        style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                        _freshness(l10n, location.updatedAt),
+                        style: const TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -399,7 +435,7 @@ class _MemberLocationSheet extends ConsumerWidget {
                 label: name,
               ),
               icon: const Icon(Icons.directions, size: 20),
-              label: const Text('Get directions'),
+              label: Text(l10n.mapGetDirections),
             ),
           ],
         ),
@@ -412,9 +448,9 @@ String _coordinates(LatLng point) =>
     '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
 
 /// "Now" is a claim, so it is only made when it is true.
-String _freshness(DateTime at) {
+String _freshness(AppLocalizations l10n, DateTime at) {
   final minutes = DateTime.now().difference(at.toLocal()).inMinutes;
-  if (minutes < 2) return 'Right now';
-  if (minutes < 60) return '$minutes minutes ago';
-  return 'Last seen ${DateFormat('HH:mm').format(at.toLocal())}';
+  if (minutes < 2) return l10n.mapRightNow;
+  if (minutes < 60) return l10n.mapMinutesAgo(minutes);
+  return l10n.mapLastSeen(DateFormat('HH:mm').format(at.toLocal()));
 }

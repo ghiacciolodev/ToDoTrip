@@ -6,27 +6,50 @@ import 'package:intl/intl.dart';
 /// 0.01 has no exact binary representation, so a few splits are enough for the
 /// rounding error to become visible. Doubles are not allowed to exist between
 /// the API and the widget — only this type crosses that distance.
+///
+/// Formatting follows [Intl.defaultLocale], which the app sets from the active
+/// language on every build. Italian, French, German and Spanish all write
+/// "32,50", and showing "32.50" to them reads as a bug even when the number is
+/// right. Going through intl's own global rather than threading a locale through
+/// every call site also means every bare `DateFormat` in the app becomes
+/// localised by the same switch, instead of forty places each having to
+/// remember.
 extension type const Money(int cents) {
-  /// Single place to change if the app ever ships in another locale.
-  static const _locale = 'en_IE';
+  /// Rebuilt when the language changes, cached while it does not: formatting a
+  /// list of expenses builds one of these per row on every repaint.
+  static String? _cachedFor;
+  static NumberFormat? _currency;
+  static NumberFormat? _plain;
 
-  static final _formatter = NumberFormat.currency(locale: _locale, symbol: '€');
-  static final _plain = NumberFormat.decimalPatternDigits(
-    locale: _locale,
-    decimalDigits: 2,
-  );
+  static void _ensure() {
+    final locale = Intl.getCurrentLocale();
+    if (_cachedFor == locale && _currency != null) return;
+    _cachedFor = locale;
+    _currency = NumberFormat.currency(locale: locale, symbol: '€');
+    _plain = NumberFormat.decimalPatternDigits(
+      locale: locale,
+      decimalDigits: 2,
+    );
+  }
 
-  /// "€32.50"
-  String get formatted => _formatter.format(cents / 100);
+  /// "€32.50" in English, "32,50 €" in Italian.
+  String get formatted {
+    _ensure();
+    return _currency!.format(cents / 100);
+  }
 
   /// "32.50" — for text fields, where the symbol is part of the decoration.
-  String get plain => _plain.format(cents / 100);
+  String get plain {
+    _ensure();
+    return _plain!.format(cents / 100);
+  }
 
   /// "+€32.50" / "−€18.00", using a real minus sign rather than a hyphen.
   String get signed {
-    if (cents == 0) return _formatter.format(0);
+    _ensure();
+    if (cents == 0) return _currency!.format(0);
     final sign = cents > 0 ? '+' : '−';
-    return '$sign${_formatter.format(cents.abs() / 100)}';
+    return '$sign${_currency!.format(cents.abs() / 100)}';
   }
 
   bool get isZero => cents == 0;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -179,26 +180,31 @@ class _TripShellState extends ConsumerState<TripShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final trip = ref.watch(tripProvider(widget.tripId));
     final members = ref.watch(tripMembersProvider(widget.tripId));
 
     // Only gate on the first load. Checking hasValue as well means a refresh
     // updates the content in place instead of replacing the whole screen with
     // a spinner and remounting every tab.
-    final firstLoad = (trip.isLoading && !trip.hasValue) ||
+    final firstLoad =
+        (trip.isLoading && !trip.hasValue) ||
         (members.isLoading && !members.hasValue);
     // Likewise for errors: a failed refresh should not discard data already on
     // screen, so this only fires when there is nothing to show.
-    final fatalError = (!trip.hasValue ? trip.error : null) ??
+    final fatalError =
+        (!trip.hasValue ? trip.error : null) ??
         (!members.hasValue ? members.error : null);
     final ready = !firstLoad && fatalError == null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(trip.value?.name ?? 'Trip')),
+      appBar: AppBar(title: Text(trip.value?.name ?? l10n.tripFallbackName)),
       body: RefreshOnResume(
         onResume: () => _refresh(_index, force: true),
         child: switch ((firstLoad, fatalError)) {
-          (true, _) => const Center(child: CircularProgressIndicator.adaptive()),
+          (true, _) => const Center(
+            child: CircularProgressIndicator.adaptive(),
+          ),
           (_, final Object e) => _TripError(
             message: '$e',
             onRetry: () => _refresh(_index, force: true),
@@ -231,31 +237,31 @@ class _TripShellState extends ConsumerState<TripShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _onTabSelected,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
-            label: 'Calendar',
+            icon: const Icon(Icons.event_outlined),
+            selectedIcon: const Icon(Icons.event),
+            label: l10n.tabCalendar,
           ),
           NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: 'Tasks',
+            icon: const Icon(Icons.checklist_outlined),
+            selectedIcon: const Icon(Icons.checklist),
+            label: l10n.tabTasks,
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Money',
+            icon: const Icon(Icons.receipt_long_outlined),
+            selectedIcon: const Icon(Icons.receipt_long),
+            label: l10n.tabMoney,
           ),
           NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Map',
+            icon: const Icon(Icons.map_outlined),
+            selectedIcon: const Icon(Icons.map),
+            label: l10n.tabMap,
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Group',
+            icon: const Icon(Icons.people_outline),
+            selectedIcon: const Icon(Icons.people),
+            label: l10n.tabGroup,
           ),
         ],
       ),
@@ -263,12 +269,14 @@ class _TripShellState extends ConsumerState<TripShell> {
   }
 
   Widget? _buildFab() {
+    final l10n = AppLocalizations.of(context);
+
     return switch (_index) {
       0 => FloatingActionButton.extended(
         onPressed: () =>
             showAddItemSheet(context, widget.tripId, AddKind.event),
         icon: const Icon(Icons.add),
-        label: const Text('Event'),
+        label: Text(l10n.fabEvent),
       ),
       // Follows the segmented control above it: a task in the to-do view, a
       // list in the lists view.
@@ -279,7 +287,7 @@ class _TripShellState extends ConsumerState<TripShell> {
           _tasksView == TasksView.todo ? AddKind.task : AddKind.list,
         ),
         icon: const Icon(Icons.add),
-        label: Text(_tasksView == TasksView.todo ? 'Task' : 'List'),
+        label: Text(_tasksView == TasksView.todo ? l10n.fabTask : l10n.fabList),
       ),
       2 => FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
@@ -288,7 +296,7 @@ class _TripShellState extends ConsumerState<TripShell> {
           ),
         ),
         icon: const Icon(Icons.add),
-        label: const Text('Expense'),
+        label: Text(l10n.fabExpense),
       ),
       _ => null,
     };
@@ -317,7 +325,10 @@ class _TripError extends StatelessWidget {
               style: const TextStyle(color: AppColors.inkMuted),
             ),
             const SizedBox(height: 20),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).commonTryAgain),
+            ),
           ],
         ),
       ),

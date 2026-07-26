@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -13,10 +13,10 @@ import '../../providers.dart';
 import 'delete_actions.dart';
 
 Future<void> showExpenseDetailSheet(
-    BuildContext context,
-    String tripId,
-    Expense expense,
-    ) {
+  BuildContext context,
+  String tripId,
+  Expense expense,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -31,7 +31,8 @@ class _ExpenseDetailSheet extends ConsumerStatefulWidget {
   final Expense expense;
 
   @override
-  ConsumerState<_ExpenseDetailSheet> createState() => _ExpenseDetailSheetState();
+  ConsumerState<_ExpenseDetailSheet> createState() =>
+      _ExpenseDetailSheetState();
 }
 
 class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
@@ -43,13 +44,14 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
   /// everyone else owes — so it is worth saying why that name is not in the
   /// group any more.
   static String _nameFor(
-      Map<String, TripMember> lookup,
-      String userId,
-      String? myId,
-      ) {
-    if (userId == myId) return 'You';
+    AppLocalizations l10n,
+    Map<String, TripMember> lookup,
+    String userId,
+    String? myId,
+  ) {
+    if (userId == myId) return l10n.commonYou;
     final member = lookup[userId];
-    if (member == null) return 'Unknown';
+    if (member == null) return l10n.commonUnknown;
     return member.hasLeft
         ? '${member.user.displayName} (left)'
         : member.user.displayName;
@@ -59,8 +61,12 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
   /// sheet, so a delete reads identically wherever it is started from.
   Future<void> _delete() async {
     setState(() => _deleting = true);
-    final deleted =
-    await confirmDeleteExpense(context, ref, widget.tripId, widget.expense);
+    final deleted = await confirmDeleteExpense(
+      context,
+      ref,
+      widget.tripId,
+      widget.expense,
+    );
     if (!mounted) return;
     // Nothing left to show once it is gone.
     if (deleted) {
@@ -72,6 +78,7 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final expense = widget.expense;
     final lookup = ref.watch(memberLookupProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
@@ -86,13 +93,15 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
             children: [
               Text(
                 expense.description,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
               Text(
-                DateFormat('EEEE d MMMM, HH:mm').format(expense.spentAt.toLocal()),
+                DateFormat(
+                  'EEEE d MMMM, HH:mm',
+                ).format(expense.spentAt.toLocal()),
                 style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
               ),
               const SizedBox(height: 20),
@@ -111,14 +120,19 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
               const SizedBox(height: 6),
               Center(
                 child: Text(
-                  'Paid by ${expense.paidBy == myId ? 'you' : lookup[expense.paidBy]?.user.displayName ?? 'someone'}',
+                  l10n.moneyPaidBy(
+                    expense.paidBy == myId
+                        ? l10n.commonYouLower
+                        : lookup[expense.paidBy]?.user.displayName ??
+                              l10n.commonSomeoneLower,
+                  ),
                   style: const TextStyle(color: AppColors.inkMuted),
                 ),
               ),
               const SizedBox(height: 24),
 
-              const Text(
-                'SPLIT',
+              Text(
+                l10n.expenseSplitLabel,
                 style: TextStyle(
                   color: AppColors.inkMuted,
                   fontSize: 12,
@@ -149,7 +163,7 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          _nameFor(lookup, share.userId, myId),
+                          _nameFor(l10n, lookup, share.userId, myId),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -170,14 +184,18 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
               OutlinedButton.icon(
                 onPressed: _deleting ? null : _delete,
                 icon: const Icon(Icons.delete_outline, size: 20),
-                label: Text(_deleting ? 'Deleting…' : 'Delete expense'),
+                label: Text(
+                  _deleting ? l10n.expenseDeleting : l10n.expenseDelete,
+                ),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                   foregroundColor: AppColors.terracotta,
                   side: BorderSide(
-                      color: AppColors.terracotta.withValues(alpha: 0.4)),
-                  shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    color: AppColors.terracotta.withValues(alpha: 0.4),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,7 +15,7 @@ class TripsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My trips')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).tripsTitle)),
       // Someone else may have added a trip, or invited this user to one, while
       // the app was in the background: refetch on resume rather than trusting
       // whatever was on screen an hour ago.
@@ -114,21 +115,21 @@ class _EmptyState extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'No trips yet',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  AppLocalizations.of(context).tripsEmptyTitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Create your first trip, or join one\nwith a code from a friend.',
+                Text(
+                  AppLocalizations.of(context).tripsEmptyBody,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.inkMuted, height: 1.4),
                 ),
                 const SizedBox(height: 28),
                 FilledButton(
                   onPressed: () => context.go('/add'),
-                  child: const Text('Get started'),
+                  child: Text(AppLocalizations.of(context).tripsEmptyAction),
                 ),
               ],
             ),
@@ -157,7 +158,11 @@ class _ErrorState extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.cloud_off, size: 48, color: AppColors.inkMuted),
+                const Icon(
+                  Icons.cloud_off,
+                  size: 48,
+                  color: AppColors.inkMuted,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   message,
@@ -167,7 +172,7 @@ class _ErrorState extends StatelessWidget {
                 const SizedBox(height: 20),
                 OutlinedButton(
                   onPressed: onRetry,
-                  child: const Text('Try again'),
+                  child: Text(AppLocalizations.of(context).commonTryAgain),
                 ),
               ],
             ),

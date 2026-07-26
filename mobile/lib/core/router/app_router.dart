@@ -22,7 +22,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   // discarding screen state — including a half-typed form and its error.
   // refreshListenable re-runs the redirect instead, leaving widgets alone.
   final session = ValueNotifier<AsyncValue<User?>>(const AsyncLoading());
-  ref.listen(authProvider, (_, next) => session.value = next, fireImmediately: true);
+  ref.listen(
+    authProvider,
+    (_, next) => session.value = next,
+    fireImmediately: true,
+  );
   ref.onDispose(session.dispose);
 
   // Lets a route opt out of the tab shell and cover it entirely.
@@ -55,14 +59,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _, shell) => AppShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: '/trips', builder: (_, _) => const TripsScreen())],
-          ),
-          StatefulShellBranch(
-            routes: [GoRoute(path: '/add', builder: (_, _) => const AddScreen())],
+            routes: [
+              GoRoute(path: '/trips', builder: (_, _) => const TripsScreen()),
+            ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+              GoRoute(path: '/add', builder: (_, _) => const AddScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/settings',
+                builder: (_, _) => const SettingsScreen(),
+              ),
             ],
           ),
         ],
@@ -75,7 +86,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/trips/:tripId',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (_, state) => TripShell(tripId: state.pathParameters['tripId']!),
+        builder: (_, state) =>
+            TripShell(tripId: state.pathParameters['tripId']!),
       ),
     ],
   );

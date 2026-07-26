@@ -15,6 +15,7 @@ import 'data/checklist.dart';
 import 'data/checklist_repository.dart';
 import 'data/map_pin.dart';
 import 'data/map_repository.dart';
+
 final tripRepositoryProvider = Provider<TripRepository>((ref) {
   return TripRepository(dio: ref.watch(dioProvider));
 });
@@ -48,8 +49,10 @@ final tripProvider = FutureProvider.family<Trip, String>((ref, tripId) {
 /// Former members are in here on purpose, so their name still resolves beside
 /// the expenses they took part in. Use [activeMembersProvider] wherever people
 /// are picked or counted.
-final tripMembersProvider =
-FutureProvider.family<List<TripMember>, String>((ref, tripId) {
+final tripMembersProvider = FutureProvider.family<List<TripMember>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(tripRepositoryProvider).members(tripId);
 });
 
@@ -57,8 +60,10 @@ FutureProvider.family<List<TripMember>, String>((ref, tripId) {
 ///
 /// The list every screen that offers a choice must use: assigning a task to
 /// someone who left, or splitting a bill with them, is rejected by the API.
-final activeMembersProvider =
-Provider.family<List<TripMember>, String>((ref, tripId) {
+final activeMembersProvider = Provider.family<List<TripMember>, String>((
+  ref,
+  tripId,
+) {
   final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
   return [
     for (final member in members)
@@ -70,16 +75,20 @@ Provider.family<List<TripMember>, String>((ref, tripId) {
 ///
 /// Built from the full list, former members included: that is the whole point of
 /// a lookup — an id from an old expense must still find a name.
-final memberLookupProvider =
-Provider.family<Map<String, TripMember>, String>((ref, tripId) {
+final memberLookupProvider = Provider.family<Map<String, TripMember>, String>((
+  ref,
+  tripId,
+) {
   final members = ref.watch(tripMembersProvider(tripId)).value ?? const [];
   return {for (final member in members) member.user.id: member};
 });
 
 /// Invites for a trip. Owner-only: the API answers 403 to everyone else, so
 /// this is never watched unless the current user owns the trip.
-final tripInvitesProvider =
-FutureProvider.family<List<Invite>, String>((ref, tripId) {
+final tripInvitesProvider = FutureProvider.family<List<Invite>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(tripRepositoryProvider).invites(tripId);
 });
 
@@ -87,8 +96,10 @@ FutureProvider.family<List<Invite>, String>((ref, tripId) {
 ///
 /// Drives every owner-only affordance: showing a button the backend will
 /// reject with 403 is worse than not showing it at all.
-final myMembershipProvider =
-Provider.family<TripMember?, String>((ref, tripId) {
+final myMembershipProvider = Provider.family<TripMember?, String>((
+  ref,
+  tripId,
+) {
   final userId = ref.watch(authProvider).value?.id;
   if (userId == null) return null;
   // Active only: a former membership must not keep granting affordances.
@@ -102,13 +113,17 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository(dio: ref.watch(dioProvider));
 });
 
-final expensesProvider =
-FutureProvider.family<List<Expense>, String>((ref, tripId) {
+final expensesProvider = FutureProvider.family<List<Expense>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(expenseRepositoryProvider).list(tripId);
 });
 
-final balanceProvider =
-FutureProvider.family<BalanceReport, String>((ref, tripId) {
+final balanceProvider = FutureProvider.family<BalanceReport, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(expenseRepositoryProvider).balance(tripId);
 });
 
@@ -117,8 +132,10 @@ FutureProvider.family<BalanceReport, String>((ref, tripId) {
 /// Shown alongside the expenses because they move the balances just as much: a
 /// repayment that survives the expense it was made against is otherwise a change
 /// in the figures with nothing on screen to explain it.
-final settlementsProvider =
-FutureProvider.family<List<Settlement>, String>((ref, tripId) {
+final settlementsProvider = FutureProvider.family<List<Settlement>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(expenseRepositoryProvider).listSettlements(tripId);
 });
 
@@ -155,8 +172,10 @@ final checklistRepositoryProvider = Provider<ChecklistRepository>((ref) {
 /// The single source for both the cards and the screen a card opens: the API
 /// inlines the entries, so an open list stays in step with a refresh without a
 /// second provider to keep synchronised.
-final checklistsProvider =
-FutureProvider.family<List<Checklist>, String>((ref, tripId) {
+final checklistsProvider = FutureProvider.family<List<Checklist>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(checklistRepositoryProvider).list(tripId);
 });
 
@@ -166,7 +185,10 @@ final mapRepositoryProvider = Provider<MapRepository>((ref) {
 
 /// Saved places. Durable group data, so it lives behind a GET like everything
 /// else; the socket only says when to re-run it.
-final mapPinsProvider = FutureProvider.family<List<MapPin>, String>((ref, tripId) {
+final mapPinsProvider = FutureProvider.family<List<MapPin>, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(mapRepositoryProvider).pins(tripId);
 });
 
@@ -177,18 +199,24 @@ final mapPinsProvider = FutureProvider.family<List<MapPin>, String>((ref, tripId
 /// avatars may rebuild that often. Tiles and pins listen to nothing here, so a
 /// fix never touches them.
 final memberLocationsProvider =
-Provider.family<ValueNotifier<Map<String, MemberLocation>>, String>((ref, tripId) {
-  final locations = ValueNotifier<Map<String, MemberLocation>>(const {});
-  ref.onDispose(locations.dispose);
-  return locations;
-});
+    Provider.family<ValueNotifier<Map<String, MemberLocation>>, String>((
+      ref,
+      tripId,
+    ) {
+      final locations = ValueNotifier<Map<String, MemberLocation>>(const {});
+      ref.onDispose(locations.dispose);
+      return locations;
+    });
 
 /// One checklist, or null once it has been deleted — by anyone.
 final checklistProvider =
-Provider.family<Checklist?, ({String tripId, String checklistId})>((ref, key) {
-  final lists = ref.watch(checklistsProvider(key.tripId)).value ?? const [];
-  for (final list in lists) {
-    if (list.id == key.checklistId) return list;
-  }
-  return null;
-});
+    Provider.family<Checklist?, ({String tripId, String checklistId})>((
+      ref,
+      key,
+    ) {
+      final lists = ref.watch(checklistsProvider(key.tripId)).value ?? const [];
+      for (final list in lists) {
+        if (list.id == key.checklistId) return list;
+      }
+      return null;
+    });

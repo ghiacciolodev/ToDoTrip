@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 /// Scaffold shared by the three top-level tabs.
 ///
 /// Backed by StatefulShellRoute so each branch keeps its own navigation stack
@@ -12,6 +14,8 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: navigationShell,
       // Colours, height and label styling come from navigationBarTheme.
@@ -23,21 +27,24 @@ class AppShell extends StatelessWidget {
           // behaviour users expect from every native app.
           initialLocation: index == navigationShell.currentIndex,
         ),
-        destinations: const [
+        // German labels run about 30% longer than English, which is what breaks
+        // a bar this narrow: the theme shows them at 11pt and the destinations
+        // ellipsize rather than overflow.
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.luggage_outlined),
-            selectedIcon: Icon(Icons.luggage),
-            label: 'Trips',
+            icon: const Icon(Icons.luggage_outlined),
+            selectedIcon: const Icon(Icons.luggage),
+            label: l10n.navTrips,
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Add',
+            icon: const Icon(Icons.add_circle_outline),
+            selectedIcon: const Icon(Icons.add_circle),
+            label: l10n.navAdd,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
           ),
         ],
       ),

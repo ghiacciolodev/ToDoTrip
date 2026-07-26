@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/colors.dart';
@@ -12,11 +13,11 @@ import '../../../../core/theme/colors.dart';
 /// On iOS Apple Maps is offered as well, because for many people it is the
 /// default and the one that knows their car.
 Future<void> openDirections(
-    BuildContext context, {
-      required double latitude,
-      required double longitude,
-      required String label,
-    }) async {
+  BuildContext context, {
+  required double latitude,
+  required double longitude,
+  required String label,
+}) async {
   final google = Uri.parse(
     'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude',
   );
@@ -34,12 +35,15 @@ Future<void> openDirections(
         children: [
           ListTile(
             leading: const Icon(Icons.map_outlined, color: AppColors.inkMuted),
-            title: const Text('Apple Maps'),
+            title: Text(AppLocalizations.of(context).mapAppleMaps),
             onTap: () => Navigator.of(context).pop('apple'),
           ),
           ListTile(
-            leading: const Icon(Icons.navigation_outlined, color: AppColors.inkMuted),
-            title: const Text('Google Maps'),
+            leading: const Icon(
+              Icons.navigation_outlined,
+              color: AppColors.inkMuted,
+            ),
+            title: Text(AppLocalizations.of(context).mapGoogleMaps),
             onTap: () => Navigator.of(context).pop('google'),
           ),
         ],
@@ -51,7 +55,9 @@ Future<void> openDirections(
   await _launch(
     context,
     choice == 'apple'
-        ? Uri.parse('https://maps.apple.com/?daddr=$latitude,$longitude&q=$label')
+        ? Uri.parse(
+            'https://maps.apple.com/?daddr=$latitude,$longitude&q=$label',
+          )
         : google,
   );
 }
@@ -61,6 +67,8 @@ Future<void> _launch(BuildContext context, Uri url) async {
   if (!opened && context.mounted) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('No maps app to open this with.')));
+      ..showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).errorNoMapsApp)),
+      );
   }
 }

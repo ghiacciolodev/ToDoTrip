@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -29,8 +30,7 @@ class CalendarTab extends ConsumerWidget {
           message: '${items.error}',
           onRetry: () => ref.invalidate(itemsProvider(tripId)),
         ),
-        (null, _) =>
-        const Center(child: CircularProgressIndicator.adaptive()),
+        (null, _) => const Center(child: CircularProgressIndicator.adaptive()),
         (final all?, _) => _Agenda(tripId: tripId, items: all),
       },
     );
@@ -48,10 +48,11 @@ class _Agenda extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (items.every((i) => i.type != ItemType.event)) {
-      return const EmptyState(
+      final l10n = AppLocalizations.of(context);
+      return EmptyState(
         icon: Icons.event_outlined,
-        title: 'Nothing planned yet',
-        subtitle: 'Add flights, check-ins and\nanything with a time on it.',
+        title: l10n.calendarEmptyTitle,
+        subtitle: l10n.calendarEmptyBody,
       );
     }
 
@@ -65,7 +66,8 @@ class _Agenda extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       itemCount: events.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, index) => _EventCard(tripId: tripId, item: events[index]),
+      itemBuilder: (_, index) =>
+          _EventCard(tripId: tripId, item: events[index]),
     );
   }
 }
@@ -250,8 +252,8 @@ class _DayLine extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final days = DateTime(at.year, at.month, at.day).difference(today).inDays;
     final badge = switch (days) {
-      0 => 'TODAY',
-      1 => 'TOMORROW',
+      0 => AppLocalizations.of(context).calendarToday,
+      1 => AppLocalizations.of(context).calendarTomorrow,
       _ => null,
     };
 

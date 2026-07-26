@@ -64,7 +64,9 @@ class ChecklistRepository {
     required String entryId,
   }) async {
     try {
-      await dio.delete('/trips/$tripId/checklists/$checklistId/entries/$entryId');
+      await dio.delete(
+        '/trips/$tripId/checklists/$checklistId/entries/$entryId',
+      );
     } on DioException catch (e) {
       throw ApiException.from(e);
     }
@@ -77,7 +79,8 @@ class ChecklistRepository {
     required bool checked,
   }) async {
     try {
-      final path = '/trips/$tripId/checklists/$checklistId/entries/$entryId/check';
+      final path =
+          '/trips/$tripId/checklists/$checklistId/entries/$entryId/check';
       final response = checked ? await dio.post(path) : await dio.delete(path);
       return ChecklistEntry.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

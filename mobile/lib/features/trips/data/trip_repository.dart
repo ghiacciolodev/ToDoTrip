@@ -62,9 +62,8 @@ class TripRepository {
 
   static String _asDate(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-'
-          '${value.month.toString().padLeft(2, '0')}-'
-          '${value.day.toString().padLeft(2, '0')}';
-
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}';
 
   Future<Trip> byId(String tripId) async {
     try {
@@ -128,6 +127,7 @@ class TripRepository {
       throw ApiException.from(e);
     }
   }
+
   Future<List<Invite>> invites(String tripId) async {
     try {
       final response = await dio.get('/trips/$tripId/invites');

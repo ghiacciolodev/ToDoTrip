@@ -55,7 +55,11 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 
   /// Registers, then signs in: the API returns a user, not a token pair.
-  Future<void> register(String email, String password, String displayName) async {
+  Future<void> register(
+    String email,
+    String password,
+    String displayName,
+  ) async {
     final repo = ref.read(authRepositoryProvider);
     await repo.register(
       email: email,
@@ -79,4 +83,6 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 }
 
-final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new);
+final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(
+  AuthNotifier.new,
+);
