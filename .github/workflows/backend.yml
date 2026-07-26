@@ -41,7 +41,9 @@ jobs:
       TEST_DATABASE_URL: postgresql+asyncpg://todotrip:todotrip@localhost:5432/todotrip_test
       # Required by app.config at import time; there is no .env in CI.
       DATABASE_URL: postgresql+asyncpg://todotrip:todotrip@localhost:5432/todotrip_test
-      JWT_SECRET: ci-secret-not-used-in-production
+      # Long enough to satisfy the check that keeps a placeholder secret out of
+      # anything but development.
+      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
       ENVIRONMENT: test
 
     steps:

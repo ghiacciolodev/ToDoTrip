@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../config.dart';
 import '../storage/token_storage.dart';
 import 'auth_interceptor.dart';
+import 'debug_log_interceptor.dart';
 
 /// Builds the configured HTTP client.
 Dio createDio({
@@ -31,9 +32,7 @@ Dio createDio({
   );
 
   if (kDebugMode) {
-    dio.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: true, requestHeader: false),
-    );
+    dio.interceptors.add(DebugLogInterceptor());
   }
 
   return dio;

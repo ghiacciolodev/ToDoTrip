@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app.core import rate_limit
 from app.database import get_db
 from app.main import app
 from app.models import Base
@@ -40,6 +41,16 @@ async def _schema() -> AsyncGenerator[None]:
         await conn.run_sync(Base.metadata.create_all)
     yield
     await test_engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def _clean_rate_limits() -> None:
+    """Every test starts with empty throttling windows.
+
+    They all reach the API from the same client address, so without this a test
+    would be rejected because of the requests made by the ones before it.
+    """
+    rate_limit.reset_all()
 
 
 @pytest.fixture(autouse=True)

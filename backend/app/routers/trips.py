@@ -2,8 +2,9 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.rate_limit import throttle
 from app.dependencies import CurrentUser, DbSession, Membership, Ownership
 from app.schemas.auth import UserPublic
 from app.schemas.trip import (
@@ -32,7 +33,13 @@ async def list_trips(db: DbSession, user: CurrentUser):
 
 
 # Declared before the /{trip_id} routes so "join" is never parsed as an id.
-@router.post("/join", response_model=TripPublic)
+# Throttled because this is the one endpoint where guessing pays off: a valid
+# code grants access to a group's whole calendar and ledger.
+@router.post(
+    "/join",
+    response_model=TripPublic,
+    dependencies=[Depends(throttle(limit=20, window_seconds=3600, scope="join"))],
+)
 async def join_trip(payload: JoinRequest, db: DbSession, user: CurrentUser):
     try:
         return await trip_service.join_by_code(db, payload.code, user.id)
