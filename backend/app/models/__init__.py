@@ -11,6 +11,7 @@ from app.models.checklist import Checklist, ChecklistEntry
 from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
 from app.models.item import Item, ItemAssignee, ItemType
+from app.models.map import MapPin, MemberLocation, PinCategory
 from app.models.trip import MemberRole, Trip, TripMember, TripPastMember
 from app.models.user import User
 
@@ -24,7 +25,10 @@ __all__ = [
     "Item",
     "ItemAssignee",
     "ItemType",
+    "MapPin",
+    "MemberLocation",
     "MemberRole",
+    "PinCategory",
     "RefreshToken",
     "Settlement",
     "Trip",

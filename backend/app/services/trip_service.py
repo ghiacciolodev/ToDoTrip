@@ -11,6 +11,7 @@ from app.models import (
     Invite,
     Item,
     ItemAssignee,
+    MemberLocation,
     MemberRole,
     Trip,
     TripMember,
@@ -155,15 +156,23 @@ async def remove_member(db: AsyncSession, membership: TripMember) -> None:
     """Drop a membership and everything that only made sense while it existed.
 
     Task assignments go: the task itself stays, it just loses one of the people
-    responsible for it. Expenses, shares and settlements are kept — they record
-    money that actually moved, and deleting them would rewrite what everyone
-    else owes. Because those rows survive, the person is remembered in
-    trip_past_members so their name can still be shown next to them.
+    responsible for it. Their shared location goes too, or they would sit on the
+    group's map for up to half an hour after losing access to it. Expenses,
+    shares and settlements are kept — they record money that actually moved, and
+    deleting them would rewrite what everyone else owes. Because those rows
+    survive, the person is remembered in trip_past_members so their name can
+    still be shown next to them.
     """
     await db.execute(
         delete(ItemAssignee).where(
             ItemAssignee.user_id == membership.user_id,
             ItemAssignee.item_id.in_(select(Item.id).where(Item.trip_id == membership.trip_id)),
+        )
+    )
+    await db.execute(
+        delete(MemberLocation).where(
+            MemberLocation.trip_id == membership.trip_id,
+            MemberLocation.user_id == membership.user_id,
         )
     )
     # Replaces any earlier record of the same person leaving the same trip.

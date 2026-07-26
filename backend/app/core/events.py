@@ -66,7 +66,7 @@ async def unregister(trip_id: UUID, socket: WebSocket) -> None:
     await _manager.remove(trip_id, socket)
 
 
-async def emit(trip_id: UUID, type_: str, *, actor_id: UUID) -> None:
+async def emit(trip_id: UUID, type_: str, *, actor_id: UUID, data: dict | None = None) -> None:
     """The single door every mutation announces itself through.
 
     Routers call this and nothing else. Today it only fans out to websockets;
@@ -76,8 +76,19 @@ async def emit(trip_id: UUID, type_: str, *, actor_id: UUID) -> None:
 
     The actor's own sockets are skipped — that client already invalidated
     locally, and a second refresh only makes the UI flicker.
+
+    [data] is the deliberate exception to "announce the fact, never the data".
+    A position is two floats that change every twenty seconds: telling four
+    moving clients to each re-run a GET would be dozens of requests a minute to
+    move sixty bytes. Durable, structured state stays behind a GET; ephemeral,
+    tiny and frequent state travels here.
     """
-    payload = {"type": type_, "trip_id": str(trip_id), "actor_id": str(actor_id)}
+    payload = {
+        "type": type_,
+        "trip_id": str(trip_id),
+        "actor_id": str(actor_id),
+        **(data or {}),
+    }
     for socket, user_id in await _manager.snapshot(trip_id):
         if user_id == actor_id:
             continue

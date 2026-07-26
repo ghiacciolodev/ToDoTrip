@@ -168,6 +168,85 @@ class TestBroadcast:
         assert events.connection_count(trip_id) == 0
 
 
+class TestLocationPush:
+    """Positions are the one thing pushed with their data, not announced.
+
+    Two floats changing every twenty seconds: telling four moving clients to
+    each re-run a GET would be dozens of requests a minute to move sixty bytes.
+    """
+
+    def test_a_position_arrives_with_its_coordinates(self, tc: TestClient, group: dict):
+        with tc.websocket_connect(group["url"]) as luca_ws:
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            tc.put(
+                f"{TRIPS}/{group['trip_id']}/location",
+                json={"latitude": 38.7223, "longitude": -9.1393, "accuracy_m": 12.5},
+                headers=group["mario_headers"],
+            )
+
+            event = luca_ws.receive_json()
+            assert event["type"] == "location.update"
+            assert event["user_id"] == group["mario"]
+            assert event["lat"] == 38.7223
+            assert event["lng"] == -9.1393
+            assert event["at"]
+
+    def test_the_mover_does_not_hear_themselves(self, tc: TestClient, group: dict):
+        with (
+            tc.websocket_connect(group["url"]) as mario_ws,
+            tc.websocket_connect(group["url"]) as luca_ws,
+        ):
+            mario_ws.send_json({"token": group["mario_token"]})
+            assert mario_ws.receive_json()["type"] == "connected"
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            tc.put(
+                f"{TRIPS}/{group['trip_id']}/location",
+                json={"latitude": 38.7223, "longitude": -9.1393},
+                headers=group["mario_headers"],
+            )
+            assert luca_ws.receive_json()["type"] == "location.update"
+
+            tc.put(
+                f"{TRIPS}/{group['trip_id']}/location",
+                json={"latitude": 41.1579, "longitude": -8.6291},
+                headers=group["luca_headers"],
+            )
+            # Mario's first message is Luca's move: his own never came back.
+            first_for_mario = mario_ws.receive_json()
+            assert first_for_mario["user_id"] == group["luca"]
+
+    def test_stopping_is_announced(self, tc: TestClient, group: dict):
+        with tc.websocket_connect(group["url"]) as luca_ws:
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            tc.delete(f"{TRIPS}/{group['trip_id']}/location", headers=group["mario_headers"])
+
+            event = luca_ws.receive_json()
+            assert event["type"] == "location.cleared"
+            assert event["user_id"] == group["mario"]
+
+    def test_pins_are_announced_without_their_data(self, tc: TestClient, group: dict):
+        """Durable, structured state stays behind a GET."""
+        with tc.websocket_connect(group["url"]) as luca_ws:
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            tc.post(
+                f"{TRIPS}/{group['trip_id']}/pins",
+                json={"name": "Ostello", "latitude": 41.1579, "longitude": -8.6291},
+                headers=group["mario_headers"],
+            )
+
+            event = luca_ws.receive_json()
+            assert event["type"] == "pins.changed"
+            assert set(event) == {"type", "trip_id", "actor_id"}
+
+
 class TestAccessRevocation:
     def test_a_removed_member_is_cut_off(self, tc: TestClient, group: dict):
         """No data travels here, but even the bell is a signal of the group's

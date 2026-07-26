@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
@@ -12,6 +13,8 @@ import 'data/item.dart';
 import 'data/item_repository.dart';
 import 'data/checklist.dart';
 import 'data/checklist_repository.dart';
+import 'data/map_pin.dart';
+import 'data/map_repository.dart';
 final tripRepositoryProvider = Provider<TripRepository>((ref) {
   return TripRepository(dio: ref.watch(dioProvider));
 });
@@ -155,6 +158,29 @@ final checklistRepositoryProvider = Provider<ChecklistRepository>((ref) {
 final checklistsProvider =
 FutureProvider.family<List<Checklist>, String>((ref, tripId) {
   return ref.watch(checklistRepositoryProvider).list(tripId);
+});
+
+final mapRepositoryProvider = Provider<MapRepository>((ref) {
+  return MapRepository(dio: ref.watch(dioProvider));
+});
+
+/// Saved places. Durable group data, so it lives behind a GET like everything
+/// else; the socket only says when to re-run it.
+final mapPinsProvider = FutureProvider.family<List<MapPin>, String>((ref, tripId) {
+  return ref.watch(mapRepositoryProvider).pins(tripId);
+});
+
+/// Live positions, keyed by user id.
+///
+/// A ValueNotifier rather than a provider holding the state: positions change
+/// every twenty seconds per moving member, and only the layer drawing the
+/// avatars may rebuild that often. Tiles and pins listen to nothing here, so a
+/// fix never touches them.
+final memberLocationsProvider =
+Provider.family<ValueNotifier<Map<String, MemberLocation>>, String>((ref, tripId) {
+  final locations = ValueNotifier<Map<String, MemberLocation>>(const {});
+  ref.onDispose(locations.dispose);
+  return locations;
 });
 
 /// One checklist, or null once it has been deleted — by anyone.

@@ -26,6 +26,17 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- When-in-use only. NSLocationAlwaysUsageDescription is deliberately
+	     absent: sharing runs while the map is open and never in the background,
+	     so "Always" would ask for more than the feature uses and iOS would keep
+	     re-confirming it with an alarming prompt. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TodoTrip shows your location to the people in your trip while you have the map open.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>maps</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

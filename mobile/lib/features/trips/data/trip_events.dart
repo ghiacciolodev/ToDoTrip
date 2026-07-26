@@ -27,8 +27,10 @@ class TripEventsChannel with WidgetsBindingObserver {
   final String tripId;
   final TokenStorage storage;
 
-  /// One event type per call: "expenses.changed", "items.changed", …
-  final void Function(String type) onEvent;
+  /// The decoded event. Most carry only a type; live positions also carry
+  /// their coordinates, which is the one thing this channel pushes rather than
+  /// announces.
+  final void Function(Map<String, dynamic> event) onEvent;
 
   /// The channel came back after dropping, or access was lost for good. Events
   /// may have been missed in between; the caller refetches everything rather
@@ -124,7 +126,7 @@ class TripEventsChannel with WidgetsBindingObserver {
       _everConnected = true;
       return;
     }
-    onEvent(type);
+    onEvent(decoded);
   }
 
   void _onClosed(WebSocket socket) {

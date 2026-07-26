@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
+import '../data/map_pin.dart';
 import '../data/trip_events.dart';
 import '../providers.dart';
 import 'add_expense_screen.dart';
@@ -71,10 +72,11 @@ class _TripShellState extends ConsumerState<TripShell> {
   }
 
   /// One provider group per event type: the client re-runs GETs it already
-  /// knows, it never receives data over the socket.
-  void _onRemoteEvent(String type) {
+  /// knows. Positions are the single exception — they arrive with their data,
+  /// because two floats every twenty seconds are not worth a round trip each.
+  void _onRemoteEvent(Map<String, dynamic> event) {
     if (!mounted) return;
-    switch (type) {
+    switch (event['type']) {
       case 'expenses.changed':
         invalidateMoney(ref, widget.tripId);
       case 'items.changed':
@@ -83,6 +85,12 @@ class _TripShellState extends ConsumerState<TripShell> {
       case 'members.changed':
         ref.invalidate(tripMembersProvider(widget.tripId));
         ref.invalidate(tripInvitesProvider(widget.tripId));
+      case 'pins.changed':
+        ref.invalidate(mapPinsProvider(widget.tripId));
+      case 'location.update':
+        _applyLocation(event);
+      case 'location.cleared':
+        _clearLocation(event['user_id'] as String?);
       case 'trip.changed':
         ref.invalidate(tripProvider(widget.tripId));
       case 'trip.deleted':
@@ -90,6 +98,35 @@ class _TripShellState extends ConsumerState<TripShell> {
         ref.invalidate(tripsProvider);
         context.go('/trips');
     }
+  }
+
+  void _applyLocation(Map<String, dynamic> event) {
+    final userId = event['user_id'] as String?;
+    final lat = (event['lat'] as num?)?.toDouble();
+    final lng = (event['lng'] as num?)?.toDouble();
+    final at = DateTime.tryParse('${event['at']}');
+    if (userId == null || lat == null || lng == null || at == null) return;
+
+    final locations = ref.read(memberLocationsProvider(widget.tripId));
+    locations.value = {
+      ...locations.value,
+      userId: MemberLocation(
+        userId: userId,
+        latitude: lat,
+        longitude: lng,
+        accuracyM: (event['accuracy_m'] as num?)?.toDouble(),
+        updatedAt: at,
+        // The client never enforces the TTL — the server stops serving expired
+        // rows — but the field is part of the model, so it is filled honestly.
+        expiresAt: at.add(const Duration(minutes: 30)),
+      ),
+    };
+  }
+
+  void _clearLocation(String? userId) {
+    if (userId == null) return;
+    final locations = ref.read(memberLocationsProvider(widget.tripId));
+    locations.value = {...locations.value}..remove(userId);
   }
 
   /// After a gap in the connection anything may have changed, so everything is
@@ -127,7 +164,8 @@ class _TripShellState extends ConsumerState<TripShell> {
         ref.invalidate(checklistsProvider(widget.tripId));
       case 2:
         invalidateMoney(ref, widget.tripId);
-      // The map has nothing to fetch yet.
+      case 3:
+        ref.invalidate(mapPinsProvider(widget.tripId));
       case 4:
         ref.invalidate(tripProvider(widget.tripId));
         ref.invalidate(tripInvitesProvider(widget.tripId));
@@ -175,7 +213,9 @@ class _TripShellState extends ConsumerState<TripShell> {
                 onViewChanged: (v) => setState(() => _tasksView = v),
               ),
               ExpensesTab(tripId: widget.tripId),
-              const MapTab(),
+              // isVisible, not mounted: the tab survives inside the
+              // IndexedStack, but the GPS must stop the moment it is off screen.
+              MapTab(tripId: widget.tripId, isVisible: _index == 3),
               GroupTab(tripId: widget.tripId),
             ],
           ),
