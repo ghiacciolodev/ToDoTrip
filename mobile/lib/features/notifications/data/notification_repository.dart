@@ -14,7 +14,9 @@ class NotificationRepository {
     try {
       final response = await dio.get(
         '/notifications',
-        queryParameters: {'limit': limit, if (before != null) 'before': before},
+        // ?before is omitted rather than sent as null on the first page: the
+        // server reads its absence as "start from the top".
+        queryParameters: {'limit': limit, 'before': ?before},
       );
       return NotificationPage.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

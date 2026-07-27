@@ -426,10 +426,9 @@ class _TaskRowState extends ConsumerState<_TaskRow> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final lookup = ref.watch(memberLookupProvider(widget.tripId));
-    final assignees = [
-      for (final id in item.assignees)
-        if (lookup[id] case final member?) member,
-    ];
+    // An id with nobody behind it is skipped: a member can be removed from the
+    // trip while their name is still on a task.
+    final assignees = [for (final id in item.assignees) ?lookup[id]];
 
     return SwipeToDelete(
       id: item.id,

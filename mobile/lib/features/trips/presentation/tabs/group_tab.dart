@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_messages.dart';
-import '../../../../core/providers.dart';
 import '../../../../core/theme/avatar_color.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/trip.dart';
