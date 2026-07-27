@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
-  ![tests](https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/NOME_FILE.yml/badge.svg)
+  ![backend](https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/backend.yml/badge.svg)
 </p>
 
 ---
