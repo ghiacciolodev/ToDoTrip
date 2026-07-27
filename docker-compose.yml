@@ -12,6 +12,9 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Runs once, when the volume is first created, and gives the test suite
+      # the second database it expects.
+      - ./backend/docker/create-test-db.sh:/docker-entrypoint-initdb.d/create-test-db.sh:ro
     # Lets other services wait for a database that actually accepts queries,
     # not just for a container that has started.
     healthcheck:
@@ -19,6 +22,36 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./backend
+    container_name: todotrip-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # `db` is the service name above; inside the compose network that is the
+      # hostname. `localhost` here would mean the API container itself.
+      DATABASE_URL: postgresql+asyncpg://todotrip:todotrip@db:5432/todotrip
+      # Development is the only environment allowed to run on a placeholder
+      # secret — app/config.py refuses to start otherwise.
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      # Published on every interface, so the Android emulator (10.0.2.2) and a
+      # phone on the same wifi both reach it.
+      - "8000:8000"
+    volumes:
+      # The source, live: saving a file on the host reloads the server in the
+      # container. Without this, `docker compose up` would keep serving whatever
+      # the image was built from.
+      - ./backend:/app
+    # Overrides the image command to add --reload. Migrations still run first:
+    # they need a reachable database and have to be done before the first
+    # request, which is exactly this window.
+    command: >-
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   pgdata:

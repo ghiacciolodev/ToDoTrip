@@ -1,0 +1,10 @@
+# The virtualenv is built for the host OS and would shadow the one installed
+# inside the image.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Real credentials never travel into an image. Compose supplies the values.
+.env
