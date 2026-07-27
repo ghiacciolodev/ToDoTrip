@@ -247,11 +247,11 @@ One call, because it is one moment — *X happened in trip Y, caused by Z*.
 
 ```mermaid
 flowchart LR
-    call["emit(trip_id, type, actor_id, notify?)"]
+    hub["emit(trip_id, type, actor_id, notify?)"]
 
-    call --> ws["WebSocket fan-out<br/><i>ephemeral</i>"]
-    call --> notif["notifications table<br/><i>durable</i>"]
-    call -.-> push["push<br/><i>not built</i>"]
+    hub --> ws["WebSocket fan-out<br/><i>ephemeral</i>"]
+    hub --> notif["notifications table<br/><i>durable</i>"]
+    hub -.-> push["push<br/><i>not built</i>"]
 
     ws --> online["Whoever is looking:<br/>re-runs the GET it knows"]
     notif --> offline["Whoever is not:<br/>finds it hours later"]
