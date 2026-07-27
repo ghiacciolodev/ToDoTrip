@@ -258,10 +258,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add flights, check-ins and\nanything with a time on it.';
 
   @override
-  String get calendarToday => 'TODAY';
+  String get calendarToday => 'Today';
 
   @override
-  String get calendarTomorrow => 'TOMORROW';
+  String get calendarTomorrow => 'Tomorrow';
 
   @override
   String get tasksViewTodo => 'To-do';
@@ -1041,4 +1041,155 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileDeleteOwnsTrips =>
       'You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.';
+
+  @override
+  String get tripSettingsTitle => 'Trip settings';
+
+  @override
+  String get tripSettingsEdit => 'Edit';
+
+  @override
+  String get tripSettingsInfo => 'Information';
+
+  @override
+  String get tripSettingsPersonal => 'Just for you';
+
+  @override
+  String get tripSettingsDanger => 'Danger zone';
+
+  @override
+  String get tripCurrencyLabel => 'Currency';
+
+  @override
+  String get tripCurrencyWarning =>
+      'Changing the currency won\'t convert existing expenses. Amounts stay the same, only the symbol changes.';
+
+  @override
+  String get tripSaveChanges => 'Save changes';
+
+  @override
+  String get tripSaved => 'Trip updated';
+
+  @override
+  String tripCreatedByOn(String name, String date) {
+    return 'Created by $name on $date';
+  }
+
+  @override
+  String tripStatMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatExpenses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expenses',
+      one: '1 expense',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count plan entries',
+      one: '1 plan entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripTotalSpent => 'Total spent';
+
+  @override
+  String get tripExportCsv => 'Export expenses as CSV';
+
+  @override
+  String get tripExportEmpty => 'There are no expenses to export yet.';
+
+  @override
+  String tripExportShareText(String trip) {
+    return '$trip — expenses';
+  }
+
+  @override
+  String get tripMuteLabel => 'Mute this trip';
+
+  @override
+  String get tripMuteBody => 'Stop getting notified about it';
+
+  @override
+  String get tripArchive => 'Archive trip';
+
+  @override
+  String get tripArchiveBody =>
+      'Moves it out of your list. Everyone keeps reading it, nobody can add to it.';
+
+  @override
+  String get tripArchiveTitle => 'Archive this trip?';
+
+  @override
+  String get tripUnarchive => 'Bring back from the archive';
+
+  @override
+  String get tripArchivedBanner =>
+      'This trip is archived. Nothing can be added to it.';
+
+  @override
+  String get tripsArchivedTitle => 'Archived';
+
+  @override
+  String tripsArchivedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count archived trips',
+      one: '1 archived trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripsArchivedEmpty => 'Nothing archived yet.';
+
+  @override
+  String get tripUnsavedChanges => 'You have unsaved changes';
+
+  @override
+  String get calendarYesterday => 'Yesterday';
+
+  @override
+  String get calendarStartsNow => 'Now';
+
+  @override
+  String calendarStartsInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count min',
+      one: 'in 1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String calendarStartsInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
 }

@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.events import emit
-from app.dependencies import CurrentUser, DbSession, Membership
+from app.dependencies import CurrentUser, DbSession, Membership, Writable
 from app.schemas.map import LocationPublic, LocationUpdate, PinCreate, PinPublic, PinUpdate
 from app.services import map_service
 from app.services.map_service import PinNotFound
@@ -65,7 +65,7 @@ async def list_pins(trip_id: UUID, db: DbSession, _: Membership):
 
 @router.post("/pins", response_model=PinPublic, status_code=status.HTTP_201_CREATED)
 async def create_pin(
-    trip_id: UUID, payload: PinCreate, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, payload: PinCreate, db: DbSession, user: CurrentUser, _: Writable
 ):
     pin = await map_service.create_pin(db, trip_id, user.id, payload.model_dump())
     await emit(trip_id, "pins.changed", actor_id=user.id)
@@ -74,7 +74,7 @@ async def create_pin(
 
 @router.patch("/pins/{pin_id}", response_model=PinPublic)
 async def update_pin(
-    trip_id: UUID, pin_id: UUID, payload: PinUpdate, db: DbSession, membership: Membership
+    trip_id: UUID, pin_id: UUID, payload: PinUpdate, db: DbSession, membership: Writable
 ):
     try:
         pin = await map_service.get_pin(db, trip_id, pin_id)
@@ -87,7 +87,7 @@ async def update_pin(
 
 
 @router.delete("/pins/{pin_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_pin(trip_id: UUID, pin_id: UUID, db: DbSession, membership: Membership):
+async def delete_pin(trip_id: UUID, pin_id: UUID, db: DbSession, membership: Writable):
     """Any member can delete, as for expenses and tasks: a shared map nobody is
     allowed to tidy stops being useful."""
     try:

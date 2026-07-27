@@ -8,6 +8,8 @@ import '../../features/settings/presentation/profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/trips/presentation/add_screen.dart';
+import '../../features/trips/presentation/archived_trips_screen.dart';
+import '../../features/trips/presentation/trip_settings_screen.dart';
 import '../../features/trips/presentation/trip_shell.dart';
 import '../../features/trips/presentation/trips_screen.dart';
 import '../providers.dart';
@@ -97,6 +99,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         parentNavigatorKey: rootNavigatorKey,
         builder: (_, _) => const ProfileScreen(),
+      ),
+
+      GoRoute(
+        path: '/trips/:tripId/settings',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, state) =>
+            TripSettingsScreen(tripId: state.pathParameters['tripId']!),
+      ),
+
+      GoRoute(
+        path: '/archive',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const ArchivedTripsScreen(),
       ),
     ],
   );

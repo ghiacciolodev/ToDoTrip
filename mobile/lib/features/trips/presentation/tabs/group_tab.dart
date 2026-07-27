@@ -43,7 +43,10 @@ class GroupTab extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          _TripCard(trip: trip),
+          _TripCard(
+            trip: trip,
+            onTap: () => context.push('/trips/$tripId/settings'),
+          ),
           const SizedBox(height: 24),
 
           _SectionLabel(l10n.groupPeopleCount(members.length)),
@@ -182,64 +185,80 @@ class GroupTab extends ConsumerWidget {
 }
 
 class _TripCard extends StatelessWidget {
-  const _TripCard({required this.trip});
+  const _TripCard({required this.trip, required this.onTap});
 
   final Trip trip;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              trip.name,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 15,
-                  color: AppColors.inkMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _dates(context, trip),
-                  style: const TextStyle(
-                    color: AppColors.inkMuted,
-                    fontSize: 13,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      trip.name,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                const Icon(
-                  Icons.payments_outlined,
-                  size: 15,
-                  color: AppColors.inkMuted,
-                ),
-                const SizedBox(width: 6),
+                  // The card was already tappable and opened nothing; the
+                  // chevron is what says it goes somewhere now.
+                  const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 15,
+                    color: AppColors.inkMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _dates(context, trip),
+                    style: const TextStyle(
+                      color: AppColors.inkMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(
+                    Icons.payments_outlined,
+                    size: 15,
+                    color: AppColors.inkMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    trip.baseCurrency,
+                    style: const TextStyle(
+                      color: AppColors.inkMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              if (trip.description != null && trip.description!.isNotEmpty) ...[
+                const SizedBox(height: 12),
                 Text(
-                  trip.baseCurrency,
+                  trip.description!,
                   style: const TextStyle(
                     color: AppColors.inkMuted,
-                    fontSize: 13,
+                    height: 1.4,
                   ),
                 ),
               ],
-            ),
-            if (trip.description != null && trip.description!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                trip.description!,
-                style: const TextStyle(color: AppColors.inkMuted, height: 1.4),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

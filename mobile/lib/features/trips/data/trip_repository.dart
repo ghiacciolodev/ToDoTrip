@@ -7,14 +7,21 @@ import 'invite.dart';
 
 /// Talks to /trips. Converts Dio failures into ApiException so nothing
 /// Dio-specific leaks into the UI layer.
+/// Distinguishes "not mentioned" from "set to null" in a PATCH. Sending null
+/// where the caller meant nothing would clear a field nobody touched.
+const _unset = Object();
+
 class TripRepository {
   TripRepository({required this.dio});
 
   final Dio dio;
 
-  Future<List<Trip>> list() async {
+  Future<List<Trip>> list({bool archived = false}) async {
     try {
-      final response = await dio.get('/trips');
+      final response = await dio.get(
+        '/trips',
+        queryParameters: archived ? const {'archived': true} : null,
+      );
       return (response.data as List)
           .map((json) => Trip.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -121,6 +128,88 @@ class TripRepository {
       return (response.data as List)
           .map((json) => TripMember.fromJson(json as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Owner only. Only the keys passed are sent, so a PATCH never blanks a field
+  /// the settings screen did not touch — which is why every parameter here is a
+  /// sentinel rather than a plain null.
+  Future<Trip> update(
+    String tripId, {
+    Object? name = _unset,
+    Object? description = _unset,
+    Object? startDate = _unset,
+    Object? endDate = _unset,
+    Object? baseCurrency = _unset,
+    Object? icon = _unset,
+    Object? color = _unset,
+    Object? archived = _unset,
+  }) async {
+    final data = <String, dynamic>{
+      if (name != _unset) 'name': name,
+      if (description != _unset) 'description': description,
+      if (startDate != _unset)
+        'start_date': startDate == null ? null : _asDate(startDate as DateTime),
+      if (endDate != _unset)
+        'end_date': endDate == null ? null : _asDate(endDate as DateTime),
+      if (baseCurrency != _unset) 'base_currency': baseCurrency,
+      if (icon != _unset) 'icon': icon,
+      if (color != _unset) 'color': color,
+      if (archived != _unset) 'archived': archived,
+    };
+    try {
+      final response = await dio.patch('/trips/$tripId', data: data);
+      return Trip.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// The expense ledger as a CSV, with the filename the server chose.
+  ///
+  /// Bytes rather than a string: the response carries a byte-order mark so
+  /// spreadsheets read it as UTF-8, and decoding then re-encoding it here would
+  /// be two chances to lose that.
+  Future<({List<int> bytes, String filename})> exportCsv(String tripId) async {
+    try {
+      final response = await dio.get<List<int>>(
+        '/trips/$tripId/export.csv',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return (
+        bytes: response.data ?? const <int>[],
+        filename: _filenameFrom(response.headers.value('content-disposition')),
+      );
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Reads the plain `filename="..."` parameter, ignoring the RFC 5987 one:
+  /// the ASCII form is already safe to write to a filesystem, which the
+  /// percent-encoded original is not.
+  static String _filenameFrom(String? disposition) {
+    final match = RegExp('filename="([^"]+)"').firstMatch(disposition ?? '');
+    return match?.group(1) ?? 'expenses.csv';
+  }
+
+  Future<bool> isMuted(String tripId) async {
+    try {
+      final response = await dio.get('/trips/$tripId/members/me/settings');
+      return response.data['muted'] as bool;
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  Future<void> setMuted(String tripId, bool muted) async {
+    try {
+      await dio.patch(
+        '/trips/$tripId/members/me/settings',
+        data: {'muted': muted},
+      );
     } on DioException catch (e) {
       throw ApiException.from(e);
     }

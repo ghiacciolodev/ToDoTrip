@@ -30,6 +30,14 @@ final tripsProvider = FutureProvider<List<Trip>>((ref) async {
   return ref.watch(tripRepositoryProvider).list();
 });
 
+/// Trips that have been put away. A separate request, made only when the
+/// archive is opened: most people have none, and nobody scrolling their live
+/// trips is waiting on it.
+final archivedTripsProvider = FutureProvider<List<Trip>>((ref) async {
+  ref.watch(authProvider);
+  return ref.watch(tripRepositoryProvider).list(archived: true);
+});
+
 /// One trip, by id.
 ///
 /// A family: Riverpod keeps one instance per tripId and disposes it when no

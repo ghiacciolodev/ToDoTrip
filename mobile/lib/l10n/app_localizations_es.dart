@@ -259,10 +259,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Añade vuelos, entradas y\ntodo lo que tenga una hora.';
 
   @override
-  String get calendarToday => 'HOY';
+  String get calendarToday => 'Hoy';
 
   @override
-  String get calendarTomorrow => 'MAÑANA';
+  String get calendarTomorrow => 'Mañana';
 
   @override
   String get tasksViewTodo => 'Pendientes';
@@ -1048,4 +1048,155 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get profileDeleteOwnsTrips =>
       'Todavía eres propietario de un viaje en el que hay otras personas. Pásalo a alguien o elimínalo y vuelve a intentarlo.';
+
+  @override
+  String get tripSettingsTitle => 'Ajustes del viaje';
+
+  @override
+  String get tripSettingsEdit => 'Editar';
+
+  @override
+  String get tripSettingsInfo => 'Información';
+
+  @override
+  String get tripSettingsPersonal => 'Solo para ti';
+
+  @override
+  String get tripSettingsDanger => 'Zona peligrosa';
+
+  @override
+  String get tripCurrencyLabel => 'Moneda';
+
+  @override
+  String get tripCurrencyWarning =>
+      'Cambiar la moneda no convierte los gastos ya registrados. Los importes siguen igual, solo cambia el símbolo.';
+
+  @override
+  String get tripSaveChanges => 'Guardar los cambios';
+
+  @override
+  String get tripSaved => 'Viaje actualizado';
+
+  @override
+  String tripCreatedByOn(String name, String date) {
+    return 'Creado por $name el $date';
+  }
+
+  @override
+  String tripStatMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count miembros',
+      one: '1 miembro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatExpenses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gastos',
+      one: '1 gasto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count elementos del plan',
+      one: '1 elemento del plan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripTotalSpent => 'Total gastado';
+
+  @override
+  String get tripExportCsv => 'Exportar los gastos en CSV';
+
+  @override
+  String get tripExportEmpty => 'Todavía no hay gastos que exportar.';
+
+  @override
+  String tripExportShareText(String trip) {
+    return '$trip — gastos';
+  }
+
+  @override
+  String get tripMuteLabel => 'Silenciar este viaje';
+
+  @override
+  String get tripMuteBody => 'Deja de recibir notificaciones';
+
+  @override
+  String get tripArchive => 'Archivar viaje';
+
+  @override
+  String get tripArchiveBody =>
+      'Lo saca de tu lista. Todos siguen leyéndolo, nadie puede añadir nada.';
+
+  @override
+  String get tripArchiveTitle => '¿Archivar este viaje?';
+
+  @override
+  String get tripUnarchive => 'Sacar del archivo';
+
+  @override
+  String get tripArchivedBanner =>
+      'Este viaje está archivado. Ya no se le puede añadir nada.';
+
+  @override
+  String get tripsArchivedTitle => 'Archivados';
+
+  @override
+  String tripsArchivedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count viajes archivados',
+      one: '1 viaje archivado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripsArchivedEmpty => 'Todavía no has archivado nada.';
+
+  @override
+  String get tripUnsavedChanges => 'Tienes cambios sin guardar';
+
+  @override
+  String get calendarYesterday => 'Ayer';
+
+  @override
+  String get calendarStartsNow => 'Ahora';
+
+  @override
+  String calendarStartsInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'en $count min',
+      one: 'en 1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String calendarStartsInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'en $count horas',
+      one: 'en 1 hora',
+    );
+    return '$_temp0';
+  }
 }

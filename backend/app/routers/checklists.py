@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.events import emit
-from app.dependencies import CurrentUser, DbSession, Membership
+from app.dependencies import CurrentUser, DbSession, Membership, Writable
 from app.schemas.checklist import (
     ChecklistCreate,
     ChecklistEntryCreate,
@@ -26,7 +26,7 @@ _ENTRY_NOT_FOUND = HTTPException(status.HTTP_404_NOT_FOUND, "Entry not found")
 
 @router.post("", response_model=ChecklistPublic, status_code=status.HTTP_201_CREATED)
 async def create_checklist(
-    trip_id: UUID, payload: ChecklistCreate, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, payload: ChecklistCreate, db: DbSession, user: CurrentUser, _: Writable
 ):
     checklist = await checklist_service.create_checklist(db, trip_id, user.id, payload.model_dump())
     # Lists live on the same tab as tasks, so they share the items event.
@@ -40,9 +40,7 @@ async def list_checklists(trip_id: UUID, db: DbSession, _: Membership):
 
 
 @router.delete("/{checklist_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_checklist(
-    trip_id: UUID, checklist_id: UUID, db: DbSession, membership: Membership
-):
+async def delete_checklist(trip_id: UUID, checklist_id: UUID, db: DbSession, membership: Writable):
     """Any member can delete, as for items: a shared list nobody can tidy
     becomes unusable."""
     try:
@@ -63,7 +61,7 @@ async def add_entry(
     checklist_id: UUID,
     payload: ChecklistEntryCreate,
     db: DbSession,
-    membership: Membership,
+    membership: Writable,
 ):
     try:
         checklist = await checklist_service.get_checklist(db, trip_id, checklist_id)
@@ -76,7 +74,7 @@ async def add_entry(
 
 @router.delete("/{checklist_id}/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_entry(
-    trip_id: UUID, checklist_id: UUID, entry_id: UUID, db: DbSession, membership: Membership
+    trip_id: UUID, checklist_id: UUID, entry_id: UUID, db: DbSession, membership: Writable
 ):
     try:
         checklist = await checklist_service.get_checklist(db, trip_id, checklist_id)
@@ -96,7 +94,7 @@ async def check_entry(
     entry_id: UUID,
     db: DbSession,
     user: CurrentUser,
-    _: Membership,
+    _: Writable,
 ):
     return await _set_checked(db, trip_id, checklist_id, entry_id, True, user.id)
 
@@ -108,7 +106,7 @@ async def uncheck_entry(
     entry_id: UUID,
     db: DbSession,
     user: CurrentUser,
-    _: Membership,
+    _: Writable,
 ):
     return await _set_checked(db, trip_id, checklist_id, entry_id, False, user.id)
 

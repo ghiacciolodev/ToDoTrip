@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.events import emit
-from app.dependencies import CurrentUser, DbSession, Membership
+from app.dependencies import CurrentUser, DbSession, Membership, Writable
 from app.models import ItemType
 from app.schemas.item import ItemCreate, ItemPublic, ItemUpdate
 from app.services import item_service
@@ -26,7 +26,7 @@ _NOT_A_TASK = HTTPException(status.HTTP_409_CONFLICT, "Only tasks can be complet
 
 @router.post("", response_model=ItemPublic, status_code=status.HTTP_201_CREATED)
 async def create_item(
-    trip_id: UUID, payload: ItemCreate, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, payload: ItemCreate, db: DbSession, user: CurrentUser, _: Writable
 ):
     try:
         item = await item_service.create_item(db, trip_id, user.id, payload.model_dump())
@@ -68,7 +68,7 @@ async def get_item(trip_id: UUID, item_id: UUID, db: DbSession, _: Membership):
 
 @router.patch("/{item_id}", response_model=ItemPublic)
 async def update_item(
-    trip_id: UUID, item_id: UUID, payload: ItemUpdate, db: DbSession, membership: Membership
+    trip_id: UUID, item_id: UUID, payload: ItemUpdate, db: DbSession, membership: Writable
 ):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
@@ -82,7 +82,7 @@ async def update_item(
 
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(trip_id: UUID, item_id: UUID, db: DbSession, membership: Membership):
+async def delete_item(trip_id: UUID, item_id: UUID, db: DbSession, membership: Writable):
     """Any member can delete: a shared list nobody can tidy becomes unusable."""
     try:
         await item_service.delete_item(db, await item_service.get_item(db, trip_id, item_id))
@@ -93,7 +93,7 @@ async def delete_item(trip_id: UUID, item_id: UUID, db: DbSession, membership: M
 
 @router.post("/{item_id}/complete", response_model=ItemPublic)
 async def complete_item(
-    trip_id: UUID, item_id: UUID, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, item_id: UUID, db: DbSession, user: CurrentUser, _: Writable
 ):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
@@ -107,9 +107,7 @@ async def complete_item(
 
 
 @router.delete("/{item_id}/complete", response_model=ItemPublic)
-async def reopen_item(
-    trip_id: UUID, item_id: UUID, db: DbSession, user: CurrentUser, _: Membership
-):
+async def reopen_item(trip_id: UUID, item_id: UUID, db: DbSession, user: CurrentUser, _: Writable):
     try:
         item = await item_service.get_item(db, trip_id, item_id)
         item = await item_service.set_completion(db, item, False, user.id)

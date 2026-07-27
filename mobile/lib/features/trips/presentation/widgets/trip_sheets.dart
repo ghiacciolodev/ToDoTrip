@@ -9,6 +9,7 @@ import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/trip_identity.dart';
 import '../../providers.dart';
+import 'trip_pickers.dart';
 
 /// Bottom sheets rather than dialogs: they read as native on both platforms,
 /// and leave room for a keyboard without the content jumping.
@@ -188,9 +189,9 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
           ),
           const SizedBox(height: 16),
 
-          _PickerLabel(l10n.tripIconLabel),
+          PickerLabel(l10n.tripIconLabel),
           const SizedBox(height: 8),
-          _IconPicker(
+          IconPicker(
             selected: _icon,
             colour: tripColors[_color]!,
             // Tapping the chosen one again clears it: the step stays skippable
@@ -199,9 +200,9 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
           ),
           const SizedBox(height: 16),
 
-          _PickerLabel(l10n.tripColorLabel),
+          PickerLabel(l10n.tripColorLabel),
           const SizedBox(height: 8),
-          _ColorPicker(
+          ColorPicker(
             selected: _color,
             onPick: (key) => setState(() => _color = key),
           ),
@@ -372,126 +373,6 @@ class _Preview extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PickerLabel extends StatelessWidget {
-  const _PickerLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: AppColors.inkMuted,
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-/// One scrolling row rather than a grid: twelve icons in a grid would push the
-/// name field and the button off a small screen.
-class _IconPicker extends StatelessWidget {
-  const _IconPicker({
-    required this.selected,
-    required this.colour,
-    required this.onPick,
-  });
-
-  final String? selected;
-  final Color colour;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: tripIcons.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final entry = tripIcons.entries.elementAt(index);
-          final chosen = entry.key == selected;
-          return Semantics(
-            selected: chosen,
-            button: true,
-            child: InkWell(
-              onTap: () => onPick(entry.key),
-              customBorder: const CircleBorder(),
-              child: Container(
-                height: 46,
-                width: 46,
-                decoration: BoxDecoration(
-                  color: chosen
-                      ? colour.withValues(alpha: 0.14)
-                      : AppColors.background,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: chosen ? colour : AppColors.border,
-                    width: chosen ? 2 : 1,
-                  ),
-                ),
-                child: Icon(
-                  entry.value,
-                  size: 22,
-                  color: chosen ? colour : AppColors.inkMuted,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// The eight palette colours. Always one selected: unlike the icon there is no
-/// neutral colour to fall back to, so the choice is only ever changed.
-class _ColorPicker extends StatelessWidget {
-  const _ColorPicker({required this.selected, required this.onPick});
-
-  final String selected;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        for (final entry in tripColors.entries)
-          Semantics(
-            selected: entry.key == selected,
-            button: true,
-            child: InkWell(
-              onTap: () => onPick(entry.key),
-              customBorder: const CircleBorder(),
-              child: Container(
-                height: 38,
-                width: 38,
-                decoration: BoxDecoration(
-                  color: entry.value,
-                  shape: BoxShape.circle,
-                  // A ring set off the swatch rather than a tick drawn on it:
-                  // a white tick disappears on the two lightest colours.
-                  border: Border.all(
-                    color: entry.key == selected
-                        ? AppColors.ink
-                        : Colors.transparent,
-                    width: 2,
-                    strokeAlign: BorderSide.strokeAlignOutside,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

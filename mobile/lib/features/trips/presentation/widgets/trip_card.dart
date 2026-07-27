@@ -8,14 +8,15 @@ import '../../../../l10n/app_localizations.dart';
 import '../../data/trip.dart';
 import '../../data/trip_identity.dart';
 import 'avatar_stack.dart';
+import 'progress_ring.dart';
 
 /// One trip in the list.
 ///
-/// Two zones. The head carries identity — the trip's own colour, washed out
-/// behind a disc of the same colour that holds the icon — and the foot carries
-/// state: who is in it, when it is, what it costs you. The saturated colour is
-/// confined to the disc on purpose: eight trips are then distinguishable before
-/// the name is read, without the list becoming a wall of colour.
+/// One anatomy, shared with everything else that scrolls in this app: a circle
+/// on the left carrying identity and state, the name in the middle, the state
+/// on the right. The circle is a ring around the trip's icon, filled as the trip
+/// goes by — the same drawing a checklist uses for its items, so "three days
+/// into seven" and "three things left" read as the same kind of fact.
 class TripCard extends StatelessWidget {
   const TripCard({super.key, required this.trip, this.onTap});
 
@@ -32,111 +33,94 @@ class TripCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      // A shadow instead of the usual hairline: these cards are meant to read as
-      // objects lying on the list, and the coloured head already gives them an
-      // edge the border would only duplicate.
+      // A shadow rather than the usual hairline: these read as objects lying on
+      // the list, and a border would flatten them back into rows of a table.
       elevation: 1.5,
       shadowColor: AppColors.ink.withValues(alpha: 0.16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Head(trip: trip, identity: identity),
-            _Foot(trip: trip),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+          child: Row(
+            children: [
+              _Identity(trip: trip, identity: identity),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            trip.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.ink,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _StatusBadge(trip: trip),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _Meta(trip: trip),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _Head extends StatelessWidget {
-  const _Head({required this.trip, required this.identity});
+/// The icon in its colour, inside a ring that shows how far along the trip is.
+class _Identity extends StatelessWidget {
+  const _Identity({required this.trip, required this.identity});
 
   final Trip trip;
   final TripIdentity identity;
 
   @override
   Widget build(BuildContext context) {
-    final description = trip.description?.trim();
-    final hasDescription = description != null && description.isNotEmpty;
+    // Only a running trip has a fraction to draw. Everything else gets the bare
+    // track, which still reads as the same object rather than a different one.
+    final progress = trip.stage == TripStage.running && trip.endDate != null
+        ? trip.dayOfTrip / trip.totalDays
+        : null;
 
-    return Container(
-      // A wash, not the colour itself: dark text on it keeps full contrast,
-      // which is what buys the three levels of hierarchy on this card.
-      color: identity.colour.withValues(alpha: 0.10),
-      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
-      child: Row(
-        // Without a description the row is a single line and centres on the
-        // disc; with one it hangs from the top.
-        crossAxisAlignment: hasDescription
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.center,
-        children: [
-          _IconDisc(identity: identity),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  trip.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.ink,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-                if (hasDescription) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.inkMuted,
-                      fontSize: 13,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    return ProgressRing(
+      size: 52,
+      stroke: 3,
+      colour: identity.colour,
+      value: progress,
+      child: Container(
+        height: 40,
+        width: 40,
+        decoration: BoxDecoration(
+          color: identity.colour,
+          shape: BoxShape.circle,
+        ),
+        // Picking a different icon crossfades instead of cutting — the card is
+        // usually on screen while that choice is being made.
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            identity.icon,
+            key: ValueKey(identity.icon.codePoint),
+            color: Colors.white,
+            size: 21,
           ),
-          const SizedBox(width: 10),
-          _StatusBadge(trip: trip),
-        ],
-      ),
-    );
-  }
-}
-
-class _IconDisc extends StatelessWidget {
-  const _IconDisc({required this.identity});
-
-  final TripIdentity identity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      width: 52,
-      decoration: BoxDecoration(color: identity.colour, shape: BoxShape.circle),
-      // Picking a different icon crossfades instead of cutting — the card is
-      // usually on screen while that choice is being made.
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: Icon(
-          identity.icon,
-          key: ValueKey(identity.icon.codePoint),
-          color: Colors.white,
-          size: 26,
         ),
       ),
     );
@@ -172,7 +156,7 @@ class _StatusBadge extends StatelessWidget {
         true,
       ),
       // Nothing left to count down to: the useful question becomes whether
-      // anyone is still doing anything here.
+      // anyone is still doing anything in there.
       TripStage.ended || TripStage.undated => (
         trip.lastActivityAt == null
             ? null
@@ -182,79 +166,77 @@ class _StatusBadge extends StatelessWidget {
     };
     if (label == null) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: prominent ? AppColors.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: prominent ? AppColors.border : AppColors.inkMuted,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!prominent) ...[
+    if (!prominent) {
+      // Cold information: no pill around it, just the clock and the words.
+      return Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             const Icon(Icons.schedule, size: 12, color: AppColors.inkMuted),
             const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              color: prominent ? AppColors.ink : AppColors.inkMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.inkMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.ink,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-class _Foot extends StatelessWidget {
-  const _Foot({required this.trip});
+/// Faces, dates and money on one line, in that order: who, when, how much.
+class _Meta extends StatelessWidget {
+  const _Meta({required this.trip});
 
   final Trip trip;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                if (trip.memberPreview.isNotEmpty) ...[
-                  AvatarStack(
-                    people: [
-                      for (final member in trip.memberPreview)
-                        AvatarPerson(id: member.id, name: member.displayName),
-                    ],
-                    total: trip.memberCount,
-                    size: 26,
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Flexible(
-                  child: Text(
-                    _dateRange(context, trip),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.inkMuted,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    return Row(
+      children: [
+        if (trip.memberPreview.isNotEmpty) ...[
+          AvatarStack(
+            people: [
+              for (final member in trip.memberPreview)
+                AvatarPerson(id: member.id, name: member.displayName),
+            ],
+            total: trip.memberCount,
+            size: 24,
           ),
-          const SizedBox(width: 8),
-          _BalanceChip(trip: trip),
+          const SizedBox(width: 10),
         ],
-      ),
+        Expanded(
+          child: Text(
+            _dateRange(context, trip),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+          ),
+        ),
+        _Balance(trip: trip),
+      ],
     );
   }
 
@@ -267,25 +249,24 @@ class _Foot extends StatelessWidget {
     if (start == null && end == null) return l10n.tripNoDates;
 
     final dayMonth = DateFormat('d MMM');
-    final full = DateFormat('d MMM y');
 
     if (start != null && end != null) {
       if (start.year == end.year && start.month == end.month) {
-        return '${start.day} – ${full.format(end)}';
+        return '${start.day} – ${dayMonth.format(end)}';
       }
-      return '${dayMonth.format(start)} – ${full.format(end)}';
+      return '${dayMonth.format(start)} – ${dayMonth.format(end)}';
     }
-    if (start != null) return l10n.tripDatesFrom(full.format(start));
-    return l10n.tripDatesUntil(full.format(end!));
+    if (start != null) return l10n.tripDatesFrom(dayMonth.format(start));
+    return l10n.tripDatesUntil(dayMonth.format(end!));
   }
 }
 
 /// What this trip costs you, or nothing at all when it has no expenses.
 ///
-/// Shown only when there is something to say: a chip reading "Settled" on a trip
-/// nobody has spent on is noise.
-class _BalanceChip extends StatelessWidget {
-  const _BalanceChip({required this.trip});
+/// Shown only when there is something to say: "Settled" on a trip nobody has
+/// spent on is a claim about money that does not exist.
+class _Balance extends StatelessWidget {
+  const _Balance({required this.trip});
 
   final Trip trip;
 
@@ -299,19 +280,12 @@ class _BalanceChip extends StatelessWidget {
     // roughly 8% of men.
     final (label, colour) = switch (cents) {
       0 => (l10n.moneySettledShort, AppColors.inkMuted),
-      > 0 => (
-        '+${Money(cents).formatted}',
-        Theme.of(context).colorScheme.onPrimaryContainer,
-      ),
+      > 0 => ('+${Money(cents).formatted}', AppColors.primaryDark),
       _ => ('−${Money(cents).abs.formatted}', AppColors.terracotta),
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: colour.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
       child: Text(
         label,
         style: TextStyle(

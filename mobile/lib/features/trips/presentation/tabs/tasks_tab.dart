@@ -12,6 +12,7 @@ import '../../providers.dart';
 import '../checklist_screen.dart';
 import '../widgets/avatar_stack.dart';
 import '../widgets/delete_actions.dart';
+import '../widgets/progress_ring.dart';
 import '../widgets/tab_states.dart';
 
 /// The two kinds of thing left to do.
@@ -126,11 +127,10 @@ class _TodoView extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
-        for (final task in open)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _TaskCard(tripId: tripId, item: task),
-          ),
+        // One container with hairlines between the rows, not a box per task.
+        // Twenty bordered cards is twenty frames around fifteen words each; a
+        // to-do list wants to read as a list.
+        if (open.isNotEmpty) _TaskGroup(tripId: tripId, tasks: open),
         // Completed work collapses out of the way rather than disappearing:
         // seeing it ticked off is half the point of a shared list.
         if (done.isNotEmpty) ...[
@@ -143,17 +143,42 @@ class _TodoView extends ConsumerWidget {
                 style: const TextStyle(fontSize: 14, color: AppColors.inkMuted),
               ),
               tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-              children: [
-                for (final task in done)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _TaskCard(tripId: tripId, item: task),
-                  ),
-              ],
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              children: [_TaskGroup(tripId: tripId, tasks: done)],
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+/// A stack of task rows sharing one card.
+class _TaskGroup extends StatelessWidget {
+  const _TaskGroup({required this.tripId, required this.tasks});
+
+  final String tripId;
+  final List<Item> tasks;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 1.5,
+      shadowColor: AppColors.ink.withValues(alpha: 0.16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final (index, task) in tasks.indexed) ...[
+            // Indented past the ticks, so the column of circles stays unbroken
+            // and the eye can run down it.
+            if (index > 0)
+              const Divider(height: 1, thickness: 1, indent: 50, endIndent: 0),
+            _TaskRow(tripId: tripId, item: task),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -215,6 +240,9 @@ class _ChecklistCard extends ConsumerWidget {
       onDelete: () => confirmDeleteChecklist(context, ref, tripId, checklist),
       child: Card(
         clipBehavior: Clip.antiAlias,
+        elevation: 1.5,
+        shadowColor: AppColors.ink.withValues(alpha: 0.16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
@@ -226,84 +254,59 @@ class _ChecklistCard extends ConsumerWidget {
               confirmDeleteChecklist(context, ref, tripId, checklist),
           child: Padding(
             padding: const EdgeInsets.all(14),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 44,
-                      width: 44,
-                      decoration: BoxDecoration(
-                        color: complete
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        complete ? Icons.check : Icons.playlist_add_check,
-                        color: complete
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.onPrimaryContainer,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            checklist.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          // The number that matters while shopping is what is
-                          // still missing, not what is already in the basket.
-                          Text(
-                            switch ((total, left)) {
-                              (0, _) => l10n.listEmpty,
-                              (_, 0) => l10n.listAllDone,
-                              (_, final n) => l10n.listLeftOf(n, total),
-                            },
-                            style: TextStyle(
-                              color: complete
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer
-                                  : AppColors.inkMuted,
-                              fontSize: 13,
-                              fontWeight: complete
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: AppColors.inkMuted,
-                      size: 20,
-                    ),
-                  ],
+                // The ring replaces both the square icon and the progress bar
+                // that used to sit under the card: the same two facts in one
+                // drawing, and a row shorter. The number inside is what is still
+                // missing, which is the number you want while standing in a shop.
+                _ListRing(
+                  left: left,
+                  progress: checklist.progress,
+                  complete: complete,
+                  empty: total == 0,
                 ),
-                if (total > 0) ...[
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: checklist.progress,
-                      minHeight: 5,
-                      backgroundColor: AppColors.border,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        checklist.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      // The number that matters while shopping is what is still
+                      // missing, not what is already in the basket.
+                      Text(
+                        switch ((total, left)) {
+                          (0, _) => l10n.listEmpty,
+                          (_, 0) => l10n.listAllDone,
+                          (_, final n) => l10n.listLeftOf(n, total),
+                        },
+                        style: TextStyle(
+                          color: complete
+                              ? Theme.of(context).colorScheme.onPrimaryContainer
+                              : AppColors.inkMuted,
+                          fontSize: 13,
+                          fontWeight: complete
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.inkMuted,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -313,22 +316,74 @@ class _ChecklistCard extends ConsumerWidget {
   }
 }
 
-class _TaskCard extends ConsumerStatefulWidget {
-  const _TaskCard({required this.tripId, required this.item});
+/// How much of a list is left, drawn the same way a trip draws its days.
+class _ListRing extends StatelessWidget {
+  const _ListRing({
+    required this.left,
+    required this.progress,
+    required this.complete,
+    required this.empty,
+  });
+
+  final int left;
+  final double progress;
+  final bool complete;
+  final bool empty;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
+    // Finished lists lose the ring entirely: nothing to count, and a full
+    // circle with a tick reads at a glance where "0" would need reading.
+    if (complete) {
+      return Container(
+        height: 44,
+        width: 44,
+        decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+        child: const Icon(Icons.check, color: Colors.white, size: 22),
+      );
+    }
+
+    return ProgressRing(
+      size: 44,
+      stroke: 4,
+      colour: primary,
+      value: empty ? null : progress,
+      child: empty
+          ? const Icon(
+              Icons.playlist_add_check,
+              size: 20,
+              color: AppColors.inkMuted,
+            )
+          : Text(
+              '$left',
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+    );
+  }
+}
+
+class _TaskRow extends ConsumerStatefulWidget {
+  const _TaskRow({required this.tripId, required this.item});
 
   final String tripId;
   final Item item;
 
   @override
-  ConsumerState<_TaskCard> createState() => _TaskCardState();
+  ConsumerState<_TaskRow> createState() => _TaskRowState();
 }
 
-class _TaskCardState extends ConsumerState<_TaskCard> {
+class _TaskRowState extends ConsumerState<_TaskRow> {
   late bool _done = widget.item.isDone;
   bool _busy = false;
 
   @override
-  void didUpdateWidget(covariant _TaskCard oldWidget) {
+  void didUpdateWidget(covariant _TaskRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Someone else ticked it off: follow the server, unless our own request is
     // still in flight and would be overwritten by data that predates it.
@@ -379,17 +434,25 @@ class _TaskCardState extends ConsumerState<_TaskCard> {
     return SwipeToDelete(
       id: item.id,
       onDelete: () => confirmDeleteItem(context, ref, widget.tripId, item),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: AppColors.surface,
         child: InkWell(
+          // The whole row toggles, which is a far bigger target than the ring
+          // and means the ring itself needs no gesture of its own.
           onTap: _toggle,
           onLongPress: () =>
               confirmDeleteItem(context, ref, widget.tripId, item),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
             child: Row(
               children: [
-                _Tick(done: _done, onTap: _toggle),
+                _Tick(
+                  done: _done,
+                  overdue:
+                      !_done &&
+                      item.startsAt != null &&
+                      item.startsAt!.toLocal().isBefore(DateTime.now()),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -436,44 +499,36 @@ class _TaskCardState extends ConsumerState<_TaskCard> {
 /// A round tick instead of a Material checkbox.
 ///
 /// Softer next to the rounded cards, and it animates between the two states so
-/// the optimistic flip is visible as a change rather than a repaint.
+/// the optimistic flip is visible as a change rather than a repaint. It carries
+/// no gesture of its own: the row it sits in is the target.
 class _Tick extends StatelessWidget {
-  const _Tick({required this.done, required this.onTap});
+  const _Tick({required this.done, this.overdue = false});
 
   final bool done;
-  final VoidCallback onTap;
+
+  /// A late task colours its ring too, so the deadline is not the only thing
+  /// saying so — and the column of circles becomes scannable on its own.
+  final bool overdue;
 
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
-      onTap: onTap,
-      // Keeps the finger target at the 48dp minimum even though the ring drawn
-      // is half that.
-      radius: 24,
-      containedInkWell: false,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 24,
-          width: 24,
-          decoration: BoxDecoration(
-            color: done
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: done
-                  ? Theme.of(context).colorScheme.primary
-                  : AppColors.inkMuted,
-              width: 1.6,
-            ),
-          ),
-          child: done
-              ? const Icon(Icons.check, size: 16, color: Colors.white)
-              : null,
-        ),
+    final primary = Theme.of(context).colorScheme.primary;
+    final edge = done
+        ? primary
+        : (overdue ? AppColors.terracotta : AppColors.inkMuted);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      height: 24,
+      width: 24,
+      decoration: BoxDecoration(
+        color: done ? primary : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(color: edge, width: 1.8),
       ),
+      child: done
+          ? const Icon(Icons.check, size: 16, color: Colors.white)
+          : null,
     );
   }
 }

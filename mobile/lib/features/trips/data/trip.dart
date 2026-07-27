@@ -32,6 +32,9 @@ abstract class Trip with _$Trip {
     // from the id when they are absent.
     String? icon,
     String? color,
+    // Set once the trip has been put away: still fully readable, but nothing
+    // can be added to it any more. The server enforces that, not the app.
+    DateTime? archivedAt,
     required String createdBy,
     required DateTime createdAt,
     // Present only in the list response: the detail endpoint has no reason to
@@ -40,9 +43,17 @@ abstract class Trip with _$Trip {
     @Default(<MemberPreview>[]) List<MemberPreview> memberPreview,
     int? myBalanceCents,
     DateTime? lastActivityAt,
+    // The other way round: only the detail response carries these, because only
+    // the settings screen shows them.
+    @Default(0) int expenseCount,
+    @Default(0) int itemCount,
+    @Default(0) int totalSpentCents,
+    String? createdByName,
   }) = _Trip;
 
   const Trip._();
+
+  bool get isArchived => archivedAt != null;
 
   /// Where the trip stands relative to today, which is what someone scanning
   /// the list is looking for — more than the dates themselves.

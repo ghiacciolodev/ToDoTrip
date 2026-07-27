@@ -26,6 +26,9 @@ dependencies:
   json_annotation: ^4.12.0
   latlong2: ^0.9.1
   riverpod_annotation: ^4.0.3
+  # The only way to reach the platform share sheet, which is what the CSV export
+  # needs: a file the user can send to a spreadsheet, a chat or their own mail.
+  share_plus: ^13.3.0
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
 

@@ -334,13 +334,13 @@
   "@calendarEmptyBody": {
     "description": "Examples of what an event is"
   },
-  "calendarToday": "TODAY",
+  "calendarToday": "Today",
   "@calendarToday": {
-    "description": "Badge on an event happening today, uppercase"
+    "description": "Day heading for today's events"
   },
-  "calendarTomorrow": "TOMORROW",
+  "calendarTomorrow": "Tomorrow",
   "@calendarTomorrow": {
-    "description": "Badge on an event happening tomorrow, uppercase"
+    "description": "Day heading for tomorrow's events"
   },
   "tasksViewTodo": "To-do",
   "@tasksViewTodo": {
@@ -1412,5 +1412,176 @@
   "profileDeleteOwnsTrips": "You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.",
   "@profileDeleteOwnsTrips": {
     "description": "Deletion refused because the caller still owns a trip with other members"
+  },
+  "tripSettingsTitle": "Trip settings",
+  "@tripSettingsTitle": {
+    "description": "Title of the trip settings screen"
+  },
+  "tripSettingsEdit": "Edit",
+  "@tripSettingsEdit": {
+    "description": "Section holding the editable trip fields"
+  },
+  "tripSettingsInfo": "Information",
+  "@tripSettingsInfo": {
+    "description": "Section holding read-only facts about the trip"
+  },
+  "tripSettingsPersonal": "Just for you",
+  "@tripSettingsPersonal": {
+    "description": "Section holding settings that affect only the caller"
+  },
+  "tripSettingsDanger": "Danger zone",
+  "@tripSettingsDanger": {
+    "description": "Section holding archive and delete"
+  },
+  "tripCurrencyLabel": "Currency",
+  "@tripCurrencyLabel": {
+    "description": "Label of the trip currency field"
+  },
+  "tripCurrencyWarning": "Changing the currency won't convert existing expenses. Amounts stay the same, only the symbol changes.",
+  "@tripCurrencyWarning": {
+    "description": "Spelled out because amounts are stored without an exchange rate"
+  },
+  "tripSaveChanges": "Save changes",
+  "@tripSaveChanges": {
+    "description": "Commits the edited trip fields"
+  },
+  "tripSaved": "Trip updated",
+  "@tripSaved": {
+    "description": "Confirmation after saving the trip"
+  },
+  "tripCreatedByOn": "Created by {name} on {date}",
+  "@tripCreatedByOn": {
+    "description": "Who created the trip and when",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tripStatMembers": "{count, plural, =1{1 member} other{{count} members}}",
+  "@tripStatMembers": {
+    "description": "How many people are in the trip",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripStatExpenses": "{count, plural, =1{1 expense} other{{count} expenses}}",
+  "@tripStatExpenses": {
+    "description": "How many expenses the trip has",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripStatItems": "{count, plural, =1{1 plan entry} other{{count} plan entries}}",
+  "@tripStatItems": {
+    "description": "How many events and tasks the trip has",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripTotalSpent": "Total spent",
+  "@tripTotalSpent": {
+    "description": "Label of the trip's total spending"
+  },
+  "tripExportCsv": "Export expenses as CSV",
+  "@tripExportCsv": {
+    "description": "Downloads the ledger and opens the share sheet"
+  },
+  "tripExportEmpty": "There are no expenses to export yet.",
+  "@tripExportEmpty": {
+    "description": "Export refused because there is nothing in the ledger"
+  },
+  "tripExportShareText": "{trip} — expenses",
+  "@tripExportShareText": {
+    "description": "Message accompanying the shared CSV",
+    "placeholders": {
+      "trip": {
+        "type": "String"
+      }
+    }
+  },
+  "tripMuteLabel": "Mute this trip",
+  "@tripMuteLabel": {
+    "description": "Switch that silences this trip for the caller only"
+  },
+  "tripMuteBody": "Stop getting notified about it",
+  "@tripMuteBody": {
+    "description": "What muting does"
+  },
+  "tripArchive": "Archive trip",
+  "@tripArchive": {
+    "description": "Puts the trip away, read-only for everyone"
+  },
+  "tripArchiveBody": "Moves it out of your list. Everyone keeps reading it, nobody can add to it.",
+  "@tripArchiveBody": {
+    "description": "What archiving does and does not do"
+  },
+  "tripArchiveTitle": "Archive this trip?",
+  "@tripArchiveTitle": {
+    "description": "Heading of the archive confirmation"
+  },
+  "tripUnarchive": "Bring back from the archive",
+  "@tripUnarchive": {
+    "description": "Returns an archived trip to the active list"
+  },
+  "tripArchivedBanner": "This trip is archived. Nothing can be added to it.",
+  "@tripArchivedBanner": {
+    "description": "Shown on an archived trip, explaining why nothing can be added"
+  },
+  "tripsArchivedTitle": "Archived",
+  "@tripsArchivedTitle": {
+    "description": "Title of the archived trips screen"
+  },
+  "tripsArchivedCount": "{count, plural, =1{1 archived trip} other{{count} archived trips}}",
+  "@tripsArchivedCount": {
+    "description": "Row opening the archive, with how much is in it",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripsArchivedEmpty": "Nothing archived yet.",
+  "@tripsArchivedEmpty": {
+    "description": "The archive has nothing in it"
+  },
+  "tripUnsavedChanges": "You have unsaved changes",
+  "@tripUnsavedChanges": {
+    "description": "Explains why the save bar appeared at the bottom of the trip settings"
+  },
+  "calendarYesterday": "Yesterday",
+  "@calendarYesterday": {
+    "description": "Day heading for yesterday's events"
+  },
+  "calendarStartsNow": "Now",
+  "@calendarStartsNow": {
+    "description": "Badge on the next event when it is starting this minute"
+  },
+  "calendarStartsInMinutes": "{count, plural, =1{in 1 min} other{in {count} min}}",
+  "@calendarStartsInMinutes": {
+    "description": "Badge on the next event, under an hour away",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarStartsInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
+  "@calendarStartsInHours": {
+    "description": "Badge on the next event, under a day away",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

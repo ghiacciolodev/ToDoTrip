@@ -83,12 +83,18 @@ async def create_trip(db: AsyncSession, user_id: UUID, data: dict) -> Trip:
     return trip
 
 
-async def list_trips(db: AsyncSession, user_id: UUID) -> list[Trip]:
-    """Only trips the user belongs to. The join IS the authorization filter."""
+async def list_trips(db: AsyncSession, user_id: UUID, *, archived: bool = False) -> list[Trip]:
+    """Only trips the user belongs to. The join IS the authorization filter.
+
+    Archived ones are a separate list rather than a flag on the same one: a trip
+    that is over should stop competing for the top of the screen, but it is kept
+    precisely so it can still be opened and read.
+    """
+    condition = Trip.archived_at.is_not(None) if archived else Trip.archived_at.is_(None)
     result = await db.execute(
         select(Trip)
         .join(TripMember, TripMember.trip_id == Trip.id)
-        .where(TripMember.user_id == user_id)
+        .where(TripMember.user_id == user_id, condition)
         .order_by(Trip.start_date.desc().nullslast(), Trip.created_at.desc())
     )
     return list(result.scalars().all())
@@ -136,7 +142,9 @@ async def last_activity(db: AsyncSession, trip_ids: list[UUID]) -> dict[UUID, da
     return {trip_id: at for trip_id, at in rows}
 
 
-async def list_trips_with_summary(db: AsyncSession, user_id: UUID) -> list[dict]:
+async def list_trips_with_summary(
+    db: AsyncSession, user_id: UUID, *, archived: bool = False
+) -> list[dict]:
     """The trips list as one screen needs it, in a bounded number of queries.
 
     Four round trips regardless of how many trips there are: the trips, then
@@ -148,7 +156,7 @@ async def list_trips_with_summary(db: AsyncSession, user_id: UUID) -> list[dict]
     Balances are still derived, never stored; this only moves the same
     arithmetic to where the rows already are.
     """
-    trips = await list_trips(db, user_id)
+    trips = await list_trips(db, user_id, archived=archived)
     if not trips:
         return []
     trip_ids = [trip.id for trip in trips]
@@ -207,14 +215,59 @@ async def get_trip(db: AsyncSession, trip_id: UUID) -> Trip:
     return trip
 
 
+async def trip_details(db: AsyncSession, trip: Trip) -> dict:
+    """The aggregates the settings screen shows, in three counting queries.
+
+    Counted in the database rather than by fetching the rows: the screen wants
+    the number 14, not fourteen expenses.
+    """
+    members = await count_members(db, trip.id)
+    items = await db.scalar(select(func.count()).select_from(Item).where(Item.trip_id == trip.id))
+    # One pass for both, since they come off the same rows.
+    expenses, total = (
+        await db.execute(
+            select(func.count(), func.coalesce(func.sum(Expense.amount_cents), 0)).where(
+                Expense.trip_id == trip.id
+            )
+        )
+    ).one()
+
+    author = await db.scalar(select(User.display_name).where(User.id == trip.created_by))
+    return {
+        "member_count": members,
+        "item_count": items,
+        "expense_count": expenses,
+        "total_spent_cents": total,
+        # Empty after that account was closed; the client falls back to its own
+        # placeholder rather than being handed English from the server.
+        "created_by_name": author or None,
+    }
+
+
 async def update_trip(db: AsyncSession, trip: Trip, data: dict) -> Trip:
     # exclude_unset is applied by the router: only keys the client actually
     # sent reach this point, so a PATCH never blanks untouched fields.
+    archived = data.pop("archived", None)
+    if archived is not None:
+        # Re-archiving an archived trip keeps the original timestamp: the date
+        # it was put away is a fact, and a stray second tap should not rewrite it.
+        if archived and trip.archived_at is None:
+            trip.archived_at = datetime.now(UTC)
+        elif not archived:
+            trip.archived_at = None
+
     for key, value in data.items():
         setattr(trip, key, value)
     await db.commit()
     await db.refresh(trip)
     return trip
+
+
+async def set_muted(db: AsyncSession, membership: TripMember, muted: bool) -> TripMember:
+    membership.muted = muted
+    await db.commit()
+    await db.refresh(membership)
+    return membership
 
 
 async def delete_trip(db: AsyncSession, trip: Trip) -> None:

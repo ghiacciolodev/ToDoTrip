@@ -259,10 +259,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajoutez les vols, les arrivées et\ntout ce qui a une heure.';
 
   @override
-  String get calendarToday => 'AUJOURD\'HUI';
+  String get calendarToday => 'Aujourd’hui';
 
   @override
-  String get calendarTomorrow => 'DEMAIN';
+  String get calendarTomorrow => 'Demain';
 
   @override
   String get tasksViewTodo => 'À faire';
@@ -1049,4 +1049,156 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get profileDeleteOwnsTrips =>
       'Vous êtes encore propriétaire d’un voyage où se trouvent d’autres personnes. Transmettez-le ou supprimez-le, puis réessayez.';
+
+  @override
+  String get tripSettingsTitle => 'Réglages du voyage';
+
+  @override
+  String get tripSettingsEdit => 'Modifier';
+
+  @override
+  String get tripSettingsInfo => 'Informations';
+
+  @override
+  String get tripSettingsPersonal => 'Rien que pour vous';
+
+  @override
+  String get tripSettingsDanger => 'Zone sensible';
+
+  @override
+  String get tripCurrencyLabel => 'Devise';
+
+  @override
+  String get tripCurrencyWarning =>
+      'Changer de devise ne convertit pas les dépenses déjà saisies. Les montants restent identiques, seul le symbole change.';
+
+  @override
+  String get tripSaveChanges => 'Enregistrer les modifications';
+
+  @override
+  String get tripSaved => 'Voyage mis à jour';
+
+  @override
+  String tripCreatedByOn(String name, String date) {
+    return 'Créé par $name le $date';
+  }
+
+  @override
+  String tripStatMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count membres',
+      one: '1 membre',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatExpenses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dépenses',
+      one: '1 dépense',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count éléments du programme',
+      one: '1 élément du programme',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripTotalSpent => 'Total dépensé';
+
+  @override
+  String get tripExportCsv => 'Exporter les dépenses en CSV';
+
+  @override
+  String get tripExportEmpty => 'Il n’y a pas encore de dépenses à exporter.';
+
+  @override
+  String tripExportShareText(String trip) {
+    return '$trip — dépenses';
+  }
+
+  @override
+  String get tripMuteLabel => 'Mettre ce voyage en sourdine';
+
+  @override
+  String get tripMuteBody => 'Ne plus recevoir de notifications';
+
+  @override
+  String get tripArchive => 'Archiver le voyage';
+
+  @override
+  String get tripArchiveBody =>
+      'Le retire de votre liste. Tout le monde continue à le lire, personne ne peut plus rien y ajouter.';
+
+  @override
+  String get tripArchiveTitle => 'Archiver ce voyage ?';
+
+  @override
+  String get tripUnarchive => 'Sortir de l’archive';
+
+  @override
+  String get tripArchivedBanner =>
+      'Ce voyage est archivé. On ne peut plus rien y ajouter.';
+
+  @override
+  String get tripsArchivedTitle => 'Archivés';
+
+  @override
+  String tripsArchivedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count voyages archivés',
+      one: '1 voyage archivé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripsArchivedEmpty => 'Rien d’archivé pour l’instant.';
+
+  @override
+  String get tripUnsavedChanges =>
+      'Vous avez des modifications non enregistrées';
+
+  @override
+  String get calendarYesterday => 'Hier';
+
+  @override
+  String get calendarStartsNow => 'Maintenant';
+
+  @override
+  String calendarStartsInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'dans $count min',
+      one: 'dans 1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String calendarStartsInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'dans $count heures',
+      one: 'dans 1 heure',
+    );
+    return '$_temp0';
+  }
 }

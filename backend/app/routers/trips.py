@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 
 from app.core.events import close_trip, emit, kick
 from app.core.rate_limit import throttle
@@ -14,12 +15,14 @@ from app.schemas.trip import (
     JoinRequest,
     MemberPreview,
     MemberPublic,
+    MemberSettings,
     TripCreate,
+    TripDetail,
     TripPublic,
     TripSummary,
     TripUpdate,
 )
-from app.services import trip_service
+from app.services import export_service, trip_service
 from app.services.trip_service import (
     InvalidInvite,
     NotAMember,
@@ -65,7 +68,7 @@ async def create_trip(payload: TripCreate, db: DbSession, user: CurrentUser):
 
 
 @router.get("", response_model=list[TripSummary])
-async def list_trips(db: DbSession, user: CurrentUser):
+async def list_trips(db: DbSession, user: CurrentUser, archived: bool = False):
     """Every trip the caller belongs to, with what the list screen draws.
 
     Member count, the first avatars, the caller's own balance and when the trip
@@ -80,7 +83,7 @@ async def list_trips(db: DbSession, user: CurrentUser):
             my_balance_cents=row["my_balance_cents"],
             last_activity_at=row["last_activity_at"],
         )
-        for row in await trip_service.list_trips_with_summary(db, user.id)
+        for row in await trip_service.list_trips_with_summary(db, user.id, archived=archived)
     ]
 
 
@@ -101,9 +104,31 @@ async def join_trip(payload: JoinRequest, db: DbSession, user: CurrentUser):
     return joined
 
 
-@router.get("/{trip_id}", response_model=TripPublic)
+@router.get("/{trip_id}", response_model=TripDetail)
 async def get_trip(trip_id: UUID, db: DbSession, membership: Membership):
-    return await trip_service.get_trip(db, trip_id)
+    """One trip, with the counts and the total its settings screen shows."""
+    trip = await trip_service.get_trip(db, trip_id)
+    return TripDetail(
+        **TripPublic.model_validate(trip).model_dump(),
+        **await trip_service.trip_details(db, trip),
+    )
+
+
+@router.get("/{trip_id}/export.csv", response_class=PlainTextResponse)
+async def export_expenses(trip_id: UUID, db: DbSession, membership: Membership):
+    """The ledger as a spreadsheet.
+
+    Open to any member, not just the owner: everybody's own money is in it, and
+    the file says nothing the app does not already show them.
+    """
+    trip = await trip_service.get_trip(db, trip_id)
+    return PlainTextResponse(
+        # The BOM is what makes Excel read it as UTF-8 instead of the local
+        # code page, which is the difference between "Cena" and "CenaÃ ".
+        content="﻿" + await export_service.expenses_csv(db, trip),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": export_service.content_disposition(trip.name)},
+    )
 
 
 @router.patch("/{trip_id}", response_model=TripPublic)
@@ -154,6 +179,23 @@ async def _members(db: DbSession, trip_id: UUID) -> list[MemberPublic]:
 
 
 # Declared before /members/{user_id} so "me" is never parsed as a user id.
+@router.get("/{trip_id}/members/me/settings", response_model=MemberSettings)
+async def my_settings(membership: Membership):
+    return MemberSettings(muted=membership.muted)
+
+
+@router.patch("/{trip_id}/members/me/settings", response_model=MemberSettings)
+async def update_my_settings(payload: MemberSettings, db: DbSession, membership: Membership):
+    """Only ever the caller's own row.
+
+    There is no path here that names another member: muting is a decision about
+    your own phone, and the endpoint is shaped so it cannot be aimed at anyone
+    else even by mistake.
+    """
+    updated = await trip_service.set_muted(db, membership, payload.muted)
+    return MemberSettings(muted=updated.muted)
+
+
 @router.delete("/{trip_id}/members/me", status_code=status.HTTP_204_NO_CONTENT)
 async def leave_trip(db: DbSession, membership: Membership):
     """Leave a trip, or delete it when leaving would empty it.

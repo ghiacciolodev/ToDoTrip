@@ -111,18 +111,12 @@ void main() {
     });
   });
 
-  group('the description', () {
-    testWidgets('is shown when there is one', (tester) async {
-      await pump(tester, trip(description: 'Quattro giorni di pastéis'));
-      expect(find.text('Quattro giorni di pastéis'), findsOne);
-    });
-
-    testWidgets('blank draws nothing', (tester) async {
-      /// Whitespace is not a description: it would open a gap under the name
-      /// for nothing.
-      await pump(tester, trip(description: '   '));
-      expect(find.text('   '), findsNothing);
-    });
+  testWidgets('the description stays off the card', (tester) async {
+    /// Deliberate: the card is two lines, and a third one for prose that most
+    /// trips do not have would make every card in the list taller for the few
+    /// that do. The description lives on the trip settings screen.
+    await pump(tester, trip(description: 'Quattro giorni di pastéis'));
+    expect(find.text('Quattro giorni di pastéis'), findsNothing);
   });
 
   group('the money', () {

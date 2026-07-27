@@ -590,16 +590,16 @@ abstract class AppLocalizations {
   /// **'Add flights, check-ins and\nanything with a time on it.'**
   String get calendarEmptyBody;
 
-  /// Badge on an event happening today, uppercase
+  /// Day heading for today's events
   ///
   /// In en, this message translates to:
-  /// **'TODAY'**
+  /// **'Today'**
   String get calendarToday;
 
-  /// Badge on an event happening tomorrow, uppercase
+  /// Day heading for tomorrow's events
   ///
   /// In en, this message translates to:
-  /// **'TOMORROW'**
+  /// **'Tomorrow'**
   String get calendarTomorrow;
 
   /// Segmented control: the trip's tasks
@@ -1879,6 +1879,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.'**
   String get profileDeleteOwnsTrips;
+
+  /// Title of the trip settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Trip settings'**
+  String get tripSettingsTitle;
+
+  /// Section holding the editable trip fields
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get tripSettingsEdit;
+
+  /// Section holding read-only facts about the trip
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get tripSettingsInfo;
+
+  /// Section holding settings that affect only the caller
+  ///
+  /// In en, this message translates to:
+  /// **'Just for you'**
+  String get tripSettingsPersonal;
+
+  /// Section holding archive and delete
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get tripSettingsDanger;
+
+  /// Label of the trip currency field
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get tripCurrencyLabel;
+
+  /// Spelled out because amounts are stored without an exchange rate
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the currency won\'t convert existing expenses. Amounts stay the same, only the symbol changes.'**
+  String get tripCurrencyWarning;
+
+  /// Commits the edited trip fields
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get tripSaveChanges;
+
+  /// Confirmation after saving the trip
+  ///
+  /// In en, this message translates to:
+  /// **'Trip updated'**
+  String get tripSaved;
+
+  /// Who created the trip and when
+  ///
+  /// In en, this message translates to:
+  /// **'Created by {name} on {date}'**
+  String tripCreatedByOn(String name, String date);
+
+  /// How many people are in the trip
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 member} other{{count} members}}'**
+  String tripStatMembers(int count);
+
+  /// How many expenses the trip has
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 expense} other{{count} expenses}}'**
+  String tripStatExpenses(int count);
+
+  /// How many events and tasks the trip has
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 plan entry} other{{count} plan entries}}'**
+  String tripStatItems(int count);
+
+  /// Label of the trip's total spending
+  ///
+  /// In en, this message translates to:
+  /// **'Total spent'**
+  String get tripTotalSpent;
+
+  /// Downloads the ledger and opens the share sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Export expenses as CSV'**
+  String get tripExportCsv;
+
+  /// Export refused because there is nothing in the ledger
+  ///
+  /// In en, this message translates to:
+  /// **'There are no expenses to export yet.'**
+  String get tripExportEmpty;
+
+  /// Message accompanying the shared CSV
+  ///
+  /// In en, this message translates to:
+  /// **'{trip} — expenses'**
+  String tripExportShareText(String trip);
+
+  /// Switch that silences this trip for the caller only
+  ///
+  /// In en, this message translates to:
+  /// **'Mute this trip'**
+  String get tripMuteLabel;
+
+  /// What muting does
+  ///
+  /// In en, this message translates to:
+  /// **'Stop getting notified about it'**
+  String get tripMuteBody;
+
+  /// Puts the trip away, read-only for everyone
+  ///
+  /// In en, this message translates to:
+  /// **'Archive trip'**
+  String get tripArchive;
+
+  /// What archiving does and does not do
+  ///
+  /// In en, this message translates to:
+  /// **'Moves it out of your list. Everyone keeps reading it, nobody can add to it.'**
+  String get tripArchiveBody;
+
+  /// Heading of the archive confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this trip?'**
+  String get tripArchiveTitle;
+
+  /// Returns an archived trip to the active list
+  ///
+  /// In en, this message translates to:
+  /// **'Bring back from the archive'**
+  String get tripUnarchive;
+
+  /// Shown on an archived trip, explaining why nothing can be added
+  ///
+  /// In en, this message translates to:
+  /// **'This trip is archived. Nothing can be added to it.'**
+  String get tripArchivedBanner;
+
+  /// Title of the archived trips screen
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get tripsArchivedTitle;
+
+  /// Row opening the archive, with how much is in it
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 archived trip} other{{count} archived trips}}'**
+  String tripsArchivedCount(int count);
+
+  /// The archive has nothing in it
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived yet.'**
+  String get tripsArchivedEmpty;
+
+  /// Explains why the save bar appeared at the bottom of the trip settings
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes'**
+  String get tripUnsavedChanges;
+
+  /// Day heading for yesterday's events
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get calendarYesterday;
+
+  /// Badge on the next event when it is starting this minute
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get calendarStartsNow;
+
+  /// Badge on the next event, under an hour away
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{in 1 min} other{in {count} min}}'**
+  String calendarStartsInMinutes(int count);
+
+  /// Badge on the next event, under a day away
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{in 1 hour} other{in {count} hours}}'**
+  String calendarStartsInHours(int count);
 }
 
 class _AppLocalizationsDelegate

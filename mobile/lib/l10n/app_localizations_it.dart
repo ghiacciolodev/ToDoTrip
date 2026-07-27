@@ -258,10 +258,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Aggiungi voli, check-in e\ntutto ciò che ha un orario.';
 
   @override
-  String get calendarToday => 'OGGI';
+  String get calendarToday => 'Oggi';
 
   @override
-  String get calendarTomorrow => 'DOMANI';
+  String get calendarTomorrow => 'Domani';
 
   @override
   String get tasksViewTodo => 'Da fare';
@@ -1046,4 +1046,155 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get profileDeleteOwnsTrips =>
       'Sei ancora proprietario di un viaggio in cui ci sono altre persone. Passalo a qualcun altro, oppure eliminalo, e riprova.';
+
+  @override
+  String get tripSettingsTitle => 'Impostazioni del viaggio';
+
+  @override
+  String get tripSettingsEdit => 'Modifica';
+
+  @override
+  String get tripSettingsInfo => 'Informazioni';
+
+  @override
+  String get tripSettingsPersonal => 'Solo per te';
+
+  @override
+  String get tripSettingsDanger => 'Zona pericolo';
+
+  @override
+  String get tripCurrencyLabel => 'Valuta';
+
+  @override
+  String get tripCurrencyWarning =>
+      'Cambiare valuta non converte le spese già inserite. Gli importi restano gli stessi, cambia solo il simbolo.';
+
+  @override
+  String get tripSaveChanges => 'Salva le modifiche';
+
+  @override
+  String get tripSaved => 'Viaggio aggiornato';
+
+  @override
+  String tripCreatedByOn(String name, String date) {
+    return 'Creato da $name il $date';
+  }
+
+  @override
+  String tripStatMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count membri',
+      one: '1 membro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatExpenses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count spese',
+      one: '1 spesa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripStatItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count voci del piano',
+      one: '1 voce del piano',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripTotalSpent => 'Totale speso';
+
+  @override
+  String get tripExportCsv => 'Esporta le spese in CSV';
+
+  @override
+  String get tripExportEmpty => 'Non ci sono ancora spese da esportare.';
+
+  @override
+  String tripExportShareText(String trip) {
+    return '$trip — spese';
+  }
+
+  @override
+  String get tripMuteLabel => 'Silenzia questo viaggio';
+
+  @override
+  String get tripMuteBody => 'Smetti di ricevere notifiche';
+
+  @override
+  String get tripArchive => 'Archivia viaggio';
+
+  @override
+  String get tripArchiveBody =>
+      'Lo toglie dalla tua lista. Tutti continuano a leggerlo, nessuno può più aggiungerci nulla.';
+
+  @override
+  String get tripArchiveTitle => 'Archiviare questo viaggio?';
+
+  @override
+  String get tripUnarchive => 'Riporta dall\'archivio';
+
+  @override
+  String get tripArchivedBanner =>
+      'Questo viaggio è archiviato. Non ci si può più aggiungere nulla.';
+
+  @override
+  String get tripsArchivedTitle => 'Archiviati';
+
+  @override
+  String tripsArchivedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count viaggi archiviati',
+      one: '1 viaggio archiviato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripsArchivedEmpty => 'Non hai ancora archiviato niente.';
+
+  @override
+  String get tripUnsavedChanges => 'Ci sono modifiche non salvate';
+
+  @override
+  String get calendarYesterday => 'Ieri';
+
+  @override
+  String get calendarStartsNow => 'Adesso';
+
+  @override
+  String calendarStartsInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'tra $count min',
+      one: 'tra 1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String calendarStartsInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'tra $count ore',
+      one: 'tra 1 ora',
+    );
+    return '$_temp0';
+  }
 }

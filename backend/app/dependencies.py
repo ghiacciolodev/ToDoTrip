@@ -71,3 +71,26 @@ async def get_ownership(membership: Membership) -> TripMember:
 
 
 Ownership = Annotated[TripMember, Depends(get_ownership)]
+
+
+async def get_writable_membership(membership: Membership, db: DbSession) -> TripMember:
+    """Authorize a change to the contents of a trip.
+
+    Archiving has to be enforced here rather than by hiding buttons in the app.
+    A client that is one version behind, a retried request queued while the trip
+    was still live, or anybody with a terminal would otherwise keep writing into
+    a trip the group agreed was finished — and an expense appearing in a closed
+    trip changes what people owe each other.
+
+    Reading is deliberately untouched: an archived trip is meant to be looked at.
+    """
+    trip = await trip_service.get_trip(db, membership.trip_id)
+    if trip.archived_at is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {"code": "trip_archived", "message": "This trip is archived."},
+        )
+    return membership
+
+
+Writable = Annotated[TripMember, Depends(get_writable_membership)]

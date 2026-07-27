@@ -47,15 +47,46 @@ class TripsScreen extends ConsumerWidget {
     if (list.isEmpty) return const _EmptyState();
 
     // Already ordered by the server, most recently active first.
+    final archived = ref.watch(archivedTripsProvider).value ?? const [];
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemCount: list.length,
+      // One more row at the end when there is an archive to open.
+      itemCount: list.length + (archived.isEmpty ? 0 : 1),
       separatorBuilder: (_, _) => const SizedBox(height: 14),
-      itemBuilder: (_, index) => TripCard(
-        trip: list[index],
-        // push, not go: the trip detail sits on top of the tab shell, so back
-        // returns here instead of exiting the app.
-        onTap: () => context.push('/trips/${list[index].id}'),
+      itemBuilder: (_, index) {
+        if (index == list.length) {
+          return _ArchiveRow(count: archived.length);
+        }
+        return TripCard(
+          trip: list[index],
+          // push, not go: the trip detail sits on top of the tab shell, so back
+          // returns here instead of exiting the app.
+          onTap: () => context.push('/trips/${list[index].id}'),
+        );
+      },
+    );
+  }
+}
+
+/// The way into the archive, shown only when there is something in it.
+class _ArchiveRow extends StatelessWidget {
+  const _ArchiveRow({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: ListTile(
+        leading: const Icon(Icons.archive_outlined, color: AppColors.inkMuted),
+        title: Text(
+          AppLocalizations.of(context).tripsArchivedCount(count),
+          style: const TextStyle(color: AppColors.inkMuted, fontSize: 14),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+        onTap: () => context.push('/archive'),
       ),
     );
   }

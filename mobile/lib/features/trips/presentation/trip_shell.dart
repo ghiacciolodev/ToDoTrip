@@ -231,7 +231,13 @@ class _TripShellState extends ConsumerState<TripShell> {
       // Contextual: one button that does the right thing for the tab in view.
       // Map and Group have none, because they have nothing to create yet and
       // their actions live inline in the cards.
-      floatingActionButton: ready ? _buildFab() : null,
+      //
+      // Gone entirely on an archived trip. The server refuses the write either
+      // way, but offering a button whose only possible outcome is an error is
+      // the thing this app keeps refusing to do.
+      floatingActionButton: ready && !(trip.value?.isArchived ?? false)
+          ? _buildFab()
+          : null,
 
       // Colours, height and label styling come from navigationBarTheme.
       bottomNavigationBar: NavigationBar(

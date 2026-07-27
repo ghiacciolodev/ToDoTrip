@@ -41,6 +41,11 @@ class TripUpdate(BaseModel):
     icon: str | None = Field(default=None, max_length=30)
     color: str | None = Field(default=None, max_length=30)
 
+    # A boolean on the way in, a timestamp in the table: the client is saying
+    # "put this away" or "bring it back", and when that happened is the server's
+    # business to record.
+    archived: bool | None = None
+
 
 class TripPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -53,8 +58,28 @@ class TripPublic(BaseModel):
     base_currency: str
     icon: str | None
     color: str | None
+    archived_at: datetime | None
     created_by: UUID
     created_at: datetime
+
+
+class TripDetail(TripPublic):
+    """One trip, with what its settings screen puts on the page.
+
+    The counts and the total are aggregates rather than lists: the screen shows
+    "14 expenses", and sending fourteen expenses to render the number 14 would
+    be the same waste the trips list was fixed for.
+    """
+
+    member_count: int
+    expense_count: int
+    item_count: int
+    # Sum of every expense, in the trip's own currency. Settlements are excluded
+    # deliberately: a repayment moves money between two members, it is not part
+    # of what the trip cost.
+    total_spent_cents: int
+    # Denormalised for one line of text: "Created by Mario on 3 June".
+    created_by_name: str | None
 
 
 class MemberPreview(BaseModel):
@@ -86,6 +111,12 @@ class TripSummary(TripPublic):
     # falls back to its own row, so the card always has a line to show. The list
     # arrives sorted by this, most recent first.
     last_activity_at: datetime
+
+
+class MemberSettings(BaseModel):
+    """What one person decides about one trip, for themselves alone."""
+
+    muted: bool
 
 
 class MemberPublic(BaseModel):

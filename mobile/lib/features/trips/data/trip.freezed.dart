@@ -281,7 +281,7 @@ as String,
 /// @nodoc
 mixin _$Trip {
 
- String get id; String get name; String? get description; DateTime? get startDate; DateTime? get endDate; String get baseCurrency; String? get icon; String? get color; String get createdBy; DateTime get createdAt; int get memberCount; List<MemberPreview> get memberPreview; int? get myBalanceCents; DateTime? get lastActivityAt;
+ String get id; String get name; String? get description; DateTime? get startDate; DateTime? get endDate; String get baseCurrency; String? get icon; String? get color; DateTime? get archivedAt; String get createdBy; DateTime get createdAt; int get memberCount; List<MemberPreview> get memberPreview; int? get myBalanceCents; DateTime? get lastActivityAt; int get expenseCount; int get itemCount; int get totalSpentCents; String? get createdByName;
 /// Create a copy of Trip
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -294,16 +294,16 @@ $TripCopyWith<Trip> get copyWith => _$TripCopyWithImpl<Trip>(this as Trip, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Trip&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.baseCurrency, baseCurrency) || other.baseCurrency == baseCurrency)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.color, color) || other.color == color)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.memberCount, memberCount) || other.memberCount == memberCount)&&const DeepCollectionEquality().equals(other.memberPreview, memberPreview)&&(identical(other.myBalanceCents, myBalanceCents) || other.myBalanceCents == myBalanceCents)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Trip&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.baseCurrency, baseCurrency) || other.baseCurrency == baseCurrency)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.color, color) || other.color == color)&&(identical(other.archivedAt, archivedAt) || other.archivedAt == archivedAt)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.memberCount, memberCount) || other.memberCount == memberCount)&&const DeepCollectionEquality().equals(other.memberPreview, memberPreview)&&(identical(other.myBalanceCents, myBalanceCents) || other.myBalanceCents == myBalanceCents)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.expenseCount, expenseCount) || other.expenseCount == expenseCount)&&(identical(other.itemCount, itemCount) || other.itemCount == itemCount)&&(identical(other.totalSpentCents, totalSpentCents) || other.totalSpentCents == totalSpentCents)&&(identical(other.createdByName, createdByName) || other.createdByName == createdByName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,startDate,endDate,baseCurrency,icon,color,createdBy,createdAt,memberCount,const DeepCollectionEquality().hash(memberPreview),myBalanceCents,lastActivityAt);
+int get hashCode => Object.hashAll([runtimeType,id,name,description,startDate,endDate,baseCurrency,icon,color,archivedAt,createdBy,createdAt,memberCount,const DeepCollectionEquality().hash(memberPreview),myBalanceCents,lastActivityAt,expenseCount,itemCount,totalSpentCents,createdByName]);
 
 @override
 String toString() {
-  return 'Trip(id: $id, name: $name, description: $description, startDate: $startDate, endDate: $endDate, baseCurrency: $baseCurrency, icon: $icon, color: $color, createdBy: $createdBy, createdAt: $createdAt, memberCount: $memberCount, memberPreview: $memberPreview, myBalanceCents: $myBalanceCents, lastActivityAt: $lastActivityAt)';
+  return 'Trip(id: $id, name: $name, description: $description, startDate: $startDate, endDate: $endDate, baseCurrency: $baseCurrency, icon: $icon, color: $color, archivedAt: $archivedAt, createdBy: $createdBy, createdAt: $createdAt, memberCount: $memberCount, memberPreview: $memberPreview, myBalanceCents: $myBalanceCents, lastActivityAt: $lastActivityAt, expenseCount: $expenseCount, itemCount: $itemCount, totalSpentCents: $totalSpentCents, createdByName: $createdByName)';
 }
 
 
@@ -314,7 +314,7 @@ abstract mixin class $TripCopyWith<$Res>  {
   factory $TripCopyWith(Trip value, $Res Function(Trip) _then) = _$TripCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String? description, DateTime? startDate, DateTime? endDate, String baseCurrency, String? icon, String? color, String createdBy, DateTime createdAt, int memberCount, List<MemberPreview> memberPreview, int? myBalanceCents, DateTime? lastActivityAt
+ String id, String name, String? description, DateTime? startDate, DateTime? endDate, String baseCurrency, String? icon, String? color, DateTime? archivedAt, String createdBy, DateTime createdAt, int memberCount, List<MemberPreview> memberPreview, int? myBalanceCents, DateTime? lastActivityAt, int expenseCount, int itemCount, int totalSpentCents, String? createdByName
 });
 
 
@@ -331,7 +331,7 @@ class _$TripCopyWithImpl<$Res>
 
 /// Create a copy of Trip
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? description = freezed,Object? startDate = freezed,Object? endDate = freezed,Object? baseCurrency = null,Object? icon = freezed,Object? color = freezed,Object? createdBy = null,Object? createdAt = null,Object? memberCount = null,Object? memberPreview = null,Object? myBalanceCents = freezed,Object? lastActivityAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? description = freezed,Object? startDate = freezed,Object? endDate = freezed,Object? baseCurrency = null,Object? icon = freezed,Object? color = freezed,Object? archivedAt = freezed,Object? createdBy = null,Object? createdAt = null,Object? memberCount = null,Object? memberPreview = null,Object? myBalanceCents = freezed,Object? lastActivityAt = freezed,Object? expenseCount = null,Object? itemCount = null,Object? totalSpentCents = null,Object? createdByName = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -341,13 +341,18 @@ as DateTime?,endDate: freezed == endDate ? _self.endDate : endDate // ignore: ca
 as DateTime?,baseCurrency: null == baseCurrency ? _self.baseCurrency : baseCurrency // ignore: cast_nullable_to_non_nullable
 as String,icon: freezed == icon ? _self.icon : icon // ignore: cast_nullable_to_non_nullable
 as String?,color: freezed == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
-as String?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
+as String?,archivedAt: freezed == archivedAt ? _self.archivedAt : archivedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,memberCount: null == memberCount ? _self.memberCount : memberCount // ignore: cast_nullable_to_non_nullable
 as int,memberPreview: null == memberPreview ? _self.memberPreview : memberPreview // ignore: cast_nullable_to_non_nullable
 as List<MemberPreview>,myBalanceCents: freezed == myBalanceCents ? _self.myBalanceCents : myBalanceCents // ignore: cast_nullable_to_non_nullable
 as int?,lastActivityAt: freezed == lastActivityAt ? _self.lastActivityAt : lastActivityAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,expenseCount: null == expenseCount ? _self.expenseCount : expenseCount // ignore: cast_nullable_to_non_nullable
+as int,itemCount: null == itemCount ? _self.itemCount : itemCount // ignore: cast_nullable_to_non_nullable
+as int,totalSpentCents: null == totalSpentCents ? _self.totalSpentCents : totalSpentCents // ignore: cast_nullable_to_non_nullable
+as int,createdByName: freezed == createdByName ? _self.createdByName : createdByName // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -432,10 +437,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  DateTime? archivedAt,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt,  int expenseCount,  int itemCount,  int totalSpentCents,  String? createdByName)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Trip() when $default != null:
-return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt);case _:
+return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.archivedAt,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt,_that.expenseCount,_that.itemCount,_that.totalSpentCents,_that.createdByName);case _:
   return orElse();
 
 }
@@ -453,10 +458,10 @@ return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endD
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  DateTime? archivedAt,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt,  int expenseCount,  int itemCount,  int totalSpentCents,  String? createdByName)  $default,) {final _that = this;
 switch (_that) {
 case _Trip():
-return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt);case _:
+return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.archivedAt,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt,_that.expenseCount,_that.itemCount,_that.totalSpentCents,_that.createdByName);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -473,10 +478,10 @@ return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endD
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? description,  DateTime? startDate,  DateTime? endDate,  String baseCurrency,  String? icon,  String? color,  DateTime? archivedAt,  String createdBy,  DateTime createdAt,  int memberCount,  List<MemberPreview> memberPreview,  int? myBalanceCents,  DateTime? lastActivityAt,  int expenseCount,  int itemCount,  int totalSpentCents,  String? createdByName)?  $default,) {final _that = this;
 switch (_that) {
 case _Trip() when $default != null:
-return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt);case _:
+return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endDate,_that.baseCurrency,_that.icon,_that.color,_that.archivedAt,_that.createdBy,_that.createdAt,_that.memberCount,_that.memberPreview,_that.myBalanceCents,_that.lastActivityAt,_that.expenseCount,_that.itemCount,_that.totalSpentCents,_that.createdByName);case _:
   return null;
 
 }
@@ -488,7 +493,7 @@ return $default(_that.id,_that.name,_that.description,_that.startDate,_that.endD
 @JsonSerializable()
 
 class _Trip extends Trip {
-  const _Trip({required this.id, required this.name, this.description, this.startDate, this.endDate, required this.baseCurrency, this.icon, this.color, required this.createdBy, required this.createdAt, this.memberCount = 0, final  List<MemberPreview> memberPreview = const <MemberPreview>[], this.myBalanceCents, this.lastActivityAt}): _memberPreview = memberPreview,super._();
+  const _Trip({required this.id, required this.name, this.description, this.startDate, this.endDate, required this.baseCurrency, this.icon, this.color, this.archivedAt, required this.createdBy, required this.createdAt, this.memberCount = 0, final  List<MemberPreview> memberPreview = const <MemberPreview>[], this.myBalanceCents, this.lastActivityAt, this.expenseCount = 0, this.itemCount = 0, this.totalSpentCents = 0, this.createdByName}): _memberPreview = memberPreview,super._();
   factory _Trip.fromJson(Map<String, dynamic> json) => _$TripFromJson(json);
 
 @override final  String id;
@@ -499,6 +504,7 @@ class _Trip extends Trip {
 @override final  String baseCurrency;
 @override final  String? icon;
 @override final  String? color;
+@override final  DateTime? archivedAt;
 @override final  String createdBy;
 @override final  DateTime createdAt;
 @override@JsonKey() final  int memberCount;
@@ -511,6 +517,10 @@ class _Trip extends Trip {
 
 @override final  int? myBalanceCents;
 @override final  DateTime? lastActivityAt;
+@override@JsonKey() final  int expenseCount;
+@override@JsonKey() final  int itemCount;
+@override@JsonKey() final  int totalSpentCents;
+@override final  String? createdByName;
 
 /// Create a copy of Trip
 /// with the given fields replaced by the non-null parameter values.
@@ -525,16 +535,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Trip&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.baseCurrency, baseCurrency) || other.baseCurrency == baseCurrency)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.color, color) || other.color == color)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.memberCount, memberCount) || other.memberCount == memberCount)&&const DeepCollectionEquality().equals(other._memberPreview, _memberPreview)&&(identical(other.myBalanceCents, myBalanceCents) || other.myBalanceCents == myBalanceCents)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Trip&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.baseCurrency, baseCurrency) || other.baseCurrency == baseCurrency)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.color, color) || other.color == color)&&(identical(other.archivedAt, archivedAt) || other.archivedAt == archivedAt)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.memberCount, memberCount) || other.memberCount == memberCount)&&const DeepCollectionEquality().equals(other._memberPreview, _memberPreview)&&(identical(other.myBalanceCents, myBalanceCents) || other.myBalanceCents == myBalanceCents)&&(identical(other.lastActivityAt, lastActivityAt) || other.lastActivityAt == lastActivityAt)&&(identical(other.expenseCount, expenseCount) || other.expenseCount == expenseCount)&&(identical(other.itemCount, itemCount) || other.itemCount == itemCount)&&(identical(other.totalSpentCents, totalSpentCents) || other.totalSpentCents == totalSpentCents)&&(identical(other.createdByName, createdByName) || other.createdByName == createdByName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,startDate,endDate,baseCurrency,icon,color,createdBy,createdAt,memberCount,const DeepCollectionEquality().hash(_memberPreview),myBalanceCents,lastActivityAt);
+int get hashCode => Object.hashAll([runtimeType,id,name,description,startDate,endDate,baseCurrency,icon,color,archivedAt,createdBy,createdAt,memberCount,const DeepCollectionEquality().hash(_memberPreview),myBalanceCents,lastActivityAt,expenseCount,itemCount,totalSpentCents,createdByName]);
 
 @override
 String toString() {
-  return 'Trip(id: $id, name: $name, description: $description, startDate: $startDate, endDate: $endDate, baseCurrency: $baseCurrency, icon: $icon, color: $color, createdBy: $createdBy, createdAt: $createdAt, memberCount: $memberCount, memberPreview: $memberPreview, myBalanceCents: $myBalanceCents, lastActivityAt: $lastActivityAt)';
+  return 'Trip(id: $id, name: $name, description: $description, startDate: $startDate, endDate: $endDate, baseCurrency: $baseCurrency, icon: $icon, color: $color, archivedAt: $archivedAt, createdBy: $createdBy, createdAt: $createdAt, memberCount: $memberCount, memberPreview: $memberPreview, myBalanceCents: $myBalanceCents, lastActivityAt: $lastActivityAt, expenseCount: $expenseCount, itemCount: $itemCount, totalSpentCents: $totalSpentCents, createdByName: $createdByName)';
 }
 
 
@@ -545,7 +555,7 @@ abstract mixin class _$TripCopyWith<$Res> implements $TripCopyWith<$Res> {
   factory _$TripCopyWith(_Trip value, $Res Function(_Trip) _then) = __$TripCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String? description, DateTime? startDate, DateTime? endDate, String baseCurrency, String? icon, String? color, String createdBy, DateTime createdAt, int memberCount, List<MemberPreview> memberPreview, int? myBalanceCents, DateTime? lastActivityAt
+ String id, String name, String? description, DateTime? startDate, DateTime? endDate, String baseCurrency, String? icon, String? color, DateTime? archivedAt, String createdBy, DateTime createdAt, int memberCount, List<MemberPreview> memberPreview, int? myBalanceCents, DateTime? lastActivityAt, int expenseCount, int itemCount, int totalSpentCents, String? createdByName
 });
 
 
@@ -562,7 +572,7 @@ class __$TripCopyWithImpl<$Res>
 
 /// Create a copy of Trip
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? description = freezed,Object? startDate = freezed,Object? endDate = freezed,Object? baseCurrency = null,Object? icon = freezed,Object? color = freezed,Object? createdBy = null,Object? createdAt = null,Object? memberCount = null,Object? memberPreview = null,Object? myBalanceCents = freezed,Object? lastActivityAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? description = freezed,Object? startDate = freezed,Object? endDate = freezed,Object? baseCurrency = null,Object? icon = freezed,Object? color = freezed,Object? archivedAt = freezed,Object? createdBy = null,Object? createdAt = null,Object? memberCount = null,Object? memberPreview = null,Object? myBalanceCents = freezed,Object? lastActivityAt = freezed,Object? expenseCount = null,Object? itemCount = null,Object? totalSpentCents = null,Object? createdByName = freezed,}) {
   return _then(_Trip(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -572,13 +582,18 @@ as DateTime?,endDate: freezed == endDate ? _self.endDate : endDate // ignore: ca
 as DateTime?,baseCurrency: null == baseCurrency ? _self.baseCurrency : baseCurrency // ignore: cast_nullable_to_non_nullable
 as String,icon: freezed == icon ? _self.icon : icon // ignore: cast_nullable_to_non_nullable
 as String?,color: freezed == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
-as String?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
+as String?,archivedAt: freezed == archivedAt ? _self.archivedAt : archivedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,memberCount: null == memberCount ? _self.memberCount : memberCount // ignore: cast_nullable_to_non_nullable
 as int,memberPreview: null == memberPreview ? _self._memberPreview : memberPreview // ignore: cast_nullable_to_non_nullable
 as List<MemberPreview>,myBalanceCents: freezed == myBalanceCents ? _self.myBalanceCents : myBalanceCents // ignore: cast_nullable_to_non_nullable
 as int?,lastActivityAt: freezed == lastActivityAt ? _self.lastActivityAt : lastActivityAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,expenseCount: null == expenseCount ? _self.expenseCount : expenseCount // ignore: cast_nullable_to_non_nullable
+as int,itemCount: null == itemCount ? _self.itemCount : itemCount // ignore: cast_nullable_to_non_nullable
+as int,totalSpentCents: null == totalSpentCents ? _self.totalSpentCents : totalSpentCents // ignore: cast_nullable_to_non_nullable
+as int,createdByName: freezed == createdByName ? _self.createdByName : createdByName // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

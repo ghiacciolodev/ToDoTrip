@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.events import emit
-from app.dependencies import CurrentUser, DbSession, Membership
+from app.dependencies import CurrentUser, DbSession, Membership, Writable
 from app.schemas.expense import (
     BalanceReport,
     ExpenseCreate,
@@ -32,7 +32,7 @@ _NOT_MEMBERS = HTTPException(
 
 @router.post("/expenses", response_model=ExpensePublic, status_code=status.HTTP_201_CREATED)
 async def create_expense(
-    trip_id: UUID, payload: ExpenseCreate, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, payload: ExpenseCreate, db: DbSession, user: CurrentUser, _: Writable
 ):
     try:
         expense = await expense_service.create_expense(db, trip_id, user.id, payload.model_dump())
@@ -56,7 +56,7 @@ async def get_expense(trip_id: UUID, expense_id: UUID, db: DbSession, _: Members
 
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_expense(trip_id: UUID, expense_id: UUID, db: DbSession, membership: Membership):
+async def delete_expense(trip_id: UUID, expense_id: UUID, db: DbSession, membership: Writable):
     try:
         expense = await expense_service.get_expense(db, trip_id, expense_id)
         await expense_service.delete_expense(db, expense)
@@ -73,7 +73,7 @@ async def get_balance(trip_id: UUID, db: DbSession, _: Membership):
 
 @router.post("/settlements", response_model=SettlementPublic, status_code=status.HTTP_201_CREATED)
 async def create_settlement(
-    trip_id: UUID, payload: SettlementCreate, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, payload: SettlementCreate, db: DbSession, user: CurrentUser, _: Writable
 ):
     """Records a repayment made outside the app. The sender is always the caller,
     so nobody can mark someone else's debt as paid."""
@@ -98,7 +98,7 @@ async def list_settlements(trip_id: UUID, db: DbSession, _: Membership):
 
 @router.delete("/settlements/{settlement_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_settlement(
-    trip_id: UUID, settlement_id: UUID, db: DbSession, user: CurrentUser, _: Membership
+    trip_id: UUID, settlement_id: UUID, db: DbSession, user: CurrentUser, _: Writable
 ):
     """Undo a repayment. Only the member who recorded it can, since it is their
     own claim to have paid."""

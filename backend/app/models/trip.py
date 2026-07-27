@@ -5,6 +5,7 @@ from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     Enum,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    false,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -50,6 +52,16 @@ class Trip(Base, TimestampMixin):
     # trip id, the same way avatars already work, so no trip is ever grey.
     icon: Mapped[str | None] = mapped_column(String(30))
     color: Mapped[str | None] = mapped_column(String(30))
+
+    # When the trip was put away, or null while it is live.
+    #
+    # A timestamp rather than a boolean, for the same reason completed_at is one:
+    # it answers "archived?" and "since when?" in a single column. An archived
+    # trip stays fully readable — the point of keeping it is that people go back
+    # and look at what a holiday cost — but nothing in it can be written any
+    # more, which is enforced by the Writable dependency rather than by hiding
+    # buttons in the app.
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
@@ -123,6 +135,15 @@ class TripMember(Base):
     # or deleted, so updated_at would be dead weight.
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # Whether this person wants to hear about this trip.
+    #
+    # On the membership and not on the trip: muting is one person's decision
+    # about their own phone. On trips it would be a switch that silences the
+    # group for everybody, which is not what anybody reaching for it means.
+    muted: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false(), nullable=False
     )
 
     trip: Mapped["Trip"] = relationship(back_populates="members")
