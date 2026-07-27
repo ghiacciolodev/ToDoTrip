@@ -1201,4 +1201,80 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsMarkAllRead => 'Tout marquer comme lu';
+
+  @override
+  String get notificationsEmptyTitle => 'Vous êtes à jour';
+
+  @override
+  String get notificationsEmptyBody =>
+      'Les nouvelles dépenses, les plans et les\npersonnes apparaîtront ici.';
+
+  @override
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  ) {
+    return '$actor a ajouté $amount pour $description';
+  }
+
+  @override
+  String notificationExpenseDeleted(String actor, String description) {
+    return '$actor a supprimé la dépense pour $description';
+  }
+
+  @override
+  String notificationSettlement(String actor, String amount) {
+    return '$actor vous a remboursé $amount';
+  }
+
+  @override
+  String notificationTaskAssigned(String actor, String title) {
+    return '$actor vous a confié « $title »';
+  }
+
+  @override
+  String notificationEventAdded(String actor, String title) {
+    return '$actor a ajouté $title au programme';
+  }
+
+  @override
+  String notificationMemberJoined(String actor) {
+    return '$actor a rejoint le voyage';
+  }
+
+  @override
+  String notificationSomethingHappened(String actor) {
+    return '$actor a fait quelque chose dans ce voyage';
+  }
+
+  @override
+  String get settingsMuteTrip => 'Mettre ce voyage en sourdine';
+
+  @override
+  String get settingsMuteTripBody => 'Ne plus recevoir de notifications';
+
+  @override
+  String get notificationsClearAll => 'Tout supprimer';
+
+  @override
+  String get notificationsClearAllTitle =>
+      'Supprimer toutes les notifications ?';
+
+  @override
+  String get notificationsClearAllBody =>
+      'Elles disparaissent pour vous seul. C’est irréversible.';
+
+  @override
+  String get notificationDeleteTitle => 'Supprimer cette notification ?';
+
+  @override
+  String get notificationDeleteBody =>
+      'Elle disparaît pour vous seul. Ce qu’elle annonçait reste.';
 }

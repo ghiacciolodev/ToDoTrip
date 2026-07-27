@@ -4,8 +4,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.core.events import emit
+from app.core.events import Notify, emit
 from app.dependencies import CurrentUser, DbSession, Membership, Writable
+from app.models import Expense, NotificationKind, User
 from app.schemas.expense import (
     BalanceReport,
     ExpenseCreate,
@@ -13,7 +14,7 @@ from app.schemas.expense import (
     SettlementCreate,
     SettlementPublic,
 )
-from app.services import expense_service
+from app.services import expense_service, trip_service
 from app.services.expense_service import (
     ExpenseNotFound,
     NotAllMembers,
@@ -29,6 +30,36 @@ _NOT_MEMBERS = HTTPException(
     status.HTTP_422_UNPROCESSABLE_CONTENT, "Everyone involved must be a member of this trip"
 )
 
+# Below this, a deleted expense is not worth telling four people about. A round
+# figure rather than a share of the total: the point is "somebody would notice
+# this was gone", and that is about the amount, not the proportion.
+_DELETION_WORTH_TELLING_CENTS = 2000
+
+
+async def _trip_name(db: DbSession, trip_id: UUID) -> str:
+    trip = await trip_service.get_trip(db, trip_id)
+    return trip.name
+
+
+async def _money_payload(
+    db: DbSession, trip_id: UUID, actor: User | UUID, expense: Expense
+) -> dict:
+    """The facts a money notification needs, copied rather than referenced.
+
+    The expense may be deleted five minutes from now; the notification about it
+    still has to read as a sentence.
+    """
+    name = actor.display_name if isinstance(actor, User) else None
+    if name is None:
+        member = await db.get(User, actor)
+        name = member.display_name if member else ""
+    return {
+        "actor_name": name,
+        "trip_name": await _trip_name(db, trip_id),
+        "description": expense.description,
+        "amount_cents": expense.amount_cents,
+    }
+
 
 @router.post("/expenses", response_model=ExpensePublic, status_code=status.HTTP_201_CREATED)
 async def create_expense(
@@ -38,7 +69,19 @@ async def create_expense(
         expense = await expense_service.create_expense(db, trip_id, user.id, payload.model_dump())
     except NotAllMembers:
         raise _NOT_MEMBERS from None
-    await emit(trip_id, "expenses.changed", actor_id=user.id)
+    await emit(
+        trip_id,
+        "expenses.changed",
+        actor_id=user.id,
+        db=db,
+        # Everyone, not just the people in the split: an expense moves the
+        # trip's total, and the group's money is the group's business.
+        notify=Notify(
+            kind=NotificationKind.EXPENSE_ADDED,
+            entity_id=expense.id,
+            payload=await _money_payload(db, trip_id, user, expense),
+        ),
+    )
     return expense
 
 
@@ -59,10 +102,26 @@ async def get_expense(trip_id: UUID, expense_id: UUID, db: DbSession, _: Members
 async def delete_expense(trip_id: UUID, expense_id: UUID, db: DbSession, membership: Writable):
     try:
         expense = await expense_service.get_expense(db, trip_id, expense_id)
+        removed = await _money_payload(db, trip_id, membership.user_id, expense)
         await expense_service.delete_expense(db, expense)
     except ExpenseNotFound:
         raise _NOT_FOUND from None
-    await emit(trip_id, "expenses.changed", actor_id=membership.user_id)
+    await emit(
+        trip_id,
+        "expenses.changed",
+        actor_id=membership.user_id,
+        db=db,
+        # A deletion moves everybody's balance, so it counts — but announcing
+        # every cancelled coffee doubles the noise of the whole feature. Only
+        # amounts big enough that somebody would notice them missing.
+        notify=Notify(
+            kind=NotificationKind.EXPENSE_DELETED,
+            entity_id=expense_id,
+            payload=removed,
+        )
+        if expense.amount_cents >= _DELETION_WORTH_TELLING_CENTS
+        else None,
+    )
 
 
 @router.get("/balance", response_model=BalanceReport)
@@ -87,7 +146,24 @@ async def create_settlement(
         ) from None
     except NotAllMembers:
         raise _NOT_MEMBERS from None
-    await emit(trip_id, "expenses.changed", actor_id=user.id)
+    await emit(
+        trip_id,
+        "expenses.changed",
+        actor_id=user.id,
+        db=db,
+        # Only the person who was paid. To everybody else this is bookkeeping
+        # between two other people.
+        notify=Notify(
+            kind=NotificationKind.SETTLEMENT_RECEIVED,
+            entity_id=settlement.id,
+            only=[settlement.to_user_id],
+            payload={
+                "actor_name": user.display_name,
+                "trip_name": await _trip_name(db, trip_id),
+                "amount_cents": settlement.amount_cents,
+            },
+        ),
+    )
     return settlement
 
 

@@ -5,9 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import PlainTextResponse
 
-from app.core.events import close_trip, emit, kick
+from app.core.events import Notify, close_trip, emit, kick
 from app.core.rate_limit import throttle
 from app.dependencies import CurrentUser, DbSession, Membership, Ownership
+from app.models import NotificationKind
 from app.schemas.auth import UserPublic
 from app.schemas.trip import (
     InviteCreate,
@@ -100,7 +101,19 @@ async def join_trip(payload: JoinRequest, db: DbSession, user: CurrentUser):
         joined = await trip_service.join_by_code(db, payload.code, user.id)
     except InvalidInvite:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired invite") from None
-    await emit(joined.id, "members.changed", actor_id=user.id)
+    await emit(
+        joined.id,
+        "members.changed",
+        actor_id=user.id,
+        db=db,
+        # The actor is the person arriving, so "everyone but the actor" is
+        # exactly the group they are arriving into.
+        notify=Notify(
+            kind=NotificationKind.MEMBER_JOINED,
+            entity_id=user.id,
+            payload={"actor_name": user.display_name, "trip_name": joined.name},
+        ),
+    )
     return joined
 
 

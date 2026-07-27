@@ -1199,4 +1199,80 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notificationsTitle => 'Notificaciones';
+
+  @override
+  String get notificationsMarkAllRead => 'Marcar todo como leído';
+
+  @override
+  String get notificationsEmptyTitle => 'Estás al día';
+
+  @override
+  String get notificationsEmptyBody =>
+      'Los nuevos gastos, planes y personas\naparecerán aquí.';
+
+  @override
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  ) {
+    return '$actor ha añadido $amount por $description';
+  }
+
+  @override
+  String notificationExpenseDeleted(String actor, String description) {
+    return '$actor ha eliminado el gasto de $description';
+  }
+
+  @override
+  String notificationSettlement(String actor, String amount) {
+    return '$actor te ha devuelto $amount';
+  }
+
+  @override
+  String notificationTaskAssigned(String actor, String title) {
+    return '$actor te ha asignado «$title»';
+  }
+
+  @override
+  String notificationEventAdded(String actor, String title) {
+    return '$actor ha añadido $title al plan';
+  }
+
+  @override
+  String notificationMemberJoined(String actor) {
+    return '$actor se ha unido al viaje';
+  }
+
+  @override
+  String notificationSomethingHappened(String actor) {
+    return '$actor ha hecho algo en este viaje';
+  }
+
+  @override
+  String get settingsMuteTrip => 'Silenciar este viaje';
+
+  @override
+  String get settingsMuteTripBody => 'Deja de recibir notificaciones';
+
+  @override
+  String get notificationsClearAll => 'Eliminar todas';
+
+  @override
+  String get notificationsClearAllTitle =>
+      '¿Eliminar todas las notificaciones?';
+
+  @override
+  String get notificationsClearAllBody =>
+      'Desaparecen solo para ti. No se puede deshacer.';
+
+  @override
+  String get notificationDeleteTitle => '¿Eliminar esta notificación?';
+
+  @override
+  String get notificationDeleteBody =>
+      'Desaparece solo para ti. Aquello de lo que hablaba se mantiene.';
 }

@@ -1583,5 +1583,130 @@
         "type": "int"
       }
     }
+  },
+  "notificationsTitle": "Notifications",
+  "@notificationsTitle": {
+    "description": "Title of the notification feed"
+  },
+  "notificationsMarkAllRead": "Mark all read",
+  "@notificationsMarkAllRead": {
+    "description": "Clears the badge without opening anything"
+  },
+  "notificationsEmptyTitle": "You're all caught up",
+  "@notificationsEmptyTitle": {
+    "description": "Empty feed. Not 'no notifications', which reads like a failure"
+  },
+  "notificationsEmptyBody": "New expenses, plans and people\nwill show up here.",
+  "@notificationsEmptyBody": {
+    "description": "What will appear here; the line break is intentional"
+  },
+  "notificationExpenseAdded": "{actor} added {amount} for {description}",
+  "@notificationExpenseAdded": {
+    "description": "Composed on the client from the frozen payload",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationExpenseDeleted": "{actor} deleted the expense for {description}",
+  "@notificationExpenseDeleted": {
+    "description": "Only sent for amounts big enough to be missed",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSettlement": "{actor} paid you back {amount}",
+  "@notificationSettlement": {
+    "description": "Reaches only the person who was paid",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationTaskAssigned": "{actor} gave you “{title}”",
+  "@notificationTaskAssigned": {
+    "description": "Reaches only the people the task was put on",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationEventAdded": "{actor} added {title} to the plan",
+  "@notificationEventAdded": {
+    "description": "A new calendar entry, for the whole trip",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationMemberJoined": "{actor} joined the trip",
+  "@notificationMemberJoined": {
+    "description": "Somebody redeemed an invite code",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSomethingHappened": "{actor} did something in this trip",
+  "@notificationSomethingHappened": {
+    "description": "Fallback for a kind this build does not know, sent by a newer server",
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMuteTrip": "Mute this trip",
+  "@settingsMuteTrip": {
+    "description": "Switch in trip settings, for the caller only"
+  },
+  "settingsMuteTripBody": "Stop being notified about it",
+  "@settingsMuteTripBody": {
+    "description": "What muting a trip does"
+  },
+  "notificationsClearAll": "Clear all",
+  "@notificationsClearAll": {
+    "description": "Empties the caller's own feed"
+  },
+  "notificationsClearAllTitle": "Clear all notifications?",
+  "@notificationsClearAllTitle": {
+    "description": "Heading of the clear-all confirmation"
+  },
+  "notificationsClearAllBody": "They disappear for you only. This cannot be undone.",
+  "@notificationsClearAllBody": {
+    "description": "Stresses that clearing is personal, not shared"
+  },
+  "notificationDeleteTitle": "Delete this notification?",
+  "@notificationDeleteTitle": {
+    "description": "Heading of the single-notification confirmation"
+  },
+  "notificationDeleteBody": "It disappears for you only. Whatever it was about stays.",
+  "@notificationDeleteBody": {
+    "description": "Stresses that only the notice goes, not the expense or task it described"
   }
 }

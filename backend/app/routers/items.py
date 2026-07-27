@@ -6,11 +6,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.events import emit
+from app.core.events import Notify, emit
 from app.dependencies import CurrentUser, DbSession, Membership, Writable
-from app.models import ItemType
+from app.models import ItemType, NotificationKind
 from app.schemas.item import ItemCreate, ItemPublic, ItemUpdate
-from app.services import item_service
+from app.services import item_service, trip_service
 from app.services.item_service import AssigneeNotMember, ItemNotFound, NotATask
 
 # The trip_id in the prefix feeds the Membership dependency, so every route
@@ -24,6 +24,41 @@ _BAD_ASSIGNEE = HTTPException(
 _NOT_A_TASK = HTTPException(status.HTTP_409_CONFLICT, "Only tasks can be completed")
 
 
+async def _created_notice(db: DbSession, trip_id: UUID, user, item) -> Notify | None:
+    """What, if anything, a new plan entry is worth telling people.
+
+    An event goes to the whole trip: it is something the group is now doing at a
+    particular hour. A task goes only to the people it was put on — a to-do
+    nobody was assigned is a note to the group, and a to-do assigned to Luca is
+    not news for the other three. A task with no assignees tells nobody.
+    """
+    trip = await trip_service.get_trip(db, trip_id)
+    if item.type is ItemType.EVENT:
+        return Notify(
+            kind=NotificationKind.EVENT_ADDED,
+            entity_id=item.id,
+            payload={
+                "actor_name": user.display_name,
+                "trip_name": trip.name,
+                "title": item.title,
+            },
+        )
+
+    assignees = [a.user_id for a in item.assignees]
+    if not assignees:
+        return None
+    return Notify(
+        kind=NotificationKind.TASK_ASSIGNED,
+        entity_id=item.id,
+        only=assignees,
+        payload={
+            "actor_name": user.display_name,
+            "trip_name": trip.name,
+            "title": item.title,
+        },
+    )
+
+
 @router.post("", response_model=ItemPublic, status_code=status.HTTP_201_CREATED)
 async def create_item(
     trip_id: UUID, payload: ItemCreate, db: DbSession, user: CurrentUser, _: Writable
@@ -32,7 +67,13 @@ async def create_item(
         item = await item_service.create_item(db, trip_id, user.id, payload.model_dump())
     except AssigneeNotMember:
         raise _BAD_ASSIGNEE from None
-    await emit(trip_id, "items.changed", actor_id=user.id)
+    await emit(
+        trip_id,
+        "items.changed",
+        actor_id=user.id,
+        db=db,
+        notify=await _created_notice(db, trip_id, user, item),
+    )
     return item
 
 

@@ -12,6 +12,7 @@ from app.models.expense import Expense, ExpenseShare, Settlement
 from app.models.invite import Invite
 from app.models.item import Item, ItemAssignee, ItemType
 from app.models.map import MapPin, MemberLocation, PinCategory
+from app.models.notification import Notification, NotificationKind
 from app.models.trip import MemberRole, Trip, TripMember, TripPastMember
 from app.models.user import User
 
@@ -28,6 +29,8 @@ __all__ = [
     "MapPin",
     "MemberLocation",
     "MemberRole",
+    "Notification",
+    "NotificationKind",
     "PinCategory",
     "RefreshToken",
     "Settlement",

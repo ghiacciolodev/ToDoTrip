@@ -2071,6 +2071,118 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{in 1 hour} other{in {count} hours}}'**
   String calendarStartsInHours(int count);
+
+  /// Title of the notification feed
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// Clears the badge without opening anything
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notificationsMarkAllRead;
+
+  /// Empty feed. Not 'no notifications', which reads like a failure
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get notificationsEmptyTitle;
+
+  /// What will appear here; the line break is intentional
+  ///
+  /// In en, this message translates to:
+  /// **'New expenses, plans and people\nwill show up here.'**
+  String get notificationsEmptyBody;
+
+  /// Composed on the client from the frozen payload
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} added {amount} for {description}'**
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  );
+
+  /// Only sent for amounts big enough to be missed
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} deleted the expense for {description}'**
+  String notificationExpenseDeleted(String actor, String description);
+
+  /// Reaches only the person who was paid
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} paid you back {amount}'**
+  String notificationSettlement(String actor, String amount);
+
+  /// Reaches only the people the task was put on
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} gave you “{title}”'**
+  String notificationTaskAssigned(String actor, String title);
+
+  /// A new calendar entry, for the whole trip
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} added {title} to the plan'**
+  String notificationEventAdded(String actor, String title);
+
+  /// Somebody redeemed an invite code
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined the trip'**
+  String notificationMemberJoined(String actor);
+
+  /// Fallback for a kind this build does not know, sent by a newer server
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} did something in this trip'**
+  String notificationSomethingHappened(String actor);
+
+  /// Switch in trip settings, for the caller only
+  ///
+  /// In en, this message translates to:
+  /// **'Mute this trip'**
+  String get settingsMuteTrip;
+
+  /// What muting a trip does
+  ///
+  /// In en, this message translates to:
+  /// **'Stop being notified about it'**
+  String get settingsMuteTripBody;
+
+  /// Empties the caller's own feed
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get notificationsClearAll;
+
+  /// Heading of the clear-all confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all notifications?'**
+  String get notificationsClearAllTitle;
+
+  /// Stresses that clearing is personal, not shared
+  ///
+  /// In en, this message translates to:
+  /// **'They disappear for you only. This cannot be undone.'**
+  String get notificationsClearAllBody;
+
+  /// Heading of the single-notification confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this notification?'**
+  String get notificationDeleteTitle;
+
+  /// Stresses that only the notice goes, not the expense or task it described
+  ///
+  /// In en, this message translates to:
+  /// **'It disappears for you only. Whatever it was about stays.'**
+  String get notificationDeleteBody;
 }
 
 class _AppLocalizationsDelegate

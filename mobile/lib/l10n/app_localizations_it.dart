@@ -1197,4 +1197,79 @@ class AppLocalizationsIt extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notificationsTitle => 'Notifiche';
+
+  @override
+  String get notificationsMarkAllRead => 'Segna tutte lette';
+
+  @override
+  String get notificationsEmptyTitle => 'Sei in pari';
+
+  @override
+  String get notificationsEmptyBody =>
+      'Nuove spese, programmi e persone\ncompariranno qui.';
+
+  @override
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  ) {
+    return '$actor ha aggiunto $amount per $description';
+  }
+
+  @override
+  String notificationExpenseDeleted(String actor, String description) {
+    return '$actor ha eliminato la spesa per $description';
+  }
+
+  @override
+  String notificationSettlement(String actor, String amount) {
+    return '$actor ti ha rimborsato $amount';
+  }
+
+  @override
+  String notificationTaskAssigned(String actor, String title) {
+    return '$actor ti ha assegnato «$title»';
+  }
+
+  @override
+  String notificationEventAdded(String actor, String title) {
+    return '$actor ha aggiunto $title al programma';
+  }
+
+  @override
+  String notificationMemberJoined(String actor) {
+    return '$actor è entrato nel viaggio';
+  }
+
+  @override
+  String notificationSomethingHappened(String actor) {
+    return '$actor ha fatto qualcosa in questo viaggio';
+  }
+
+  @override
+  String get settingsMuteTrip => 'Silenzia questo viaggio';
+
+  @override
+  String get settingsMuteTripBody => 'Smetti di ricevere notifiche';
+
+  @override
+  String get notificationsClearAll => 'Elimina tutte';
+
+  @override
+  String get notificationsClearAllTitle => 'Eliminare tutte le notifiche?';
+
+  @override
+  String get notificationsClearAllBody =>
+      'Spariscono solo per te. Non è reversibile.';
+
+  @override
+  String get notificationDeleteTitle => 'Eliminare questa notifica?';
+
+  @override
+  String get notificationDeleteBody =>
+      'Sparisce solo per te. Quello a cui si riferisce resta.';
 }

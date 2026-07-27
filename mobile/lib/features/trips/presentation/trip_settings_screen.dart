@@ -178,9 +178,8 @@ class _TripSettingsScreenState extends ConsumerState<TripSettingsScreen> {
           _SectionLabel(l10n.tripSettingsPersonal),
           _Group(
             children: [
-              // The mute switch is deliberately absent until notifications
-              // exist: a toggle that silences nothing is recognised as fake
-              // immediately, and costs the rest of the screen its credibility.
+              _MuteSwitch(tripId: widget.tripId),
+              const Divider(),
               ListTile(
                 leading: const Icon(
                   Icons.exit_to_app,
@@ -402,6 +401,70 @@ class _TripSettingsScreenState extends ConsumerState<TripSettingsScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// Silences this trip, for the caller and nobody else.
+///
+/// Its own little widget with its own state so a slow request cannot make the
+/// switch stutter: it flips first and asks after, and puts itself back if the
+/// server disagrees.
+class _MuteSwitch extends ConsumerStatefulWidget {
+  const _MuteSwitch({required this.tripId});
+
+  final String tripId;
+
+  @override
+  ConsumerState<_MuteSwitch> createState() => _MuteSwitchState();
+}
+
+class _MuteSwitchState extends ConsumerState<_MuteSwitch> {
+  bool? _muted;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final muted = await ref
+          .read(tripRepositoryProvider)
+          .isMuted(widget.tripId);
+      if (mounted) setState(() => _muted = muted);
+    } on ApiException {
+      // Leave the switch out rather than showing a guess.
+    }
+  }
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _muted = value);
+    try {
+      await ref.read(tripRepositoryProvider).setMuted(widget.tripId, value);
+    } on ApiException {
+      if (mounted) setState(() => _muted = !value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final muted = _muted;
+    // Nothing at all until it is known: a switch that starts off and jumps on
+    // a moment later has already told the reader something false.
+    if (muted == null) return const SizedBox.shrink();
+
+    return SwitchListTile.adaptive(
+      value: muted,
+      onChanged: _toggle,
+      title: Text(l10n.settingsMuteTrip),
+      subtitle: Text(l10n.settingsMuteTripBody),
+      secondary: Icon(
+        muted ? Icons.notifications_off_outlined : Icons.notifications_none,
+      ),
+      activeThumbColor: Theme.of(context).colorScheme.primary,
+    );
   }
 }
 

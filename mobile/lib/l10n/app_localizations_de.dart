@@ -1195,4 +1195,79 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notificationsTitle => 'Benachrichtigungen';
+
+  @override
+  String get notificationsMarkAllRead => 'Alle als gelesen markieren';
+
+  @override
+  String get notificationsEmptyTitle => 'Alles gelesen';
+
+  @override
+  String get notificationsEmptyBody =>
+      'Neue Ausgaben, Pläne und Personen\nerscheinen hier.';
+
+  @override
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  ) {
+    return '$actor hat $amount für $description hinzugefügt';
+  }
+
+  @override
+  String notificationExpenseDeleted(String actor, String description) {
+    return '$actor hat die Ausgabe für $description gelöscht';
+  }
+
+  @override
+  String notificationSettlement(String actor, String amount) {
+    return '$actor hat dir $amount zurückgezahlt';
+  }
+
+  @override
+  String notificationTaskAssigned(String actor, String title) {
+    return '$actor hat dir „$title“ gegeben';
+  }
+
+  @override
+  String notificationEventAdded(String actor, String title) {
+    return '$actor hat $title zum Programm hinzugefügt';
+  }
+
+  @override
+  String notificationMemberJoined(String actor) {
+    return '$actor ist der Reise beigetreten';
+  }
+
+  @override
+  String notificationSomethingHappened(String actor) {
+    return '$actor hat etwas in dieser Reise getan';
+  }
+
+  @override
+  String get settingsMuteTrip => 'Diese Reise stummschalten';
+
+  @override
+  String get settingsMuteTripBody => 'Keine Benachrichtigungen mehr dazu';
+
+  @override
+  String get notificationsClearAll => 'Alle löschen';
+
+  @override
+  String get notificationsClearAllTitle => 'Alle Benachrichtigungen löschen?';
+
+  @override
+  String get notificationsClearAllBody =>
+      'Sie verschwinden nur für dich. Das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get notificationDeleteTitle => 'Diese Benachrichtigung löschen?';
+
+  @override
+  String get notificationDeleteBody =>
+      'Sie verschwindet nur für dich. Worum es ging, bleibt bestehen.';
 }

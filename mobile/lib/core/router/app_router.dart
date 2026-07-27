@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/user.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
@@ -89,8 +90,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/trips/:tripId',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (_, state) =>
-            TripShell(tripId: state.pathParameters['tripId']!),
+        // ?tab= lets a notification land on the part of the trip it is about,
+        // instead of dropping the reader on the calendar to go hunting.
+        builder: (_, state) => TripShell(
+          tripId: state.pathParameters['tripId']!,
+          initialTab: int.tryParse(state.uri.queryParameters['tab'] ?? ''),
+        ),
+      ),
+
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const NotificationsScreen(),
       ),
 
       // On the root navigator too: the profile is entered from settings and

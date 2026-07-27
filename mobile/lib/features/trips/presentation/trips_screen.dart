@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/refresh_on_resume.dart';
 import '../../../core/theme/colors.dart';
+import '../../notifications/presentation/notification_bell.dart';
+import '../../notifications/providers.dart';
 import '../providers.dart';
 import 'widgets/trip_card.dart';
 
@@ -14,14 +16,27 @@ class TripsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).tripsTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).tripsTitle),
+        actions: const [NotificationBell()],
+      ),
       // Someone else may have added a trip, or invited this user to one, while
       // the app was in the background: refetch on resume rather than trusting
       // whatever was on screen an hour ago.
       body: RefreshOnResume(
-        onResume: () => ref.invalidate(tripsProvider),
+        onResume: () {
+          ref.invalidate(tripsProvider);
+          // Three hours in a pocket is exactly when the badge is wrong.
+          ref.read(unreadCountProvider.notifier).refresh();
+        },
         child: RefreshIndicator(
-          onRefresh: () => ref.refresh(tripsProvider.future),
+          onRefresh: () async {
+            // The badge rides along: this screen has no websocket of its own,
+            // so a pull is one of the few moments it can learn it is stale.
+            ref.read(unreadCountProvider.notifier).refresh();
+            ref.invalidate(tripsProvider);
+            await ref.read(tripsProvider.future);
+          },
           child: _buildBody(context, ref),
         ),
       ),
@@ -128,43 +143,52 @@ class _EmptyState extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  height: 88,
-                  width: 88,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
+          // Align, not a centred Column: only the height is constrained here,
+          // so a Column left to itself shrinks to its widest line and the
+          // Padding leaves it against the left edge.
+          child: Align(
+            alignment: const Alignment(0, -0.25),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 88,
+                    width: 88,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.map_outlined,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.map_outlined,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  const SizedBox(height: 24),
+                  Text(
+                    AppLocalizations.of(context).tripsEmptyTitle,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  AppLocalizations.of(context).tripsEmptyTitle,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context).tripsEmptyBody,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.inkMuted, height: 1.4),
-                ),
-                const SizedBox(height: 28),
-                FilledButton(
-                  onPressed: () => context.go('/add'),
-                  child: Text(AppLocalizations.of(context).tripsEmptyAction),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    AppLocalizations.of(context).tripsEmptyBody,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.inkMuted,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton(
+                    onPressed: () => context.go('/add'),
+                    child: Text(AppLocalizations.of(context).tripsEmptyAction),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -186,28 +210,31 @@ class _ErrorState extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.cloud_off,
-                  size: 48,
-                  color: AppColors.inkMuted,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.inkMuted),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton(
-                  onPressed: onRetry,
-                  child: Text(AppLocalizations.of(context).commonTryAgain),
-                ),
-              ],
+          child: Align(
+            alignment: const Alignment(0, -0.25),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.cloud_off,
+                    size: 48,
+                    color: AppColors.inkMuted,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.inkMuted),
+                  ),
+                  const SizedBox(height: 20),
+                  OutlinedButton(
+                    onPressed: onRetry,
+                    child: Text(AppLocalizations.of(context).commonTryAgain),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

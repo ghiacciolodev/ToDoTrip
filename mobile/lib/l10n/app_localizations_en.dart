@@ -1192,4 +1192,79 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all read';
+
+  @override
+  String get notificationsEmptyTitle => 'You\'re all caught up';
+
+  @override
+  String get notificationsEmptyBody =>
+      'New expenses, plans and people\nwill show up here.';
+
+  @override
+  String notificationExpenseAdded(
+    String actor,
+    String amount,
+    String description,
+  ) {
+    return '$actor added $amount for $description';
+  }
+
+  @override
+  String notificationExpenseDeleted(String actor, String description) {
+    return '$actor deleted the expense for $description';
+  }
+
+  @override
+  String notificationSettlement(String actor, String amount) {
+    return '$actor paid you back $amount';
+  }
+
+  @override
+  String notificationTaskAssigned(String actor, String title) {
+    return '$actor gave you “$title”';
+  }
+
+  @override
+  String notificationEventAdded(String actor, String title) {
+    return '$actor added $title to the plan';
+  }
+
+  @override
+  String notificationMemberJoined(String actor) {
+    return '$actor joined the trip';
+  }
+
+  @override
+  String notificationSomethingHappened(String actor) {
+    return '$actor did something in this trip';
+  }
+
+  @override
+  String get settingsMuteTrip => 'Mute this trip';
+
+  @override
+  String get settingsMuteTripBody => 'Stop being notified about it';
+
+  @override
+  String get notificationsClearAll => 'Clear all';
+
+  @override
+  String get notificationsClearAllTitle => 'Clear all notifications?';
+
+  @override
+  String get notificationsClearAllBody =>
+      'They disappear for you only. This cannot be undone.';
+
+  @override
+  String get notificationDeleteTitle => 'Delete this notification?';
+
+  @override
+  String get notificationDeleteBody =>
+      'It disappears for you only. Whatever it was about stays.';
 }

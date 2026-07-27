@@ -11,6 +11,7 @@ import '../data/trip_events.dart';
 import '../providers.dart';
 import 'add_expense_screen.dart';
 import 'tabs/calendar_tab.dart';
+import '../../notifications/providers.dart';
 import 'tabs/expenses_tab.dart';
 import 'tabs/group_tab.dart';
 import 'tabs/map_tab.dart';
@@ -31,16 +32,24 @@ import 'widgets/add_item_sheet.dart';
 /// The trip and its members are awaited once, here, so every tab below can
 /// assume both are present.
 class TripShell extends ConsumerStatefulWidget {
-  const TripShell({super.key, required this.tripId});
+  const TripShell({super.key, required this.tripId, this.initialTab});
 
   final String tripId;
+
+  /// Which tab to open on. Set by a notification, so tapping "Luca added an
+  /// expense" lands on the money rather than the calendar. Out-of-range values
+  /// fall back to the first tab: the parameter comes off a URL.
+  final int? initialTab;
 
   @override
   ConsumerState<TripShell> createState() => _TripShellState();
 }
 
 class _TripShellState extends ConsumerState<TripShell> {
-  int _index = 0;
+  late int _index = switch (widget.initialTab) {
+    final tab? when tab >= 0 && tab < 5 => tab,
+    _ => 0,
+  };
 
   /// Owned here rather than inside TasksTab so the action button can create
   /// whichever kind of thing is currently on screen.
@@ -77,6 +86,12 @@ class _TripShellState extends ConsumerState<TripShell> {
   /// because two floats every twenty seconds are not worth a round trip each.
   void _onRemoteEvent(Map<String, dynamic> event) {
     if (!mounted) return;
+    // Most of these also wrote a notification row. The badge is refreshed from
+    // the same signal rather than polled — the bell is one screen away.
+    if (event['type'] != 'location.update' &&
+        event['type'] != 'location.cleared') {
+      ref.read(unreadCountProvider.notifier).refresh();
+    }
     switch (event['type']) {
       case 'expenses.changed':
         invalidateMoney(ref, widget.tripId);

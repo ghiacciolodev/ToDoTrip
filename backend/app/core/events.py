@@ -15,9 +15,39 @@ same emit() facade.
 
 import asyncio
 import contextlib
+import logging
+from dataclasses import dataclass, field
 from uuid import UUID
 
 from fastapi import WebSocket
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import NotificationKind
+from app.services import notification_service
+
+_log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class Notify:
+    """The durable half of an event: what to write down for whoever missed it.
+
+    Passed to [emit] alongside the websocket announcement, because they are the
+    same moment described twice — "X happened in trip Y, caused by Z". Writing
+    notifications in the routers instead would mean revisiting all ten of them
+    the day push notifications arrive.
+    """
+
+    kind: NotificationKind
+
+    # Frozen facts, never a rendered sentence: the client owns the wording.
+    payload: dict = field(default_factory=dict)
+
+    entity_id: UUID | None = None
+
+    # Narrows the recipients from "every member but the actor" to a few — a
+    # repayment concerns the person who was paid, an assignment the assignees.
+    only: list[UUID] | None = None
 
 
 class _ConnectionManager:
@@ -66,13 +96,24 @@ async def unregister(trip_id: UUID, socket: WebSocket) -> None:
     await _manager.remove(trip_id, socket)
 
 
-async def emit(trip_id: UUID, type_: str, *, actor_id: UUID, data: dict | None = None) -> None:
+async def emit(
+    trip_id: UUID,
+    type_: str,
+    *,
+    actor_id: UUID,
+    data: dict | None = None,
+    db: AsyncSession | None = None,
+    notify: Notify | None = None,
+) -> None:
     """The single door every mutation announces itself through.
 
-    Routers call this and nothing else. Today it only fans out to websockets;
-    when in-app or push notifications arrive they are added here, not in ten
-    endpoints. Must be called after the commit: announcing a change that then
-    rolls back sends every client fetching data that does not exist.
+    Routers call this and nothing else. It feeds two channels from one call —
+    the websocket bell for whoever is looking, and the notification feed for
+    whoever is not — and push notifications will be a third, added here rather
+    than across ten endpoints.
+
+    Must be called after the commit: announcing a change that then rolls back
+    sends every client fetching data that does not exist.
 
     The actor's own sockets are skipped — that client already invalidated
     locally, and a second refresh only makes the UI flicker.
@@ -82,6 +123,10 @@ async def emit(trip_id: UUID, type_: str, *, actor_id: UUID, data: dict | None =
     moving clients to each re-run a GET would be dozens of requests a minute to
     move sixty bytes. Durable, structured state stays behind a GET; ephemeral,
     tiny and frequent state travels here.
+
+    [notify] is the opposite exception: a websocket event missed is harmless,
+    because the next fetch shows current data anyway, while a notification
+    missed never happened at all. Only a few events deserve one.
     """
     payload = {
         "type": type_,
@@ -93,6 +138,25 @@ async def emit(trip_id: UUID, type_: str, *, actor_id: UUID, data: dict | None =
         if user_id == actor_id:
             continue
         await _send(trip_id, socket, payload)
+
+    if notify is None or db is None:
+        return
+    try:
+        await notification_service.record(
+            db,
+            trip_id=trip_id,
+            actor_id=actor_id,
+            kind=notify.kind,
+            payload=notify.payload,
+            entity_id=notify.entity_id,
+            only=notify.only,
+        )
+    except Exception:  # noqa: BLE001
+        # The expense is already saved and the caller is owed its 201. A feed
+        # row that failed to write is worth a log line, never a failed request
+        # for work that actually succeeded.
+        _log.exception("could not record notifications for %s on %s", type_, trip_id)
+        await db.rollback()
 
 
 async def kick(trip_id: UUID, user_id: UUID) -> None:
