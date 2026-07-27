@@ -8,6 +8,9 @@
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
   <img alt="backend tests" src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/backend.yml/badge.svg">
+  <img
+  alt="mobile tests"
+  src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/mobile.yml/badge.svg">
 </p>
 
 ---
