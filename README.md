@@ -19,7 +19,6 @@
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
   <img alt="tests" src="https://img.shields.io/badge/tests-307%20backend%20%C2%B7%20123%20app-1C6B5D">
-  <img alt="languages" src="https://img.shields.io/badge/languages-5-1C6B5D">
 </p>
 
 ---
