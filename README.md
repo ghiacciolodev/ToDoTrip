@@ -1,15 +1,13 @@
 <p align="center">
   <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
 </p>
-
 <p align="center">
   <em>Everything a group of friends has to agree on before, during and after a trip.</em>
 </p>
-
 <p align="center">
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
-  ![backend](https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/backend.yml/badge.svg)
+  <img alt="backend tests" src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/backend.yml/badge.svg">
 </p>
 
 ---
