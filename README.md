@@ -221,19 +221,7 @@ still needs its controller details filled in before it means anything legally.
 ---
 
 ## Licence
-
 Copyright © 2026 Simone Acierno.
 
-Released under the **GNU Affero General Public License v3.0** — the full text is
+Released under the **Apache License 2.0** — the full text is
 in [LICENSE](LICENSE).
-
-In short: use it, study it, change it, share it. If you distribute a modified
-version you have to release your changes under the same licence — and, because
-this is the *Affero* variant, that applies to running a modified version **as a
-network service** too, not only to shipping a binary. Section 13 is the point of
-choosing it: somebody cannot take this, run it as their own hosted app, and keep
-their improvements to themselves.
-
-That clause carries an obligation in the other direction as well. Anyone hosting
-this for other people must offer those users the corresponding source, which in
-practice means a visible link to the repository from inside the app.
