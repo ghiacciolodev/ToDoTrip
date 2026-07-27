@@ -1,17 +1,34 @@
 <p align="center">
   <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
 </p>
+
 <p align="center">
   <em>Everything a group of friends has to agree on before, during and after a trip.</em>
 </p>
+
 <p align="center">
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
   <img alt="backend tests" src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/backend.yml/badge.svg">
-  <img
-  alt="mobile tests"
-  src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/mobile.yml/badge.svg">
+  <img alt="backend tests" src="https://github.com/ghiacciolodev/ToDoTrip/actions/workflows/mobile.yml/badge.svg">
 </p>
+
+<p align="center">
+  <img src="docs/brand/tripslists.png" width="200" alt="Trips">
+  <img src="docs/brand/Calendar.png" width="200" alt="Calendar">
+  <img src="docs/brand/money.png" width="200" alt="Money">
+  <img src="docs/brand/todo.png" width="200" alt="Tasks">
+</p>
+
+<details>
+<summary align="center">More screens</summary>
+<p align="center">
+  <img src="docs/brand/groupinfo.png" width="200" alt="Group">
+  <img src="docs/brand/lists.png" width="200" alt="Lists">
+  <img src="docs/brand/add join trip.png" width="200" alt="Create or join a trip">
+  <img src="docs/brand/settings.png" width="200" alt="Settings">
+</p>
+</details>
 
 ---
 
@@ -26,66 +43,16 @@ A **trip** is the boundary of everything: the plan, the money, the map, the
 people. You join one with a code, and from that moment you see everything in it
 and nothing outside it.
 
-| | |
-|---|---|
-| **Calendar** | The itinerary, grouped by day. The next thing about to happen is the only row on screen that asks for attention. |
-| **To-do & lists** | Tasks with a deadline and an owner, and throwaway checklists for the twenty things to grab in a supermarket. |
-| **Money** | Shared expenses with uneven splits, running balances, and the shortest set of payments that settles the group. |
-| **Map** | Places the group saved, and where everyone is right now — while they choose to share it. |
-| **Group** | Who is here, invite codes, and the rules for leaving without wrecking the accounts. |
+|                   |                                                                                                                 |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Calendar**      | The itinerary, grouped by day. The next thing about to happen is the only row on screen that asks for attention. |
+| **To-do & lists** | Tasks with a deadline and an owner, and throwaway checklists for the twenty things to grab in a supermarket.     |
+| **Money**         | Shared expenses with uneven splits, running balances, and the shortest set of payments that settles the group.   |
+| **Map**           | Places the group saved, and where everyone is right now — while they choose to share it.                         |
+| **Group**         | Who is here, invite codes, and the rules for leaving without wrecking the accounts.                              |
 
 Plus: in-app notifications, five languages, eight selectable accent colours, and
 a CSV export for anybody who trusts a spreadsheet more than an app.
-
----
-
-## Run everything with one command
-
-```bash
-docker compose up
-```
-
-That builds the API, waits for PostgreSQL to actually accept queries, applies
-the migrations, creates the test database, and serves on
-**http://localhost:8000** — interactive docs at **/docs**. Source is mounted
-live, so saving a file reloads the server.
-
-The app is the one thing Docker cannot start for you, because it needs a device:
-
-```bash
-cd mobile && flutter run
-```
-
-The Android emulator reaches the host API through `10.0.2.2` on its own, so
-nothing is needed there.
-
-A physical phone does need telling, because `localhost` on a phone means the
-phone. Find your machine's address on the local network — `ipconfig` on Windows,
-`ip addr` or `ifconfig` elsewhere — and pass it in:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://YOUR-MACHINE-IP:8000/api/v1
-```
-
-Both devices have to be on the same wifi, and on Windows the first attempt
-usually fails until the firewall is allowed to accept connections on port 8000.
-
-### Without Docker
-
-```bash
-docker compose up -d db
-cd backend
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
-```
-
-### Tests
-
-```bash
-cd backend && pytest          # needs the todotrip_test database, created above
-cd mobile && flutter test
-```
 
 ---
 
@@ -171,6 +138,64 @@ the twenty-odd routers calling `emit()` do not change.
 
 ---
 
+## Run it
+
+```bash
+docker compose up
+```
+
+That builds the API, waits for PostgreSQL to actually accept queries, applies
+the migrations, creates the test database, and serves on
+**http://localhost:8000** — interactive docs at **/docs**. Source is mounted
+live, so saving a file reloads the server.
+
+The app is the one thing Docker cannot start for you, because it needs a device:
+
+```bash
+cd mobile && flutter run
+```
+
+The Android emulator reaches the host API through `10.0.2.2` on its own, so
+nothing is needed there.
+
+<details>
+<summary>Running the app on a physical phone</summary>
+
+A physical phone does need telling, because `localhost` on a phone means the
+phone. Find your machine's address on the local network — `ipconfig` on
+Windows, `ip addr` or `ifconfig` elsewhere — and pass it in:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://YOUR-MACHINE-IP:8000/api/v1
+```
+
+Both devices have to be on the same wifi, and on Windows the first attempt
+usually fails until the firewall is allowed to accept connections on port 8000.
+
+</details>
+
+<details>
+<summary>Without Docker</summary>
+
+```bash
+docker compose up -d db
+cd backend
+python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+</details>
+
+### Tests
+
+```bash
+cd backend && pytest          # needs the todotrip_test database, created above
+cd mobile && flutter test
+```
+
+---
+
 ## Layout
 
 ```
@@ -222,7 +247,13 @@ still needs its controller details filled in before it means anything legally.
 ---
 
 ## Licence
+
 Copyright © 2026 Simone Acierno.
 
-Released under the **Apache License 2.0** — the full text is
-in [LICENSE](LICENSE).
+Released under the **Apache License 2.0** — the full text is in [LICENSE](LICENSE).
+
+In short: use it, study it, change it, share it — including in commercial
+projects. If you distribute a modified version you must include the original
+copyright notice and licence text, state what you changed, and not use my name
+to endorse your product. Contributors also grant you a patent licence on their
+contributions, so nobody can hand you code and then sue you for using it.
