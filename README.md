@@ -1,4 +1,6 @@
-<h1 align="center">TodoTrip</h1>
+<p align="center">
+  <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
+</p>
 
 <!--
   Once docs/brand/wordmark.png is in the repository, replace the line above
