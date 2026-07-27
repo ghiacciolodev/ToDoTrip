@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/user.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/settings/presentation/profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/shell/presentation/app_shell.dart';
 import '../../features/trips/presentation/add_screen.dart';
@@ -88,6 +89,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (_, state) =>
             TripShell(tripId: state.pathParameters['tripId']!),
+      ),
+
+      // On the root navigator too: the profile is entered from settings and
+      // left with back, not a fourth tab.
+      GoRoute(
+        path: '/profile',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const ProfileScreen(),
       ),
     ],
   );

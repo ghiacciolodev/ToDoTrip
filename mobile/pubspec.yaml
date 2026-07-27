@@ -42,3 +42,8 @@ flutter:
   uses-material-design: true
   # Builds AppLocalizations from the ARB files in lib/l10n on every build.
   generate: true
+  assets:
+    # Shipped as a file rather than as translation keys: it is one text that has
+    # to stay identical to the copy reviewed in the repository, and splitting a
+    # legal document across an ARB would guarantee the two drift apart.
+    - assets/legal/

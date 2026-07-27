@@ -122,7 +122,9 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
                   icon: const Icon(Icons.add, size: 18),
                   label: Text(l10n.inviteNewCode),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryContainer,
                   ),
                 ),
               ],
@@ -146,7 +148,7 @@ class _CodeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primaryTint,
+        color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -156,11 +158,11 @@ class _CodeCard extends StatelessWidget {
           Text(
             invite.code,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.w700,
               letterSpacing: 8,
-              color: AppColors.primaryDark,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: 4),

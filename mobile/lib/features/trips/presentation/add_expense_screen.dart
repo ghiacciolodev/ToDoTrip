@@ -221,10 +221,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       _description.text = suggestion;
                       setState(() {});
                     },
-                    backgroundColor: AppColors.primaryTint,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
                     side: BorderSide.none,
-                    labelStyle: const TextStyle(
-                      color: AppColors.primaryDark,
+                    labelStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontSize: 13,
                     ),
                   ),
@@ -246,7 +248,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       RadioListTile<String>(
                         value: member.user.id,
                         dense: true,
-                        activeColor: AppColors.primary,
+                        activeColor: Theme.of(context).colorScheme.primary,
                         title: Text(
                           member.user.id == myId
                               ? 'You'
@@ -275,8 +277,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     _customSplit
                         ? l10n.expenseSplitEqually
                         : l10n.expenseCustomAmounts,
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontSize: 13,
                     ),
                   ),
@@ -323,7 +325,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       fontWeight: FontWeight.w700,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: _remainingCents == 0
-                          ? AppColors.primaryDark
+                          ? Theme.of(context).colorScheme.onPrimaryContainer
                           : AppColors.terracotta,
                     ),
                   ),
@@ -406,7 +408,7 @@ class _ParticipantRow extends StatelessWidget {
       leading: Checkbox(
         value: selected,
         onChanged: (_) => onToggle(),
-        activeColor: AppColors.primary,
+        activeColor: Theme.of(context).colorScheme.primary,
       ),
       title: Row(
         children: [

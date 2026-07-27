@@ -973,4 +973,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDescriptionLabel => 'Description';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsAccentColour => 'Accent colour';
+
+  @override
+  String get settingsAccentColourBody =>
+      'Used for buttons, highlights and the tab bar.';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileSaved => 'Profile updated';
+
+  @override
+  String get profileEmailLocked =>
+      'Changing your email needs the new address to be verified, which is not available yet.';
+
+  @override
+  String get profileChangePassword => 'Change password';
+
+  @override
+  String get profileChangePasswordBody => 'Signs you out everywhere else';
+
+  @override
+  String get profileChangePasswordWarning =>
+      'Every other device signed in to this account will be signed out.';
+
+  @override
+  String get profileCurrentPassword => 'Current password';
+
+  @override
+  String get profileNewPassword => 'New password';
+
+  @override
+  String get profileRepeatPassword => 'Repeat new password';
+
+  @override
+  String get profilePasswordMismatch => 'The two passwords do not match';
+
+  @override
+  String get profileWrongPassword => 'That is not your current password';
+
+  @override
+  String get profilePasswordChanged => 'Password changed';
+
+  @override
+  String get profileDeleteAccount => 'Delete account';
+
+  @override
+  String get profileDeleteTitle => 'Delete your account?';
+
+  @override
+  String get profileDeleteBody =>
+      'Your name, email and password are erased and you are signed out everywhere. Expenses you took part in stay, without your name on them, because they decide what other people owe. This cannot be undone.';
+
+  @override
+  String get profileDeleteConfirm => 'Delete';
+
+  @override
+  String get profileDeleteOwnsTrips =>
+      'You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.';
 }

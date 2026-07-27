@@ -40,7 +40,7 @@ class MemberMarker extends StatelessWidget {
         shape: BoxShape.circle,
         // A ring is what lifts an avatar off a busy map.
         border: Border.all(
-          color: isMe ? AppColors.primary : Colors.white,
+          color: isMe ? Theme.of(context).colorScheme.primary : Colors.white,
           width: isMe ? 3 : 2.5,
         ),
       ),
@@ -73,10 +73,17 @@ class PinMarker extends StatelessWidget {
           topRight: Radius.circular(14),
           bottomRight: Radius.circular(14),
         ),
-        border: Border.all(color: AppColors.primary, width: 2),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary,
+          width: 2,
+        ),
       ),
       alignment: Alignment.center,
-      child: Icon(category.icon, size: 18, color: AppColors.primaryDark),
+      child: Icon(
+        category.icon,
+        size: 18,
+        color: Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
     );
   }
 }
@@ -91,7 +98,7 @@ class ClusterMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
       ),

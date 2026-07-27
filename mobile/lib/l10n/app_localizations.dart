@@ -1753,6 +1753,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Description'**
   String get tripDescriptionLabel;
+
+  /// Confirms an edit
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// Settings section for how the app looks
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// Heading of the accent colour swatches
+  ///
+  /// In en, this message translates to:
+  /// **'Accent colour'**
+  String get settingsAccentColour;
+
+  /// Explains what the accent colour affects
+  ///
+  /// In en, this message translates to:
+  /// **'Used for buttons, highlights and the tab bar.'**
+  String get settingsAccentColourBody;
+
+  /// Title of the profile screen
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// Confirmation after saving the profile
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated'**
+  String get profileSaved;
+
+  /// Why the email field is read-only
+  ///
+  /// In en, this message translates to:
+  /// **'Changing your email needs the new address to be verified, which is not available yet.'**
+  String get profileEmailLocked;
+
+  /// Opens the change-password sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get profileChangePassword;
+
+  /// Consequence of changing the password, shown under the row
+  ///
+  /// In en, this message translates to:
+  /// **'Signs you out everywhere else'**
+  String get profileChangePasswordBody;
+
+  /// Warning at the top of the change-password sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Every other device signed in to this account will be signed out.'**
+  String get profileChangePasswordWarning;
+
+  /// Field for the password in use
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get profileCurrentPassword;
+
+  /// Field for the replacement password
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get profileNewPassword;
+
+  /// Confirmation field, catching a typo that would lock the user out
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat new password'**
+  String get profileRepeatPassword;
+
+  /// The two new-password fields differ
+  ///
+  /// In en, this message translates to:
+  /// **'The two passwords do not match'**
+  String get profilePasswordMismatch;
+
+  /// The current password was wrong
+  ///
+  /// In en, this message translates to:
+  /// **'That is not your current password'**
+  String get profileWrongPassword;
+
+  /// Confirmation after changing the password
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed'**
+  String get profilePasswordChanged;
+
+  /// Opens the account deletion confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get profileDeleteAccount;
+
+  /// Heading of the account deletion confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get profileDeleteTitle;
+
+  /// What deleting an account does and does not remove
+  ///
+  /// In en, this message translates to:
+  /// **'Your name, email and password are erased and you are signed out everywhere. Expenses you took part in stay, without your name on them, because they decide what other people owe. This cannot be undone.'**
+  String get profileDeleteBody;
+
+  /// Confirms account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get profileDeleteConfirm;
+
+  /// Deletion refused because the caller still owns a trip with other members
+  ///
+  /// In en, this message translates to:
+  /// **'You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.'**
+  String get profileDeleteOwnsTrips;
 }
 
 class _AppLocalizationsDelegate

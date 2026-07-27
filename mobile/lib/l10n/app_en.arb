@@ -1328,5 +1328,89 @@
   "tripDescriptionLabel": "Description",
   "@tripDescriptionLabel": {
     "description": "Label of the optional description field"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Confirms an edit"
+  },
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {
+    "description": "Settings section for how the app looks"
+  },
+  "settingsAccentColour": "Accent colour",
+  "@settingsAccentColour": {
+    "description": "Heading of the accent colour swatches"
+  },
+  "settingsAccentColourBody": "Used for buttons, highlights and the tab bar.",
+  "@settingsAccentColourBody": {
+    "description": "Explains what the accent colour affects"
+  },
+  "profileTitle": "Profile",
+  "@profileTitle": {
+    "description": "Title of the profile screen"
+  },
+  "profileSaved": "Profile updated",
+  "@profileSaved": {
+    "description": "Confirmation after saving the profile"
+  },
+  "profileEmailLocked": "Changing your email needs the new address to be verified, which is not available yet.",
+  "@profileEmailLocked": {
+    "description": "Why the email field is read-only"
+  },
+  "profileChangePassword": "Change password",
+  "@profileChangePassword": {
+    "description": "Opens the change-password sheet"
+  },
+  "profileChangePasswordBody": "Signs you out everywhere else",
+  "@profileChangePasswordBody": {
+    "description": "Consequence of changing the password, shown under the row"
+  },
+  "profileChangePasswordWarning": "Every other device signed in to this account will be signed out.",
+  "@profileChangePasswordWarning": {
+    "description": "Warning at the top of the change-password sheet"
+  },
+  "profileCurrentPassword": "Current password",
+  "@profileCurrentPassword": {
+    "description": "Field for the password in use"
+  },
+  "profileNewPassword": "New password",
+  "@profileNewPassword": {
+    "description": "Field for the replacement password"
+  },
+  "profileRepeatPassword": "Repeat new password",
+  "@profileRepeatPassword": {
+    "description": "Confirmation field, catching a typo that would lock the user out"
+  },
+  "profilePasswordMismatch": "The two passwords do not match",
+  "@profilePasswordMismatch": {
+    "description": "The two new-password fields differ"
+  },
+  "profileWrongPassword": "That is not your current password",
+  "@profileWrongPassword": {
+    "description": "The current password was wrong"
+  },
+  "profilePasswordChanged": "Password changed",
+  "@profilePasswordChanged": {
+    "description": "Confirmation after changing the password"
+  },
+  "profileDeleteAccount": "Delete account",
+  "@profileDeleteAccount": {
+    "description": "Opens the account deletion confirmation"
+  },
+  "profileDeleteTitle": "Delete your account?",
+  "@profileDeleteTitle": {
+    "description": "Heading of the account deletion confirmation"
+  },
+  "profileDeleteBody": "Your name, email and password are erased and you are signed out everywhere. Expenses you took part in stay, without your name on them, because they decide what other people owe. This cannot be undone.",
+  "@profileDeleteBody": {
+    "description": "What deleting an account does and does not remove"
+  },
+  "profileDeleteConfirm": "Delete",
+  "@profileDeleteConfirm": {
+    "description": "Confirms account deletion"
+  },
+  "profileDeleteOwnsTrips": "You still own a trip other people are in. Hand it over to someone else, or delete it, then try again.",
+  "@profileDeleteOwnsTrips": {
+    "description": "Deletion refused because the caller still owns a trip with other members"
   }
 }

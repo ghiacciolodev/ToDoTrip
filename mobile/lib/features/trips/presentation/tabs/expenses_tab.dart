@@ -13,6 +13,7 @@ import '../widgets/delete_actions.dart';
 import '../widgets/expense_detail_sheet.dart';
 import '../widgets/settle_up_sheet.dart';
 import '../widgets/settlement_sheet.dart';
+import '../../../auth/data/user.dart';
 
 class ExpensesTab extends ConsumerWidget {
   const ExpensesTab({super.key, required this.tripId});
@@ -197,7 +198,10 @@ class _BalanceCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final (label, colour) = switch (mine.cents) {
       0 => (l10n.moneyAllSettled, AppColors.inkMuted),
-      > 0 => (l10n.moneyYouAreOwed, AppColors.primaryDark),
+      > 0 => (
+        l10n.moneyYouAreOwed,
+        Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
       _ => (l10n.moneyYouOwe, AppColors.terracotta),
     };
 
@@ -277,7 +281,7 @@ class _EveryoneBalance extends ConsumerWidget {
                     child: Text(
                       entry.userId == myId
                           ? AppLocalizations.of(context).commonYou
-                          : lookup[entry.userId]?.user.displayName ??
+                          : lookup[entry.userId]?.user.nameOrNull ??
                                 AppLocalizations.of(context).commonUnknown,
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -290,7 +294,7 @@ class _EveryoneBalance extends ConsumerWidget {
                       fontFeatures: const [FontFeature.tabularFigures()],
                       color: switch (entry.balanceCents) {
                         0 => AppColors.inkMuted,
-                        > 0 => AppColors.primaryDark,
+                        > 0 => Theme.of(context).colorScheme.onPrimaryContainer,
                         _ => AppColors.terracotta,
                       },
                     ),
@@ -321,7 +325,7 @@ class _ExpenseRow extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final payer = expense.paidBy == myId
         ? l10n.commonYou
-        : lookup[expense.paidBy]?.user.displayName ?? l10n.commonSomeone;
+        : lookup[expense.paidBy]?.user.nameOrNull ?? l10n.commonSomeone;
     final myShare = expense.shareFor(myId);
 
     return SwipeToDelete(
@@ -341,12 +345,12 @@ class _ExpenseRow extends ConsumerWidget {
                   height: 44,
                   width: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryTint,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _iconFor(expense.description),
-                    color: AppColors.primaryDark,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                     size: 22,
                   ),
                 ),
@@ -453,7 +457,7 @@ class _SettlementRow extends ConsumerWidget {
 
     String name(String id, {required bool subject}) {
       if (id == myId) return subject ? l10n.commonYou : l10n.commonYouLower;
-      return lookup[id]?.user.displayName ?? l10n.commonSomeone;
+      return lookup[id]?.user.nameOrNull ?? l10n.commonSomeone;
     }
 
     return Card(

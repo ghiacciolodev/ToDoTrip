@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'core/locale_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/brand.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
@@ -19,11 +20,14 @@ class TodoTripApp extends ConsumerWidget {
     // Null while the stored preference is read, and null again when the user
     // wants the system language: both mean "let Flutter resolve it".
     final locale = ref.watch(localeProvider).value;
+    // The stored accent, or the brand teal for the frame or two it takes to
+    // read it off the disk.
+    final brand = ref.watch(brandProvider).value ?? defaultBrand;
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.light(brand),
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

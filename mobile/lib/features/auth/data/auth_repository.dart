@@ -63,6 +63,55 @@ class AuthRepository {
     }
   }
 
+  Future<User> updateProfile({required String displayName}) async {
+    try {
+      final response = await dio.patch(
+        '/auth/me',
+        data: {'display_name': displayName},
+      );
+      return User.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Changes the password and stores the pair that comes back.
+  ///
+  /// The server ends every session, including this one, so the new tokens are
+  /// saved immediately: skipping that would sign the user out of the device they
+  /// are holding, one request after asking to stay safer.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/auth/change-password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        },
+      );
+      await storage.save(
+        access: response.data['access_token'] as String,
+        refresh: response.data['refresh_token'] as String,
+      );
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+  }
+
+  /// Closes the account, then clears the device. The 409 for someone who still
+  /// owns trips reaches the caller as an ApiException with its code intact.
+  Future<void> deleteAccount() async {
+    try {
+      await dio.delete('/auth/me');
+    } on DioException catch (e) {
+      throw ApiException.from(e);
+    }
+    await storage.clear();
+  }
+
   /// Best effort: the server revokes the refresh token, but local tokens are
   /// cleared either way. A failed network call must never trap a user in a
   /// session they asked to end.

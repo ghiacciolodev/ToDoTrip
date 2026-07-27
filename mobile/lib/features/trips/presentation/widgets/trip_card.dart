@@ -299,7 +299,10 @@ class _BalanceChip extends StatelessWidget {
     // roughly 8% of men.
     final (label, colour) = switch (cents) {
       0 => (l10n.moneySettledShort, AppColors.inkMuted),
-      > 0 => ('+${Money(cents).formatted}', AppColors.primaryDark),
+      > 0 => (
+        '+${Money(cents).formatted}',
+        Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
       _ => ('−${Money(cents).abs.formatted}', AppColors.terracotta),
     };
 

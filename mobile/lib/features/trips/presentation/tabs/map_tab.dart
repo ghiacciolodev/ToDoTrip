@@ -503,7 +503,7 @@ class _SharingBar extends StatelessWidget {
                       sharing ? Icons.location_on : Icons.location_off_outlined,
                       size: 20,
                       color: sharing
-                          ? AppColors.primaryDark
+                          ? Theme.of(context).colorScheme.onPrimaryContainer
                           : AppColors.inkMuted,
                     ),
                     const SizedBox(width: 10),

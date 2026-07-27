@@ -6,14 +6,16 @@ from app.core import security
 from app.core.rate_limit import throttle
 from app.dependencies import CurrentUser, DbSession
 from app.schemas.auth import (
+    PasswordChange,
     RefreshRequest,
     TokenPair,
     UserLogin,
     UserPublic,
     UserRegister,
+    UserUpdate,
 )
 from app.services import auth_service
-from app.services.auth_service import AuthError, EmailAlreadyUsed
+from app.services.auth_service import AuthError, EmailAlreadyUsed, StillOwnsTrips
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -83,3 +85,54 @@ async def logout(payload: RefreshRequest, db: DbSession):
 @router.get("/me", response_model=UserPublic)
 async def me(user: CurrentUser):
     return user
+
+
+@router.patch("/me", response_model=UserPublic)
+async def update_me(payload: UserUpdate, db: DbSession, user: CurrentUser):
+    # exclude_unset: a PATCH must not blank fields the client did not send.
+    return await auth_service.update_profile(db, user, payload.model_dump(exclude_unset=True))
+
+
+# Throttled like login: it takes the current password, so it is one more place
+# where guessing could be attempted, and Argon2 makes each attempt expensive.
+@router.post("/change-password", response_model=TokenPair, dependencies=[_login_throttle])
+async def change_password(payload: PasswordChange, db: DbSession, user: CurrentUser):
+    """Replace the password and end every session, including this one.
+
+    A new pair comes back so the caller stays signed in. Every other device is
+    signed out, which is the whole point when the password is being changed
+    because someone else may know it.
+    """
+    try:
+        refresh_token = await auth_service.change_password(
+            db, user, payload.current_password, payload.new_password
+        )
+    except AuthError:
+        raise _INVALID_CREDENTIALS from None
+    return TokenPair(
+        access_token=security.create_access_token(user.id),
+        refresh_token=refresh_token,
+    )
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(db: DbSession, user: CurrentUser):
+    """Close the account.
+
+    Refused while the caller still owns a trip somebody else is in: that group
+    would be left with nobody who can invite, rename or close it, and picking a
+    replacement owner is not a decision this endpoint gets to make.
+    """
+    try:
+        await auth_service.delete_account(db, user)
+    except StillOwnsTrips as error:
+        # A code and the ids, not prose: the app has to name those trips on
+        # screen so the remedy is one tap away rather than a guess.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            {
+                "code": "still_owns_trips",
+                "message": "Hand over or close your trips first.",
+                "trip_ids": [str(trip_id) for trip_id in error.trip_ids],
+            },
+        ) from None

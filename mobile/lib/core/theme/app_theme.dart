@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'brand.dart';
 import 'colors.dart';
 
 /// Application theme.
@@ -9,21 +10,40 @@ import 'colors.dart';
 /// One Material 3 theme for both platforms, tuned to avoid the details that
 /// make an app read as "Android on iOS": no filled app bar, floating snack
 /// bars, sheets instead of dialogs.
+///
+/// The accent arrives as a [Brand] rather than being read from a constant, so
+/// the whole app follows the colour the user picked. Its three roles map onto
+/// the scheme slots that already mean the same thing, which is why widgets can
+/// ask for `colorScheme.primary` and friends instead of importing a palette:
+///
+///   * `primary`             — fills
+///   * `onPrimaryContainer`  — the readable shade, for text and small icons
+///   * `primaryContainer`    — the quiet tint behind a selected row
 abstract final class AppTheme {
-  static ThemeData get light {
+  /// The colour half of the theme, on its own.
+  ///
+  /// Separate from [light] so it can be asserted on without building a text
+  /// theme — that reaches for a webfont, which is neither available nor wanted
+  /// in a test.
+  static ColorScheme schemeFor(Brand brand) {
     // fromSeed harmonises the seed into something slightly different, so the
-    // brand colour is put back explicitly.
-    final scheme =
-        ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: AppColors.primary,
-          onPrimary: Colors.white,
-          surface: AppColors.surface,
-          onSurface: AppColors.ink,
-          error: AppColors.terracotta,
-        );
+    // brand colours are put back explicitly.
+    return ColorScheme.fromSeed(
+      seedColor: brand.primary,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: brand.primary,
+      onPrimary: Colors.white,
+      primaryContainer: brand.tint,
+      onPrimaryContainer: brand.dark,
+      surface: AppColors.surface,
+      onSurface: AppColors.ink,
+      error: AppColors.terracotta,
+    );
+  }
+
+  static ThemeData light(Brand brand) {
+    final scheme = schemeFor(brand);
 
     final textTheme = GoogleFonts.interTextTheme().apply(
       bodyColor: AppColors.ink,
@@ -86,7 +106,7 @@ abstract final class AppTheme {
         ),
         border: _inputBorder(AppColors.border),
         enabledBorder: _inputBorder(AppColors.border),
-        focusedBorder: _inputBorder(AppColors.primary, width: 1.6),
+        focusedBorder: _inputBorder(brand.primary, width: 1.6),
         errorBorder: _inputBorder(AppColors.terracotta),
         focusedErrorBorder: _inputBorder(AppColors.terracotta, width: 1.6),
       ),
@@ -116,7 +136,7 @@ abstract final class AppTheme {
       // M3 would tint this with a secondaryContainer derived from the seed,
       // which is not the brand colour. Set explicitly, like primary itself.
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
+        backgroundColor: brand.primary,
         foregroundColor: Colors.white,
         elevation: 2,
         highlightElevation: 4,
@@ -131,7 +151,7 @@ abstract final class AppTheme {
       // shell — stay identical without repeating themselves.
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primaryTint,
+        indicatorColor: brand.tint,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         height: 64,
@@ -143,7 +163,7 @@ abstract final class AppTheme {
                 ? FontWeight.w600
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
-                ? AppColors.primaryDark
+                ? brand.dark
                 : AppColors.inkMuted,
           ),
         ),
@@ -151,7 +171,7 @@ abstract final class AppTheme {
           (states) => IconThemeData(
             size: 22,
             color: states.contains(WidgetState.selected)
-                ? AppColors.primaryDark
+                ? brand.dark
                 : AppColors.inkMuted,
           ),
         ),
@@ -160,8 +180,8 @@ abstract final class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           backgroundColor: AppColors.surface,
-          selectedBackgroundColor: AppColors.primaryTint,
-          selectedForegroundColor: AppColors.primaryDark,
+          selectedBackgroundColor: brand.tint,
+          selectedForegroundColor: brand.dark,
           foregroundColor: AppColors.inkMuted,
           side: const BorderSide(color: AppColors.border),
           textStyle: GoogleFonts.inter(

@@ -247,8 +247,10 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                       if (_assignedTo.isNotEmpty)
                         Text(
                           '${_assignedTo.length} selected',
-                          style: const TextStyle(
-                            color: AppColors.primaryDark,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -284,8 +286,12 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
                               _assignedTo.remove(member.user.id);
                             }
                           }),
-                          selectedColor: AppColors.primaryTint,
-                          checkmarkColor: AppColors.primaryDark,
+                          selectedColor: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer,
+                          checkmarkColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                           side: const BorderSide(color: AppColors.border),
                         ),
                     ],
@@ -353,8 +359,14 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
   ButtonStyle _outlinedStyle({required bool active}) {
     return OutlinedButton.styleFrom(
       minimumSize: const Size.fromHeight(52),
-      foregroundColor: active ? AppColors.primaryDark : AppColors.ink,
-      side: BorderSide(color: active ? AppColors.primary : AppColors.border),
+      foregroundColor: active
+          ? Theme.of(context).colorScheme.onPrimaryContainer
+          : AppColors.ink,
+      side: BorderSide(
+        color: active
+            ? Theme.of(context).colorScheme.primary
+            : AppColors.border,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }

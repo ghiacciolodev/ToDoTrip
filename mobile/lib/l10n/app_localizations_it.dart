@@ -977,4 +977,73 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tripDescriptionLabel => 'Descrizione';
+
+  @override
+  String get commonSave => 'Salva';
+
+  @override
+  String get settingsAppearance => 'Aspetto';
+
+  @override
+  String get settingsAccentColour => 'Colore principale';
+
+  @override
+  String get settingsAccentColourBody =>
+      'Usato per i pulsanti, gli elementi in evidenza e la barra delle schede.';
+
+  @override
+  String get profileTitle => 'Profilo';
+
+  @override
+  String get profileSaved => 'Profilo aggiornato';
+
+  @override
+  String get profileEmailLocked =>
+      'Cambiare email richiede di verificare il nuovo indirizzo, cosa non ancora disponibile.';
+
+  @override
+  String get profileChangePassword => 'Cambia password';
+
+  @override
+  String get profileChangePasswordBody =>
+      'Disconnette tutti gli altri dispositivi';
+
+  @override
+  String get profileChangePasswordWarning =>
+      'Ogni altro dispositivo collegato a questo account verrà disconnesso.';
+
+  @override
+  String get profileCurrentPassword => 'Password attuale';
+
+  @override
+  String get profileNewPassword => 'Nuova password';
+
+  @override
+  String get profileRepeatPassword => 'Ripeti la nuova password';
+
+  @override
+  String get profilePasswordMismatch => 'Le due password non coincidono';
+
+  @override
+  String get profileWrongPassword => 'Non è la tua password attuale';
+
+  @override
+  String get profilePasswordChanged => 'Password cambiata';
+
+  @override
+  String get profileDeleteAccount => 'Elimina account';
+
+  @override
+  String get profileDeleteTitle => 'Eliminare il tuo account?';
+
+  @override
+  String get profileDeleteBody =>
+      'Nome, email e password vengono cancellati e verrai disconnesso ovunque. Le spese a cui hai partecipato restano, senza il tuo nome, perché determinano quanto devono gli altri. Non è reversibile.';
+
+  @override
+  String get profileDeleteConfirm => 'Elimina';
+
+  @override
+  String get profileDeleteOwnsTrips =>
+      'Sei ancora proprietario di un viaggio in cui ci sono altre persone. Passalo a qualcun altro, oppure eliminalo, e riprova.';
 }

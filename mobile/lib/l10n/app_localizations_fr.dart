@@ -980,4 +980,73 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripDescriptionLabel => 'Description';
+
+  @override
+  String get commonSave => 'Enregistrer';
+
+  @override
+  String get settingsAppearance => 'Apparence';
+
+  @override
+  String get settingsAccentColour => 'Couleur principale';
+
+  @override
+  String get settingsAccentColourBody =>
+      'Utilisée pour les boutons, les éléments actifs et la barre d’onglets.';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String get profileSaved => 'Profil mis à jour';
+
+  @override
+  String get profileEmailLocked =>
+      'Changer d’adresse e-mail suppose de vérifier la nouvelle, ce qui n’est pas encore possible.';
+
+  @override
+  String get profileChangePassword => 'Changer de mot de passe';
+
+  @override
+  String get profileChangePasswordBody => 'Vous déconnecte partout ailleurs';
+
+  @override
+  String get profileChangePasswordWarning =>
+      'Tous les autres appareils connectés à ce compte seront déconnectés.';
+
+  @override
+  String get profileCurrentPassword => 'Mot de passe actuel';
+
+  @override
+  String get profileNewPassword => 'Nouveau mot de passe';
+
+  @override
+  String get profileRepeatPassword => 'Répétez le nouveau mot de passe';
+
+  @override
+  String get profilePasswordMismatch =>
+      'Les deux mots de passe ne correspondent pas';
+
+  @override
+  String get profileWrongPassword => 'Ce n’est pas votre mot de passe actuel';
+
+  @override
+  String get profilePasswordChanged => 'Mot de passe modifié';
+
+  @override
+  String get profileDeleteAccount => 'Supprimer le compte';
+
+  @override
+  String get profileDeleteTitle => 'Supprimer votre compte ?';
+
+  @override
+  String get profileDeleteBody =>
+      'Votre nom, votre e-mail et votre mot de passe sont effacés et vous êtes déconnecté partout. Les dépenses auxquelles vous avez participé restent, sans votre nom, car elles déterminent ce que les autres doivent. C’est irréversible.';
+
+  @override
+  String get profileDeleteConfirm => 'Supprimer';
+
+  @override
+  String get profileDeleteOwnsTrips =>
+      'Vous êtes encore propriétaire d’un voyage où se trouvent d’autres personnes. Transmettez-le ou supprimez-le, puis réessayez.';
 }

@@ -257,7 +257,7 @@ class _EntryRowState extends ConsumerState<_EntryRow> {
                 Checkbox(
                   value: _checked,
                   onChanged: (_) => _toggle(),
-                  activeColor: AppColors.primary,
+                  activeColor: Theme.of(context).colorScheme.primary,
                   shape: const CircleBorder(),
                 ),
                 Expanded(
@@ -335,7 +335,7 @@ class _Composer extends StatelessWidget {
                 onPressed: busy ? null : onSubmit,
                 icon: const Icon(Icons.add),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.square(48),
                 ),

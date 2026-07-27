@@ -235,13 +235,15 @@ class _ChecklistCard extends ConsumerWidget {
                       width: 44,
                       decoration: BoxDecoration(
                         color: complete
-                            ? AppColors.primary
-                            : AppColors.primaryTint,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         complete ? Icons.check : Icons.playlist_add_check,
-                        color: complete ? Colors.white : AppColors.primaryDark,
+                        color: complete
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onPrimaryContainer,
                         size: 22,
                       ),
                     ),
@@ -270,7 +272,9 @@ class _ChecklistCard extends ConsumerWidget {
                             },
                             style: TextStyle(
                               color: complete
-                                  ? AppColors.primaryDark
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer
                                   : AppColors.inkMuted,
                               fontSize: 13,
                               fontWeight: complete
@@ -296,7 +300,7 @@ class _ChecklistCard extends ConsumerWidget {
                       value: checklist.progress,
                       minHeight: 5,
                       backgroundColor: AppColors.border,
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -454,10 +458,14 @@ class _Tick extends StatelessWidget {
           height: 24,
           width: 24,
           decoration: BoxDecoration(
-            color: done ? AppColors.primary : Colors.transparent,
+            color: done
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
             shape: BoxShape.circle,
             border: Border.all(
-              color: done ? AppColors.primary : AppColors.inkMuted,
+              color: done
+                  ? Theme.of(context).colorScheme.primary
+                  : AppColors.inkMuted,
               width: 1.6,
             ),
           ),

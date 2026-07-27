@@ -86,8 +86,12 @@ class _EventCard extends ConsumerWidget {
     // Muted colours chosen explicitly instead of wrapping the card in Opacity:
     // opacity fades text and background together and drops contrast below the
     // readable threshold. primaryDark on primaryTint sits at 6.4:1.
-    final blockColour = past ? AppColors.background : AppColors.primaryTint;
-    final blockText = past ? AppColors.inkMuted : AppColors.primaryDark;
+    final blockColour = past
+        ? AppColors.background
+        : Theme.of(context).colorScheme.primaryContainer;
+    final blockText = past
+        ? AppColors.inkMuted
+        : Theme.of(context).colorScheme.onPrimaryContainer;
     final titleColour = past ? AppColors.inkMuted : AppColors.ink;
 
     return SwipeToDelete(
@@ -106,7 +110,9 @@ class _EventCard extends ConsumerWidget {
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
-                  color: past ? AppColors.border : AppColors.primary,
+                  color: past
+                      ? AppColors.border
+                      : Theme.of(context).colorScheme.primary,
                   width: 4,
                 ),
               ),
@@ -273,13 +279,13 @@ class _DayLine extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.primaryTint,
+              color: Theme.of(context).colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               badge,
-              style: const TextStyle(
-                color: AppColors.primaryDark,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,

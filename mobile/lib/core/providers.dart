@@ -75,6 +75,28 @@ class AuthNotifier extends AsyncNotifier<User?> {
     state = const AsyncData(null);
   }
 
+  /// Throws [ApiException] on failure, like the rest of this notifier, so the
+  /// profile screen can show the reason next to the field that caused it.
+  Future<void> updateProfile(String displayName) async {
+    final updated = await ref
+        .read(authRepositoryProvider)
+        .updateProfile(displayName: displayName);
+    state = AsyncData(updated);
+  }
+
+  Future<void> changePassword(String current, String replacement) async {
+    await ref
+        .read(authRepositoryProvider)
+        .changePassword(currentPassword: current, newPassword: replacement);
+  }
+
+  /// The session ends with the account, so this lands on the same state as a
+  /// sign-out and the router redirects.
+  Future<void> deleteAccount() async {
+    await ref.read(authRepositoryProvider).deleteAccount();
+    state = const AsyncData(null);
+  }
+
   /// Called by the interceptor when refreshing failed: tokens are already gone
   /// server-side, so only local state needs clearing.
   Future<void> forceLogout() async {

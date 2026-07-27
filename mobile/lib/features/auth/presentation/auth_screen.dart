@@ -211,7 +211,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         _isRegistering
                             ? l10n.authSwitchToSignIn
                             : l10n.authSwitchToSignUp,
-                        style: const TextStyle(color: AppColors.primaryDark),
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
                       ),
                     ),
                   ],
@@ -279,7 +283,7 @@ class _Logo extends StatelessWidget {
           height: 72,
           width: 72,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Icon(

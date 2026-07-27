@@ -282,7 +282,9 @@ Future<bool> _confirm(
           child: Text(
             action,
             style: TextStyle(
-              color: destructive ? AppColors.terracotta : AppColors.primaryDark,
+              color: destructive
+                  ? AppColors.terracotta
+                  : Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
         ),

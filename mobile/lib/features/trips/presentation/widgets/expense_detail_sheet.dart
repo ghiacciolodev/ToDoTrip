@@ -11,6 +11,7 @@ import '../../data/expense.dart';
 import '../../data/trip_member.dart';
 import '../../providers.dart';
 import 'delete_actions.dart';
+import '../../../auth/data/user.dart';
 
 Future<void> showExpenseDetailSheet(
   BuildContext context,
@@ -51,10 +52,11 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
   ) {
     if (userId == myId) return l10n.commonYou;
     final member = lookup[userId];
-    if (member == null) return l10n.commonUnknown;
-    return member.hasLeft
-        ? '${member.user.displayName} (left)'
-        : member.user.displayName;
+    // Missing and nameless land in the same place: someone whose account is
+    // gone is exactly as unresolvable as someone who was never here.
+    final name = member?.user.nameOrNull;
+    if (member == null || name == null) return l10n.commonUnknown;
+    return member.hasLeft ? '$name (left)' : name;
   }
 
   /// Same confirmation as the swipe and the long press on the row behind this
@@ -123,7 +125,7 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
                   l10n.moneyPaidBy(
                     expense.paidBy == myId
                         ? l10n.commonYouLower
-                        : lookup[expense.paidBy]?.user.displayName ??
+                        : lookup[expense.paidBy]?.user.nameOrNull ??
                               l10n.commonSomeoneLower,
                   ),
                   style: const TextStyle(color: AppColors.inkMuted),
@@ -151,7 +153,7 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
                         backgroundColor: avatarColorFor(share.userId),
                         child: Text(
                           initialsFor(
-                            lookup[share.userId]?.user.displayName ?? '?',
+                            lookup[share.userId]?.user.nameOrNull ?? '?',
                           ),
                           style: const TextStyle(
                             color: Colors.white,

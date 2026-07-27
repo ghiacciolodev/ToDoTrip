@@ -14,6 +14,7 @@ import '../../data/trip_member.dart';
 import '../../providers.dart';
 import '../widgets/invite_sheet.dart';
 import '../widgets/member_actions.dart';
+import '../../../auth/data/user.dart';
 
 /// Members, invites and the destructive actions for one trip.
 class GroupTab extends ConsumerWidget {
@@ -274,7 +275,10 @@ class _MemberRow extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: avatarColorFor(member.user.id),
         child: Text(
-          initialsFor(member.user.displayName),
+          initialsFor(
+            member.user.nameOrNull ??
+                AppLocalizations.of(context).commonUnknown,
+          ),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -285,7 +289,8 @@ class _MemberRow extends StatelessWidget {
         children: [
           Flexible(
             child: Text(
-              member.user.displayName,
+              member.user.nameOrNull ??
+                  AppLocalizations.of(context).commonUnknown,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
@@ -327,13 +332,13 @@ class _OwnerBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryTint,
+        color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         AppLocalizations.of(context).commonOwner,
         style: TextStyle(
-          color: AppColors.primaryDark,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),

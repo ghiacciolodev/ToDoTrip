@@ -149,13 +149,15 @@ class _CreatePinSheetState extends ConsumerState<_CreatePinSheet> {
                           category.icon,
                           size: 16,
                           color: _category == category
-                              ? AppColors.primaryDark
+                              ? Theme.of(context).colorScheme.onPrimaryContainer
                               : AppColors.inkMuted,
                         ),
                         label: Text(category.label(l10n)),
                         selected: _category == category,
                         onSelected: (_) => setState(() => _category = category),
-                        selectedColor: AppColors.primaryTint,
+                        selectedColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
                         side: const BorderSide(color: AppColors.border),
                         showCheckmark: false,
                       ),
@@ -288,10 +290,13 @@ class _PinSheet extends ConsumerWidget {
                   height: 44,
                   width: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryTint,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(pin.category.icon, color: AppColors.primaryDark),
+                  child: Icon(
+                    pin.category.icon,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

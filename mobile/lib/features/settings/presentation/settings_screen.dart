@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../core/locale_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/avatar_color.dart';
+import '../../../core/theme/brand.dart';
 import '../../../core/theme/colors.dart';
+import 'privacy_screen.dart';
 
 /// Settings.
 ///
@@ -63,7 +66,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           if (user != null)
-            _ProfileCard(name: user.displayName, email: user.email),
+            _ProfileCard(
+              name: user.displayName,
+              email: user.email,
+              onTap: () => context.push('/profile'),
+            ),
+          const SizedBox(height: 24),
+
+          _SectionLabel(l10n.settingsAppearance),
+          _SettingsGroup(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.settingsAccentColour),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.settingsAccentColourBody,
+                      style: const TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const _BrandPicker(),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
 
           _SectionLabel(l10n.settingsNotifications),
@@ -74,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (v) => setState(() => _pushNotifications = v),
                 title: Text(l10n.settingsPushNotifications),
                 subtitle: Text(l10n.settingsPushNotificationsBody),
-                activeThumbColor: AppColors.primary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
               const Divider(),
               SwitchListTile.adaptive(
@@ -82,7 +116,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (v) => setState(() => _expenseAlerts = v),
                 title: Text(l10n.settingsExpenseAlerts),
                 subtitle: Text(l10n.settingsExpenseAlertsBody),
-                activeThumbColor: AppColors.primary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
             ],
           ),
@@ -135,7 +169,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Icons.chevron_right,
                   color: AppColors.inkMuted,
                 ),
-                onTap: () => _showComingSoon(context),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PrivacyScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -183,7 +221,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               RadioListTile<String>(
                 value: 'system',
                 title: Text(l10n.settingsLanguageSystem),
-                activeColor: AppColors.primary,
+                activeColor: Theme.of(context).colorScheme.primary,
               ),
               for (final code in supportedLanguages)
                 RadioListTile<String>(
@@ -191,7 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // Each language names itself: someone looking for their own
                   // language recognises "Deutsch", not "German".
                   title: Text(languageName(code)),
-                  activeColor: AppColors.primary,
+                  activeColor: Theme.of(context).colorScheme.primary,
                 ),
             ],
           ),
@@ -214,54 +252,116 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
+/// The grid of accents.
+///
+/// Applied on tap with no confirmation: the whole screen repaints, which is a
+/// better answer than a preview swatch could give, and changing it back is one
+/// more tap.
+class _BrandPicker extends ConsumerWidget {
+  const _BrandPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final current = ref.watch(brandProvider).value ?? defaultBrand;
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        for (final brand in brands.values)
+          Semantics(
+            selected: brand.key == current.key,
+            button: true,
+            label: l10n.settingsAccentColour,
+            child: InkWell(
+              onTap: () => ref.read(brandProvider.notifier).select(brand),
+              customBorder: const CircleBorder(),
+              child: Container(
+                height: 44,
+                width: 44,
+                decoration: BoxDecoration(
+                  color: brand.primary,
+                  shape: BoxShape.circle,
+                  // A ring outside the swatch rather than a tick drawn on it: a
+                  // white tick disappears on the lighter tones.
+                  border: Border.all(
+                    color: brand.key == current.key
+                        ? AppColors.ink
+                        : Colors.transparent,
+                    width: 2,
+                    strokeAlign: BorderSide.strokeAlignOutside,
+                  ),
+                ),
+                child: brand.key == current.key
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
+                    : null,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.name, required this.email});
+  const _ProfileCard({
+    required this.name,
+    required this.email,
+    required this.onTap,
+  });
 
   final String name;
   final String email;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: avatarColorFor(email),
-              child: Text(
-                initialsFor(name),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: avatarColorFor(email),
+                child: Text(
+                  initialsFor(name),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    email,
-                    style: const TextStyle(
-                      color: AppColors.inkMuted,
-                      fontSize: 13,
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        color: AppColors.inkMuted,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+            ],
+          ),
         ),
       ),
     );

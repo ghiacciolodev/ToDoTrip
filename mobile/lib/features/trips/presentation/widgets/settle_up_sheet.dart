@@ -9,6 +9,7 @@ import '../../../../core/providers.dart';
 import '../../../../core/theme/colors.dart';
 import '../../data/expense.dart';
 import '../../providers.dart';
+import '../../../auth/data/user.dart';
 
 Future<void> showSettleUpSheet(BuildContext context, String tripId) {
   return showModalBottomSheet(
@@ -104,11 +105,11 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
                   _TransferRow(
                     from: transfer.fromUserId == myId
                         ? l10n.commonYou
-                        : lookup[transfer.fromUserId]?.user.displayName ??
+                        : lookup[transfer.fromUserId]?.user.nameOrNull ??
                               l10n.commonSomeone,
                     to: transfer.toUserId == myId
                         ? l10n.commonYouLower
-                        : lookup[transfer.toUserId]?.user.displayName ??
+                        : lookup[transfer.toUserId]?.user.nameOrNull ??
                               l10n.commonSomeoneLower,
                     amount: Money(transfer.amountCents),
                     // Only the sender can record a repayment: the API takes the

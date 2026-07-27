@@ -64,8 +64,12 @@ const tripIcons = <String, IconData>{
 
 /// Eight colours, all from the app's palette rather than invented per trip: a
 /// list of cards should look like one product.
+///
+/// Written as literals, including the ones that match the brand: a trip's teal
+/// is that trip's teal, and must not change under it because the reader picked
+/// a different accent for the app.
 const tripColors = <String, Color>{
-  'teal': AppColors.primary,
+  'teal': Color(0xFF2D9583),
   'deep': Color(0xFF1C6B5D),
   'blue': Color(0xFF3A7CA5),
   'violet': Color(0xFF9B6A9D),
