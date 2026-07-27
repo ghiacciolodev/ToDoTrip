@@ -1,6 +1,13 @@
-<p align="center">
-  <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
-</p>
+<h1 align="center">TodoTrip</h1>
+
+<!--
+  Once docs/brand/wordmark.png is in the repository, replace the line above
+  with this and the lettering shows instead of the plain title:
+
+  <p align="center">
+    <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
+  </p>
+-->
 
 <p align="center">
   <em>Everything a group of friends has to agree on before, during and after a trip.</em>
@@ -56,12 +63,19 @@ The app is the one thing Docker cannot start for you, because it needs a device:
 cd mobile && flutter run
 ```
 
-The Android emulator reaches the host API through `10.0.2.2` on its own. For a
-physical phone, point it at your machine:
+The Android emulator reaches the host API through `10.0.2.2` on its own, so
+nothing is needed there.
+
+A physical phone does need telling, because `localhost` on a phone means the
+phone. Find your machine's address on the local network — `ipconfig` on Windows,
+`ip addr` or `ifconfig` elsewhere — and pass it in:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://192.168.1.42:8000/api/v1
+flutter run --dart-define=API_BASE_URL=http://YOUR-MACHINE-IP:8000/api/v1
 ```
+
+Both devices have to be on the same wifi, and on Windows the first attempt
+usually fails until the firewall is allowed to accept connections on port 8000.
 
 ### Without Docker
 
@@ -84,28 +98,39 @@ cd mobile && flutter test
 
 ## How it is built
 
-```
-┌──────────────────────────── Flutter app ────────────────────────────┐
-│  presentation  screens and widgets, Riverpod providers              │
-│  data          freezed models, repositories over Dio                │
-│  core          theme, money, localisation, router, token storage    │
-└───────────────┬──────────────────────────────────┬──────────────────┘
-                │ REST /api/v1                     │ WS  /trips/{id}/events
-┌───────────────▼──────────────────────────────────▼──────────────────┐
-│  routers       HTTP only: status codes, no business rules           │
-│  dependencies  authentication, trip membership, write permission    │
-│  services      the rules — one module per concern                   │
-│  models        SQLAlchemy 2, async, one table per file              │
-└───────────────┬─────────────────────────────────────────────────────┘
-                │ asyncpg
-          ┌─────▼─────┐
-          │ PostgreSQL │
-          └───────────┘
+```mermaid
+flowchart TD
+    subgraph app["Flutter app"]
+        p["presentation — screens, widgets"]
+        st["providers — Riverpod"]
+        da["data — freezed models, repositories"]
+        p --> st
+        st --> da
+    end
+
+    subgraph api["FastAPI · one process"]
+        rt["routers — HTTP only"]
+        dp["dependencies — auth, membership, write permission"]
+        sv["services — the rules"]
+        md["models — SQLAlchemy 2, async"]
+        rt --> dp
+        dp --> sv
+        sv --> md
+    end
+
+    db[("PostgreSQL 17")]
+
+    da -->|"REST /api/v1"| rt
+    da <-->|"WS · trip events"| rt
+    md -->|asyncpg| db
 ```
 
 **Layers are one-way.** A router never touches a model; it translates HTTP into
 a service call and a service error into a status code. A service never imports
 FastAPI. That is what makes the rules testable without a request.
+
+The full picture — data model, authorization ladder, the anatomy of a write —
+is in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ### Six decisions worth knowing
 
