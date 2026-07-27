@@ -2,15 +2,6 @@
   <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
 </p>
 
-<!--
-  Once docs/brand/wordmark.png is in the repository, replace the line above
-  with this and the lettering shows instead of the plain title:
-
-  <p align="center">
-    <img src="docs/brand/wordmark.png" alt="TodoTrip" width="320">
-  </p>
--->
-
 <p align="center">
   <em>Everything a group of friends has to agree on before, during and after a trip.</em>
 </p>
@@ -19,7 +10,6 @@
   <img alt="backend" src="https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-2D9583">
   <img alt="app" src="https://img.shields.io/badge/app-Flutter-2D9583">
   <img alt="tests" src="https://img.shields.io/badge/tests-307%20backend%20%C2%B7%20123%20app-1C6B5D">
-  <img alt="languages" src="https://img.shields.io/badge/languages-5-1C6B5D">
 </p>
 
 ---
@@ -227,3 +217,23 @@ Working end to end and used on real trips. Known limits, all deliberate and all
 documented where they live: one API worker, OpenStreetMap's public tile servers,
 translations not yet reviewed by native speakers, and a privacy policy that
 still needs its controller details filled in before it means anything legally.
+
+---
+
+## Licence
+
+Copyright © 2026 Simone Acierno.
+
+Released under the **GNU Affero General Public License v3.0** — the full text is
+in [LICENSE](LICENSE).
+
+In short: use it, study it, change it, share it. If you distribute a modified
+version you have to release your changes under the same licence — and, because
+this is the *Affero* variant, that applies to running a modified version **as a
+network service** too, not only to shipping a binary. Section 13 is the point of
+choosing it: somebody cannot take this, run it as their own hosted app, and keep
+their improvements to themselves.
+
+That clause carries an obligation in the other direction as well. Anyone hosting
+this for other people must offer those users the corresponding source, which in
+practice means a visible link to the repository from inside the app.
