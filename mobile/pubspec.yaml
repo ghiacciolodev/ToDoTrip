@@ -21,7 +21,6 @@ dependencies:
   freezed_annotation: ^3.1.0
   geolocator: ^14.0.3
   go_router: ^17.3.0
-  google_fonts: ^8.2.0
   intl: ^0.20.2
   json_annotation: ^4.12.0
   latlong2: ^0.9.1
@@ -50,3 +49,16 @@ flutter:
     # to stay identical to the copy reviewed in the repository, and splitting a
     # legal document across an ARB would guarantee the two drift apart.
     - assets/legal/
+    # The typeface licence travels with the typeface, as the OFL requires.
+    - assets/fonts/OFL.txt
+
+  fonts:
+    # One variable file instead of four static ones: it carries every weight
+    # from Thin to Black in 876 KB, and the app uses four of them.
+    #
+    # Bundled rather than downloaded at first launch, which is what the
+    # google_fonts package did — that disclosed every user's IP address to
+    # Google for no functional gain.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf

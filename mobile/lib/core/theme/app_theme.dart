@@ -1,9 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'brand.dart';
 import 'colors.dart';
+
+/// Shipped in the app, not fetched at runtime.
+///
+/// It used to come from Google's servers on first launch, which handed every
+/// user's IP address to a third party for no functional gain — the exact
+/// practice German courts have fined websites over. One variable file covers
+/// every weight the app uses; its licence travels beside it in assets/fonts.
+const _fontFamily = 'Inter';
 
 /// Application theme.
 ///
@@ -22,9 +29,8 @@ import 'colors.dart';
 abstract final class AppTheme {
   /// The colour half of the theme, on its own.
   ///
-  /// Separate from [light] so it can be asserted on without building a text
-  /// theme — that reaches for a webfont, which is neither available nor wanted
-  /// in a test.
+  /// Separate from [light] so the palette can be asserted on without building
+  /// the rest of a theme around it.
   static ColorScheme schemeFor(Brand brand) {
     // fromSeed harmonises the seed into something slightly different, so the
     // brand colours are put back explicitly.
@@ -45,7 +51,8 @@ abstract final class AppTheme {
   static ThemeData light(Brand brand) {
     final scheme = schemeFor(brand);
 
-    final textTheme = GoogleFonts.interTextTheme().apply(
+    final textTheme = ThemeData.light().textTheme.apply(
+      fontFamily: _fontFamily,
       bodyColor: AppColors.ink,
       displayColor: AppColors.ink,
     );
@@ -90,7 +97,8 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: _fontFamily,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -140,7 +148,8 @@ abstract final class AppTheme {
         foregroundColor: Colors.white,
         elevation: 2,
         highlightElevation: 4,
-        extendedTextStyle: GoogleFonts.inter(
+        extendedTextStyle: TextStyle(
+          fontFamily: _fontFamily,
           fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
@@ -157,7 +166,8 @@ abstract final class AppTheme {
         height: 64,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => GoogleFonts.inter(
+          (states) => TextStyle(
+            fontFamily: _fontFamily,
             fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
@@ -184,7 +194,8 @@ abstract final class AppTheme {
           selectedForegroundColor: brand.dark,
           foregroundColor: AppColors.inkMuted,
           side: const BorderSide(color: AppColors.border),
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: _fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
