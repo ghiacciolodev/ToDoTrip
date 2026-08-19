@@ -3,6 +3,7 @@ import '../../../core/locale_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/avatar_color.dart';
@@ -156,10 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.info_outline),
                 title: Text(l10n.settingsVersion),
-                trailing: const Text(
-                  '0.1.0',
-                  style: TextStyle(color: AppColors.inkMuted),
-                ),
+                trailing: const _Version(),
               ),
               const Divider(),
               ListTile(
@@ -364,6 +362,31 @@ class _ProfileCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The version of the build actually running.
+///
+/// Read from the package rather than written here: a hardcoded string is right
+/// exactly once, and then quietly reports whatever it said the day somebody
+/// stopped updating it.
+class _Version extends StatelessWidget {
+  const _Version();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        return Text(
+          // Nothing at all until it is known: a version that appears a frame
+          // late is better than one that flashes a wrong value first.
+          info == null ? '' : '${info.version} (${info.buildNumber})',
+          style: const TextStyle(color: AppColors.inkMuted),
+        );
+      },
     );
   }
 }

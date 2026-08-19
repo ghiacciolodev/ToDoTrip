@@ -24,6 +24,9 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.12.0
   latlong2: ^0.9.1
+  # Reads the version out of the built package, so the About row cannot drift
+  # from what was actually shipped the way a hardcoded string does.
+  package_info_plus: ^10.2.1
   riverpod_annotation: ^4.0.3
   # The only way to reach the platform share sheet, which is what the CSV export
   # needs: a file the user can send to a spreadsheet, a chat or their own mail.
