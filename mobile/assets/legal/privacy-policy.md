@@ -36,6 +36,15 @@ puts on the trip map.
 
 **Where you are, only while you are sharing it.** See the next section.
 
+**Notifications.** When somebody adds an expense, records a repayment, assigns
+you a task, adds something to the plan or joins a trip, a notification is stored
+for each person who should hear about it. It holds the facts as they were at
+that moment — a name, an amount, a description, the trip's name — copied rather
+than looked up later, so it still reads as a sentence after the expense it
+describes has been deleted. It also records whether you have read it. You can
+delete them one by one or all at once, and switch a trip to silent, which stops
+new ones being created for you.
+
 **Your sessions.** A hashed copy of each sign-in token, so a session can be
 ended. Signing out, changing your password, or deleting your account revokes
 them.
@@ -75,18 +84,23 @@ People who leave a trip stop seeing all of it immediately. Their name stays
 attached to expenses they took part in, because deleting those records would
 change what everybody else owes.
 
+Any member can export a trip's expenses as a spreadsheet. That file contains
+every expense, who paid, and what each person's share was — including people who
+have left. Once it leaves the app it is an ordinary file, and where it goes next
+is up to whoever exported it.
+
 ## Who else receives data
 
-**OpenStreetMap.** When you open the map, your device asks OpenStreetMap's tile
-servers for the map images directly. They receive your device's IP address and
-which part of the world you are looking at. They do not receive your account, your
-trips, or your sign-in token — the map uses a separate connection that carries no
-credentials. Their policy: https://osmfoundation.org/wiki/Privacy_Policy
+**The map tile provider.** When you open the map, your device asks a tile server
+for the map images directly. It receives your device's IP address and which part
+of the world you are looking at. It does not receive your account, your trips, or
+your sign-in token — the map uses a separate connection that carries no
+credentials at all. Which provider that is depends on the build; unless stated
+otherwise it is OpenStreetMap, whose policy is at
+https://osmfoundation.org/wiki/Privacy_Policy
 
-**Google Fonts.** The app currently downloads its typeface from Google's servers
-the first time it runs, which discloses your device's IP address to Google. There
-is no functional need for this and it is intended to be removed by shipping the
-font inside the app.
+The typeface, the icons and everything else the app draws with are inside the
+app. Nothing else is fetched from a third party at any point.
 
 **Your map app.** If you tap "Get directions", the destination is handed to
 whichever maps application you choose to open. What happens next is governed by
@@ -117,6 +131,13 @@ If you still own a trip that other people are in, you have to hand it over or
 close it before your account can be deleted; otherwise that group would be left
 with nobody able to administer it.
 
+Notifications are deleted on their own schedule, whether or not you ask:
+**30 days** after you have read one, **90 days** if you never did. Deleting a
+trip deletes every notification about it.
+
+Live location is the shortest-lived of all of it: each position stops being
+readable **30 minutes** after it was recorded.
+
 ## Your rights
 
 Under the GDPR you can ask us to: give you a copy of your data (access),
@@ -125,12 +146,24 @@ another service in a machine-readable form (portability). Where we rely on your
 consent — live location — you can withdraw it at any time.
 
 The app itself lets you do most of this directly: edit your name in Settings,
-turn off location sharing, leave a trip, delete your account. For anything else,
+turn off location sharing, leave a trip, delete your account, and export a
+trip's expenses as a spreadsheet — that export is the portable, machine-readable
+copy of the part of your data that is worth having in one. For anything else,
 write to [CONTACT EMAIL]; we answer within one month.
 
 If you think we are handling your data wrongly you can complain to your national
 data protection authority. In Italy that is the Garante per la protezione dei
 dati personali (www.gpdp.it).
+
+## The source code
+
+This app is free software, released under the GNU Affero General Public License.
+Every claim on this page can be checked against the code that makes it, which is
+the point of publishing it: https://github.com/ghiacciolodev/ToDoTrip
+
+If you are reading this inside a copy of TodoTrip that somebody else is running,
+that licence entitles you to the source of *their* version, modifications
+included, from whoever operates it.
 
 ## Security
 
