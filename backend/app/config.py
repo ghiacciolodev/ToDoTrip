@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     # Fly.io, "X-Forwarded-For" behind most others.
     trusted_proxy_header: str = ""
 
+    # How often expired notifications are swept up, in hours. Zero switches the
+    # sweep off, for a deployment that would rather run it from outside.
+    notification_purge_hours: float = 6
+
+    # DEBUG is useful locally and far too loud anywhere else.
+    log_level: str = "INFO"
+
     @model_validator(mode="after")
     def check_jwt_secret(self):
         """Refuse to start outside development with a guessable signing key.

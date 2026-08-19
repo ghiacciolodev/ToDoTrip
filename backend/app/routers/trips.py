@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 
 from app.core.events import Notify, close_trip, emit, kick
 from app.core.rate_limit import throttle
-from app.dependencies import CurrentUser, DbSession, Membership, Ownership
+from app.dependencies import CurrentUser, DbSession, Membership, Ownership, ThrottledExpensive
 from app.models import NotificationKind
 from app.schemas.auth import UserPublic
 from app.schemas.trip import (
@@ -23,8 +23,8 @@ from app.schemas.trip import (
     TripSummary,
     TripUpdate,
 )
-from app.services import export_service, trip_service
-from app.services.trip_service import (
+from app.services import export_service, invite_service, member_service, trip_service
+from app.services.trip_errors import (
     InvalidInvite,
     NoLongerOwner,
     NotAMember,
@@ -99,7 +99,7 @@ async def list_trips(db: DbSession, user: CurrentUser, archived: bool = False):
 )
 async def join_trip(payload: JoinRequest, db: DbSession, user: CurrentUser):
     try:
-        joined = await trip_service.join_by_code(db, payload.code, user.id)
+        joined = await invite_service.join_by_code(db, payload.code, user.id)
     except InvalidInvite:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired invite") from None
     await emit(
@@ -128,7 +128,13 @@ async def get_trip(trip_id: UUID, db: DbSession, membership: Membership):
     )
 
 
-@router.get("/{trip_id}/export.csv", response_class=PlainTextResponse)
+@router.get(
+    "/{trip_id}/export.csv",
+    response_class=PlainTextResponse,
+    # Reads and formats an entire trip, so it gets its own, much tighter
+    # allowance than an ordinary GET.
+    dependencies=[ThrottledExpensive],
+)
 async def export_expenses(trip_id: UUID, db: DbSession, membership: Membership):
     """The ledger as a spreadsheet.
 
@@ -177,8 +183,8 @@ async def list_members(trip_id: UUID, db: DbSession, membership: Membership):
 
 async def _members(db: DbSession, trip_id: UUID) -> list[MemberPublic]:
     rows = [
-        *await trip_service.list_members(db, trip_id),
-        *await trip_service.list_past_members(db, trip_id),
+        *await member_service.list_members(db, trip_id),
+        *await member_service.list_past_members(db, trip_id),
     ]
     return [
         MemberPublic(
@@ -223,7 +229,7 @@ async def leave_trip(db: DbSession, membership: Membership):
     trip_id = membership.trip_id
     actor_id = membership.user_id
     try:
-        deleted = await trip_service.leave_trip(db, membership)
+        deleted = await member_service.leave_trip(db, membership)
     except OwnerMustTransfer:
         raise _owner_must_transfer() from None
     except OutstandingBalance as e:
@@ -248,7 +254,7 @@ async def remove_member(trip_id: UUID, user_id: UUID, db: DbSession, owner: Owne
 
     actor_id = owner.user_id
     try:
-        await trip_service.remove_by_owner(db, owner, target)
+        await member_service.remove_by_owner(db, owner, target)
     except OwnerMustTransfer:
         raise _owner_must_transfer() from None
     except OutstandingBalance as e:
@@ -274,7 +280,7 @@ async def transfer_ownership(trip_id: UUID, user_id: UUID, db: DbSession, owner:
 
     actor_id = owner.user_id
     try:
-        await trip_service.transfer_ownership(db, owner, target)
+        await member_service.transfer_ownership(db, owner, target)
     except NoLongerOwner:
         # Two transfers were in flight and the other one landed first. The
         # caller is a plain member now, so this is not a permission problem to
@@ -287,21 +293,28 @@ async def transfer_ownership(trip_id: UUID, user_id: UUID, db: DbSession, owner:
     return await _members(db, trip_id)
 
 
-@router.post("/{trip_id}/invites", response_model=InvitePublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{trip_id}/invites",
+    response_model=InvitePublic,
+    status_code=status.HTTP_201_CREATED,
+    # Each call mints a code that outlives the request and lets a stranger into
+    # the trip. Worth counting more carefully than an expense.
+    dependencies=[ThrottledExpensive],
+)
 async def create_invite(trip_id: UUID, payload: InviteCreate, db: DbSession, owner: Ownership):
-    return await trip_service.create_invite(
+    return await invite_service.create_invite(
         db, trip_id, owner.user_id, payload.expires_in_hours, payload.max_uses
     )
 
 
 @router.get("/{trip_id}/invites", response_model=list[InvitePublic])
 async def list_invites(trip_id: UUID, db: DbSession, _: Ownership):
-    return await trip_service.list_invites(db, trip_id)
+    return await invite_service.list_invites(db, trip_id)
 
 
 @router.delete("/{trip_id}/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def revoke_invite(trip_id: UUID, invite_id: UUID, db: DbSession, _: Ownership):
     try:
-        await trip_service.revoke_invite(db, trip_id, invite_id)
+        await invite_service.revoke_invite(db, trip_id, invite_id)
     except InvalidInvite:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Invite not found") from None

@@ -7,12 +7,17 @@ record of a moment that turns into "somebody did something" once the expense is
 deleted was not worth writing down.
 """
 
+import asyncio
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import housekeeping
+from app.database import SessionLocal
 from app.models import Notification
 from app.services import notification_service
 
@@ -597,3 +602,64 @@ class TestLifecycle:
         row.created_at = datetime.now(UTC) - timedelta(days=120)
         await db.commit()
         assert await notification_service.purge(db) == 1
+
+
+class TestPurgeLoop:
+    """The sweep has to keep happening, not happen once.
+
+    The bug this covers: purging only at startup meant a server that stayed up
+    for a month never cleaned anything.
+    """
+
+    async def test_it_purges_more_than_once(self, db: AsyncSession):
+        calls = 0
+
+        async def counting_purge(session):
+            nonlocal calls
+            calls += 1
+            return 0
+
+        with patch.object(notification_service, "purge", counting_purge):
+            task = asyncio.create_task(
+                housekeeping.purge_notifications_forever(0.01, session_factory=SessionLocal)
+            )
+            await asyncio.sleep(0.08)
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+        assert calls > 1
+
+    async def test_a_failure_does_not_stop_the_loop(self, db: AsyncSession):
+        """A database hiccup must not silently end the sweep for the lifetime of
+        the process."""
+        calls = 0
+
+        async def failing_once(session):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("database went away")
+            return 0
+
+        with patch.object(notification_service, "purge", failing_once):
+            task = asyncio.create_task(
+                housekeeping.purge_notifications_forever(0.01, session_factory=SessionLocal)
+            )
+            await asyncio.sleep(0.08)
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+        assert calls > 1
+
+    async def test_cancelling_stops_it(self, db: AsyncSession):
+        """Otherwise a reload leaves a second loop running against the same
+        database."""
+        task = asyncio.create_task(housekeeping.purge_notifications_forever(0.01))
+        await asyncio.sleep(0.02)
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+        assert task.cancelled()

@@ -2,10 +2,12 @@
 
 from httpx import AsyncClient
 
+from app import dependencies
 from app.core.rate_limit import RateLimiter
 
 LOGIN = "/api/v1/auth/login"
 REGISTER = "/api/v1/auth/register"
+TRIPS = "/api/v1/trips"
 WRONG = {"email": "mario@test.it", "password": "wrong-password"}
 
 
@@ -149,3 +151,109 @@ class TestBehindAProxy:
             raising=False,
         )
         assert rate_limit.client_address(self._request({})) == "10.0.0.1"
+
+
+class TestSignedInLimits:
+    """The address is the wrong key once somebody has signed in.
+
+    A family, an office and a university share one; an account is one person
+    however many devices they hold.
+    """
+
+    async def test_writes_are_counted_against_the_account(
+        self, client: AsyncClient, trip: dict, auth_headers: dict, monkeypatch
+    ):
+        monkeypatch.setattr(dependencies._writes, "limit", 3)
+        # The fixtures that built the trip were writes too; the count starts here.
+        dependencies._writes.reset()
+
+        codes = []
+        for n in range(5):
+            response = await client.post(
+                f"{TRIPS}/{trip['id']}/items",
+                json={"type": "task", "title": f"Task {n}"},
+                headers=auth_headers,
+            )
+            codes.append(response.status_code)
+
+        assert codes[:3] == [201, 201, 201]
+        assert codes[3:] == [429, 429]
+
+    async def test_reads_are_not_counted(
+        self, client: AsyncClient, trip: dict, auth_headers: dict, monkeypatch
+    ):
+        """Otherwise opening a trip and scrolling it would spend the same
+        allowance as writing to it."""
+        monkeypatch.setattr(dependencies._writes, "limit", 3)
+        dependencies._writes.reset()
+
+        for _ in range(10):
+            response = await client.get(f"{TRIPS}/{trip['id']}/items", headers=auth_headers)
+            assert response.status_code == 200
+
+    async def test_one_account_running_out_does_not_stop_another(
+        self,
+        client: AsyncClient,
+        trip: dict,
+        invite_code: str,
+        auth_headers: dict,
+        other_headers: dict,
+        monkeypatch,
+    ):
+        """The whole point of keying on the account: in the tests every request
+        arrives from the same address, so an address-keyed limit would throttle
+        both."""
+        await client.post(f"{TRIPS}/join", json={"code": invite_code}, headers=other_headers)
+        monkeypatch.setattr(dependencies._writes, "limit", 2)
+        dependencies._writes.reset()
+
+        for _ in range(3):
+            await client.post(
+                f"{TRIPS}/{trip['id']}/items",
+                json={"type": "task", "title": "Mine"},
+                headers=auth_headers,
+            )
+
+        response = await client.post(
+            f"{TRIPS}/{trip['id']}/items",
+            json={"type": "task", "title": "Theirs"},
+            headers=other_headers,
+        )
+        assert response.status_code == 201
+
+    async def test_the_export_has_its_own_tighter_allowance(
+        self, client: AsyncClient, trip: dict, auth_headers: dict, monkeypatch
+    ):
+        """A GET, and still throttled: it reads and formats a whole trip."""
+        monkeypatch.setattr(dependencies._expensive, "limit", 2)
+        dependencies._expensive.reset()
+
+        codes = [
+            (await client.get(f"{TRIPS}/{trip['id']}/export.csv", headers=auth_headers)).status_code
+            for _ in range(4)
+        ]
+
+        assert codes == [200, 200, 429, 429]
+
+    async def test_a_write_limit_does_not_spend_the_expensive_one(
+        self, client: AsyncClient, trip: dict, auth_headers: dict, monkeypatch
+    ):
+        """Two buckets, so a burst of ordinary writes cannot lock somebody out
+        of their own export."""
+        monkeypatch.setattr(dependencies._writes, "limit", 1)
+        dependencies._writes.reset()
+
+        await client.post(
+            f"{TRIPS}/{trip['id']}/items",
+            json={"type": "task", "title": "One"},
+            headers=auth_headers,
+        )
+        blocked = await client.post(
+            f"{TRIPS}/{trip['id']}/items",
+            json={"type": "task", "title": "Two"},
+            headers=auth_headers,
+        )
+        assert blocked.status_code == 429
+
+        response = await client.get(f"{TRIPS}/{trip['id']}/export.csv", headers=auth_headers)
+        assert response.status_code == 200

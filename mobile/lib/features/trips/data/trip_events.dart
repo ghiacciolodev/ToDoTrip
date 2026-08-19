@@ -8,6 +8,28 @@ import 'package:flutter/widgets.dart';
 import '../../../core/config.dart';
 import '../../../core/storage/token_storage.dart';
 
+/// What to do when the server hangs up.
+///
+/// The three cases are genuinely different and collapsing any two of them is a
+/// bug: retrying after 4403 hammers a door that will not open, and treating
+/// 4401 as a plain retry reconnects with the same token that was just refused.
+enum SocketClosure {
+  /// 4403: no longer a member. Reconnecting would only be rejected again.
+  stop,
+
+  /// 4401: the token aged out on an open socket. Rotate it, then reconnect.
+  refreshToken,
+
+  /// Anything else — a dropped network, a restarted server. Back off and retry.
+  retry,
+}
+
+SocketClosure closureFor(int? closeCode) => switch (closeCode) {
+  4403 => SocketClosure.stop,
+  4401 => SocketClosure.refreshToken,
+  _ => SocketClosure.retry,
+};
+
 /// The realtime bell for one trip.
 ///
 /// The server never pushes data, only `{"type": "…changed"}`; on every ring the
@@ -22,6 +44,7 @@ class TripEventsChannel with WidgetsBindingObserver {
     required this.storage,
     required this.onEvent,
     required this.onReconnected,
+    this.onTokenRejected,
   });
 
   final String tripId;
@@ -37,6 +60,11 @@ class TripEventsChannel with WidgetsBindingObserver {
   /// than guessing which — recovering individual events is a sync problem this
   /// design exists to avoid.
   final VoidCallback onReconnected;
+
+  /// The server refused the token on an open socket, which means it aged out
+  /// while the screen was up. Reconnecting with the same one would only be
+  /// refused again, so the caller is asked to rotate it first.
+  final Future<void> Function()? onTokenRejected;
 
   WebSocket? _socket;
   Timer? _retry;
@@ -137,10 +165,30 @@ class TripEventsChannel with WidgetsBindingObserver {
     _socket = null;
     if (_disposed || _inBackground) return;
 
-    if (socket.closeCode == 4403) {
-      _lostAccess = true;
-      onReconnected();
-      return;
+    switch (closureFor(socket.closeCode)) {
+      case SocketClosure.stop:
+        _lostAccess = true;
+        onReconnected();
+      case SocketClosure.refreshToken:
+        _refreshThenRetry();
+      case SocketClosure.retry:
+        _scheduleRetry();
+    }
+  }
+
+  /// Rotates the token, then reconnects.
+  ///
+  /// The refresh is allowed to fail: the backoff still runs, and a token that
+  /// cannot be renewed at all is the interceptor's problem to surface, not
+  /// this channel's.
+  Future<void> _refreshThenRetry() async {
+    final refresh = onTokenRejected;
+    if (refresh != null) {
+      try {
+        await refresh();
+      } on Object {
+        // Fall through to the retry either way.
+      }
     }
     _scheduleRetry();
   }

@@ -5,14 +5,16 @@ about it over the websocket — so the whole feature runs in CI with no server.
 """
 
 import time
+from unittest.mock import patch
 
 import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from app.core import events
+from app.core import events, security
 from app.database import get_db
 from app.main import app
+from app.routers import events as events_router
 from tests.conftest import SECOND_USER, USER, TestSession
 
 TRIPS = "/api/v1/trips"
@@ -283,3 +285,71 @@ def _uuid(value: str):
     from uuid import UUID
 
     return UUID(value)
+
+
+class TestSessionStaysAuthorised:
+    """Authorising once at connect was the hole.
+
+    A websocket lives for as long as the screen is open; the token that opened
+    it is good for fifteen minutes. Without a recheck, the socket outlives its
+    own authorisation.
+    """
+
+    def test_an_expired_token_closes_the_socket(self, tc: TestClient, group: dict):
+        real_decode = security.decode_access_token
+        seen = {"count": 0}
+
+        def valid_once(token: str):
+            """Valid for the handshake, expired by the first recheck.
+
+            Driven by a counter rather than by a real clock: a test that waits
+            for a token to age out is a test that fails on a slow machine.
+            """
+            seen["count"] += 1
+            return real_decode(token) if seen["count"] == 1 else None
+
+        with (
+            patch.object(events_router, "_REVALIDATE_SECONDS", 0.05),
+            patch.object(events_router.security, "decode_access_token", valid_once),
+            tc.websocket_connect(group["url"]) as luca_ws,
+        ):
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            with pytest.raises(WebSocketDisconnect) as excinfo:
+                luca_ws.receive_json()
+            assert excinfo.value.code == 4401
+
+    def test_a_deactivated_account_is_cut_off(self, tc: TestClient, group: dict):
+        """Deleting an account does not go through the trip's event fan-out, so
+        only the recheck notices."""
+        with (
+            patch.object(events_router, "_REVALIDATE_SECONDS", 0.05),
+            patch.object(events_router, "SessionLocal", TestSession),
+            tc.websocket_connect(group["url"]) as luca_ws,
+        ):
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            tc.delete("/api/v1/auth/me", headers=group["luca_headers"])
+
+            with pytest.raises(WebSocketDisconnect) as excinfo:
+                luca_ws.receive_json()
+            assert excinfo.value.code == 4401
+
+    def test_a_still_valid_session_survives_the_rechecks(self, tc: TestClient, group: dict):
+        """The recheck must not become a periodic disconnection."""
+        with (
+            patch.object(events_router, "_REVALIDATE_SECONDS", 0.05),
+            patch.object(events_router, "SessionLocal", TestSession),
+            tc.websocket_connect(group["url"]) as luca_ws,
+        ):
+            luca_ws.send_json({"token": group["luca_token"]})
+            assert luca_ws.receive_json()["type"] == "connected"
+
+            # Several passes go by, then something real happens: the socket
+            # is expected to still be there to hear it.
+            time.sleep(0.3)
+            _expense(tc, group, group["mario_headers"], group["mario"])
+
+            assert luca_ws.receive_json()["type"] == "expenses.changed"

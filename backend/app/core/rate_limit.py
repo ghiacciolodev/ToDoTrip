@@ -95,10 +95,20 @@ def client_address(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def throttle(*, limit: int, window_seconds: float, scope: str):
-    """Build a dependency that limits one endpoint by client address."""
+def build_limiter(*, limit: int, window_seconds: float, scope: str) -> RateLimiter:
+    """A limiter registered for test resets. Callers supply their own key."""
     limiter = RateLimiter(limit=limit, window_seconds=window_seconds, scope=scope)
     _limiters.append(limiter)
+    return limiter
+
+
+def throttle(*, limit: int, window_seconds: float, scope: str):
+    """Build a dependency that limits one endpoint by client address.
+
+    The right key for the endpoints nobody has signed in to yet: there is no
+    account to count against, so the address is all there is.
+    """
+    limiter = build_limiter(limit=limit, window_seconds=window_seconds, scope=scope)
 
     async def dependency(request: Request) -> None:
         limiter.check(f"{scope}:{client_address(request)}")

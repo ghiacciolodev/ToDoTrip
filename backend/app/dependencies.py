@@ -3,15 +3,15 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core import security
+from app.core import rate_limit, security
 from app.database import get_db
 from app.models import MemberRole, TripMember, User
 from app.services import trip_service
-from app.services.trip_service import NotAMember
+from app.services.trip_errors import NotAMember
 
 # auto_error=False so we control the error shape ourselves.
 _bearer = HTTPBearer(auto_error=False)
@@ -94,3 +94,42 @@ async def get_writable_membership(membership: Membership, db: DbSession) -> Trip
 
 
 Writable = Annotated[TripMember, Depends(get_writable_membership)]
+
+
+# Rate limits for signed-in callers, keyed on the account rather than the
+# address.
+#
+# The address is the wrong key once there is a session: a family, an office or a
+# university share one, and throttling them together punishes bystanders. An
+# account is one person however many devices they hold.
+#
+# Two buckets, not one per endpoint. Somebody scripting a flood does not care
+# which endpoint they hit, so counting expenses, tasks, checklists and pins
+# against the same allowance is what actually bounds the rows they can create.
+_writes = rate_limit.build_limiter(limit=120, window_seconds=60, scope="writes")
+
+# Far tighter, because each one costs real work: an export reads and formats a
+# whole trip, and an invite mints a code that outlives the request.
+_expensive = rate_limit.build_limiter(limit=10, window_seconds=60, scope="expensive")
+
+
+def _throttle_by_user(limiter: rate_limit.RateLimiter, *, writes_only: bool):
+    async def dependency(request: Request, user: CurrentUser) -> None:
+        if writes_only and request.method in {"GET", "HEAD", "OPTIONS"}:
+            return
+        limiter.check(f"{limiter.scope}:{user.id}")
+
+    return dependency
+
+
+#: Attached to whole routers rather than to each endpoint, so it counts every
+#: mutating request — including the ones added after this was written, which is
+#: the failure mode of a list of decorated endpoints. Reads pass through free.
+#:
+#: Generous on purpose: the limit exists to bound a script, not to interrupt
+#: somebody entering a round of expenses.
+ThrottledWrite = Depends(_throttle_by_user(_writes, writes_only=True))
+
+#: Attached to individual endpoints, and it counts reads too: an export is a
+#: GET that formats a whole trip.
+ThrottledExpensive = Depends(_throttle_by_user(_expensive, writes_only=False))

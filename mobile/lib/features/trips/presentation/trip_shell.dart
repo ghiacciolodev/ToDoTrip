@@ -72,6 +72,7 @@ class _TripShellState extends ConsumerState<TripShell> {
       storage: ref.read(tokenStorageProvider),
       onEvent: _onRemoteEvent,
       onReconnected: _refreshEverything,
+      onTokenRejected: _rotateToken,
     )..start();
   }
 
@@ -79,6 +80,13 @@ class _TripShellState extends ConsumerState<TripShell> {
   void dispose() {
     _events.dispose();
     super.dispose();
+  }
+
+  /// Any authenticated request makes the interceptor notice the expiry and
+  /// rotate the token, so the socket reconnects with a fresh one instead of
+  /// retrying the expired one until the backoff gives up.
+  Future<void> _rotateToken() async {
+    await ref.read(dioProvider).get('/auth/me');
   }
 
   /// One provider group per event type: the client re-runs GETs it already
