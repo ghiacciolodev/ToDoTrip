@@ -177,12 +177,20 @@ erDiagram
     }
 ```
 
-Five choices in that schema are load-bearing.
+Six choices in that schema are load-bearing.
 
 **`trip_members` is the authorization.** Presence of a row *is* permission. That
 is why leaving is a delete and why `trip_past_members` is a separate table
 instead of a `left_at` column: one forgotten filter on a nullable flag would be
 a former member reading the group's ledger.
+
+**Exactly one owner, and the database says so.** A partial unique index over
+`trip_id where role = 'OWNER'` makes a second owner impossible to write. The
+service transfers ownership as a compare-and-swap — an UPDATE that only matches
+while the caller is still the owner — because reading the role and then writing
+both rows looks atomic inside one transaction and is not: two transfers starting
+together would each demote the same person and promote a different one, leaving
+a trip with two owners and no way to tell which was wrong.
 
 **Timestamps instead of booleans.** `completed_at`, `checked_at`, `archived_at`,
 `read_at`, `revoked_at` each answer *whether* and *when* in one column, and a

@@ -26,6 +26,7 @@ from app.schemas.trip import (
 from app.services import export_service, trip_service
 from app.services.trip_service import (
     InvalidInvite,
+    NoLongerOwner,
     NotAMember,
     OutstandingBalance,
     OwnerMustTransfer,
@@ -272,7 +273,16 @@ async def transfer_ownership(trip_id: UUID, user_id: UUID, db: DbSession, owner:
         raise _MEMBER_NOT_FOUND from None
 
     actor_id = owner.user_id
-    await trip_service.transfer_ownership(db, owner, target)
+    try:
+        await trip_service.transfer_ownership(db, owner, target)
+    except NoLongerOwner:
+        # Two transfers were in flight and the other one landed first. The
+        # caller is a plain member now, so this is not a permission problem to
+        # retry against — the trip already has the owner it was given.
+        raise _conflict(
+            "no_longer_owner",
+            "Somebody else handed this trip on first.",
+        ) from None
     await emit(trip_id, "members.changed", actor_id=actor_id)
     return await _members(db, trip_id)
 

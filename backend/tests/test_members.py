@@ -5,11 +5,18 @@ The invariant every test here defends: a trip has exactly one owner, and nobody
 walks away from it with an open balance.
 """
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
+import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import MemberRole, TripMember
 
 TRIPS = "/api/v1/trips"
+AUTH = "/api/v1/auth"
 THIRD_USER = {"email": "giulia@test.it", "password": "password123", "display_name": "Giulia"}
 
 
@@ -617,3 +624,89 @@ class TestLeave:
 
         items = await client.get(f"{TRIPS}/{trip['id']}/items", headers=auth_headers)
         assert items.json()[0]["assignees"] == []
+
+
+class TestOnlyOneOwner:
+    """A trip has exactly one owner, and two transfers at once used to end it
+    with two.
+
+    The old code read the role, then wrote both rows. Inside one transaction
+    that looks atomic and is not: two callers each saw a trip with one owner,
+    each demoted the same person, and each promoted somebody different. Nobody
+    could undo it afterwards — neither of the two owners was wrong.
+    """
+
+    async def test_the_second_transfer_is_refused(
+        self,
+        client: AsyncClient,
+        trip: dict,
+        invite_code: str,
+        auth_headers: dict,
+        other_headers: dict,
+        db: AsyncSession,
+    ):
+        """Stands in for the race: the second call arrives with a caller who is
+        no longer the owner, which is exactly what the losing transaction sees."""
+        await client.post(f"{TRIPS}/join", json={"code": invite_code}, headers=other_headers)
+        theirs = (await client.get(f"{AUTH}/me", headers=other_headers)).json()["id"]
+
+        first = await client.post(
+            f"{TRIPS}/{trip['id']}/members/{theirs}/owner", headers=auth_headers
+        )
+        assert first.status_code == 200
+
+        second = await client.post(
+            f"{TRIPS}/{trip['id']}/members/{theirs}/owner", headers=auth_headers
+        )
+        # 403: the caller stopped being the owner, so the dependency turns them
+        # away before the service is ever reached.
+        assert second.status_code == 403
+
+    async def test_the_database_refuses_a_second_owner(
+        self,
+        client: AsyncClient,
+        trip: dict,
+        invite_code: str,
+        other_headers: dict,
+        db: AsyncSession,
+    ):
+        """The backstop, tested directly.
+
+        Every path that promotes somebody should go through the service, but the
+        index is what makes "two owners" impossible for the ones that do not —
+        a migration, a script, an endpoint written later.
+        """
+        await client.post(f"{TRIPS}/join", json={"code": invite_code}, headers=other_headers)
+        membership = await db.scalar(
+            select(TripMember).where(
+                TripMember.trip_id == UUID(trip["id"]),
+                TripMember.role == MemberRole.MEMBER,
+            )
+        )
+
+        membership.role = MemberRole.OWNER
+        with pytest.raises(IntegrityError):
+            await db.commit()
+        await db.rollback()
+
+    async def test_a_normal_transfer_still_works(
+        self,
+        client: AsyncClient,
+        trip: dict,
+        invite_code: str,
+        auth_headers: dict,
+        other_headers: dict,
+        db: AsyncSession,
+    ):
+        """The index checks itself per statement, so demoting has to reach the
+        database before promoting or the outgoing owner trips it."""
+        await client.post(f"{TRIPS}/join", json={"code": invite_code}, headers=other_headers)
+        theirs = (await client.get(f"{AUTH}/me", headers=other_headers)).json()["id"]
+
+        response = await client.post(
+            f"{TRIPS}/{trip['id']}/members/{theirs}/owner", headers=auth_headers
+        )
+        assert response.status_code == 200
+
+        owners = [m for m in response.json() if m["role"] == "owner"]
+        assert [m["user"]["id"] for m in owners] == [theirs]

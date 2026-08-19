@@ -10,12 +10,14 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     String,
     Text,
     UniqueConstraint,
     Uuid,
     false,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -114,8 +116,28 @@ class TripMember(Base):
 
     __tablename__ = "trip_members"
 
-    # Guards against joining the same trip twice, e.g. by reusing an invite link.
-    __table_args__ = (UniqueConstraint("trip_id", "user_id", name="uq_trip_member"),)
+    __table_args__ = (
+        # Guards against joining the same trip twice, e.g. by reusing an invite
+        # link.
+        UniqueConstraint("trip_id", "user_id", name="uq_trip_member"),
+        # Exactly one owner per trip, enforced where it cannot be argued with.
+        #
+        # The service transfers ownership as a compare-and-swap, which is what
+        # makes concurrent transfers fail cleanly rather than producing two
+        # owners. This index is the backstop for every path that does not go
+        # through it — a migration, a script, a future endpoint written by
+        # somebody who did not know the rule.
+        #
+        # The predicate says 'OWNER' and not 'owner' because native_enum=False
+        # stores the enum's *name*. Spelled the other way it would match no rows
+        # and guarantee nothing, quietly.
+        Index(
+            "uq_trip_single_owner",
+            "trip_id",
+            unique=True,
+            postgresql_where=text("role = 'OWNER'"),
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     trip_id: Mapped[UUID] = mapped_column(

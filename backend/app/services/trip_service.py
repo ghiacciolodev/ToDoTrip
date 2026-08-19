@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import delete, func, select, union_all
+from sqlalchemy import delete, func, select, union_all, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.codes import generate_invite_code
@@ -62,6 +62,14 @@ class OutstandingBalance(Exception):
         self.user_id = user_id
         self.balance_cents = balance_cents
         super().__init__(f"{user_id} has a balance of {balance_cents} cents")
+
+
+class NoLongerOwner(Exception):
+    """Somebody else handed the trip on first.
+
+    Raised when a transfer finds the caller is no longer the owner — which only
+    happens if two transfers were in flight at once.
+    """
 
 
 class InvalidInvite(Exception):
@@ -384,16 +392,45 @@ async def remove_by_owner(db: AsyncSession, owner: TripMember, target: TripMembe
 async def transfer_ownership(db: AsyncSession, owner: TripMember, target: TripMember) -> None:
     """Hand the trip to another member.
 
-    Both rows change in one transaction, so there is no instant at which the
-    trip has two owners or none. Handing it to the current owner is a no-op
-    rather than an error: the end state the caller asked for already holds.
+    Handing it to the current owner is a no-op rather than an error: the end
+    state the caller asked for already holds.
+
+    The demotion is a compare-and-swap — an UPDATE that only matches while the
+    caller is *still* the owner — and this is the whole point of the function.
+    Reading the role and then writing both rows looks atomic because it sits in
+    one transaction, and is not: two transfers starting together would each see
+    a trip with one owner, each demote the same person, and each promote a
+    different one, leaving two owners and no way for either to be undone. Here
+    the second one matches no row and is told so.
+
+    The order matters too. A partial unique index allows one OWNER per trip and
+    Postgres checks it per statement, so promoting before demoting would trip
+    over an owner who is on their way out.
     """
     if target.user_id == owner.user_id:
         return
 
-    target.role = MemberRole.OWNER
-    owner.role = MemberRole.MEMBER
+    demoted = await db.execute(
+        update(TripMember)
+        .where(TripMember.id == owner.id, TripMember.role == MemberRole.OWNER)
+        .values(role=MemberRole.MEMBER)
+    )
+    if demoted.rowcount == 0:
+        await db.rollback()
+        raise NoLongerOwner
+
+    # Flushed before the promotion so the two statements reach the database in
+    # the order the index needs, rather than in whatever order a unit of work
+    # decides to emit them.
+    await db.flush()
+    await db.execute(
+        update(TripMember).where(TripMember.id == target.id).values(role=MemberRole.OWNER)
+    )
     await db.commit()
+
+    # The caller still holds the rows as they were before the raw UPDATEs.
+    db.expire(owner)
+    db.expire(target)
 
 
 async def create_invite(
