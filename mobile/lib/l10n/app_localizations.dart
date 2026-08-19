@@ -2183,6 +2183,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It disappears for you only. Whatever it was about stays.'**
   String get notificationDeleteBody;
+
+  /// Leaves the introduction, available on every page
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardSkip;
+
+  /// Advances to the next introduction page
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardNext;
+
+  /// Finishes the introduction, on the last page
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardStart;
+
+  /// First page: what a trip is
+  ///
+  /// In en, this message translates to:
+  /// **'One place per trip'**
+  String get onboardTripsTitle;
+
+  /// First page body
+  ///
+  /// In en, this message translates to:
+  /// **'Create a trip, share the code, and everyone lands in the same plan.'**
+  String get onboardTripsBody;
+
+  /// Second page: calendar and tasks
+  ///
+  /// In en, this message translates to:
+  /// **'Everything that has a time'**
+  String get onboardPlanTitle;
+
+  /// Second page body
+  ///
+  /// In en, this message translates to:
+  /// **'Flights, check-ins, the tram at nine. Plus the jobs nobody remembers who took.'**
+  String get onboardPlanBody;
+
+  /// Third page: shared expenses
+  ///
+  /// In en, this message translates to:
+  /// **'Who owes what, settled'**
+  String get onboardMoneyTitle;
+
+  /// Third page body
+  ///
+  /// In en, this message translates to:
+  /// **'Add what you spend as you spend it. The balances work themselves out, down to the cent.'**
+  String get onboardMoneyBody;
+
+  /// Fourth page: map and location
+  ///
+  /// In en, this message translates to:
+  /// **'And where everyone is'**
+  String get onboardTogetherTitle;
+
+  /// Fourth page body; stresses that sharing is never on by default
+  ///
+  /// In en, this message translates to:
+  /// **'Save the places you agreed on, and share your position while you want to. Never by default.'**
+  String get onboardTogetherBody;
 }
 
 class _AppLocalizationsDelegate

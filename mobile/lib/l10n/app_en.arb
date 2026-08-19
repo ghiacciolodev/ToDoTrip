@@ -1708,5 +1708,49 @@
   "notificationDeleteBody": "It disappears for you only. Whatever it was about stays.",
   "@notificationDeleteBody": {
     "description": "Stresses that only the notice goes, not the expense or task it described"
+  },
+  "onboardSkip": "Skip",
+  "@onboardSkip": {
+    "description": "Leaves the introduction, available on every page"
+  },
+  "onboardNext": "Next",
+  "@onboardNext": {
+    "description": "Advances to the next introduction page"
+  },
+  "onboardStart": "Get started",
+  "@onboardStart": {
+    "description": "Finishes the introduction, on the last page"
+  },
+  "onboardTripsTitle": "One place per trip",
+  "@onboardTripsTitle": {
+    "description": "First page: what a trip is"
+  },
+  "onboardTripsBody": "Create a trip, share the code, and everyone lands in the same plan.",
+  "@onboardTripsBody": {
+    "description": "First page body"
+  },
+  "onboardPlanTitle": "Everything that has a time",
+  "@onboardPlanTitle": {
+    "description": "Second page: calendar and tasks"
+  },
+  "onboardPlanBody": "Flights, check-ins, the tram at nine. Plus the jobs nobody remembers who took.",
+  "@onboardPlanBody": {
+    "description": "Second page body"
+  },
+  "onboardMoneyTitle": "Who owes what, settled",
+  "@onboardMoneyTitle": {
+    "description": "Third page: shared expenses"
+  },
+  "onboardMoneyBody": "Add what you spend as you spend it. The balances work themselves out, down to the cent.",
+  "@onboardMoneyBody": {
+    "description": "Third page body"
+  },
+  "onboardTogetherTitle": "And where everyone is",
+  "@onboardTogetherTitle": {
+    "description": "Fourth page: map and location"
+  },
+  "onboardTogetherBody": "Save the places you agreed on, and share your position while you want to. Never by default.",
+  "@onboardTogetherBody": {
+    "description": "Fourth page body; stresses that sharing is never on by default"
   }
 }

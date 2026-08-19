@@ -1270,4 +1270,41 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get notificationDeleteBody =>
       'Sie verschwindet nur für dich. Worum es ging, bleibt bestehen.';
+
+  @override
+  String get onboardSkip => 'Überspringen';
+
+  @override
+  String get onboardNext => 'Weiter';
+
+  @override
+  String get onboardStart => 'Los geht\'s';
+
+  @override
+  String get onboardTripsTitle => 'Ein Ort pro Reise';
+
+  @override
+  String get onboardTripsBody =>
+      'Reise anlegen, Code teilen — und alle landen im selben Plan.';
+
+  @override
+  String get onboardPlanTitle => 'Alles, was eine Uhrzeit hat';
+
+  @override
+  String get onboardPlanBody =>
+      'Flüge, Check-ins, die Bahn um neun. Dazu die Aufgaben, bei denen niemand mehr weiß, wer sie übernommen hat.';
+
+  @override
+  String get onboardMoneyTitle => 'Wer wem was schuldet';
+
+  @override
+  String get onboardMoneyBody =>
+      'Ausgaben eintragen, während sie entstehen. Die Salden ergeben sich von selbst, auf den Cent genau.';
+
+  @override
+  String get onboardTogetherTitle => 'Und wo alle sind';
+
+  @override
+  String get onboardTogetherBody =>
+      'Speichert die Orte, auf die ihr euch geeinigt habt, und teilt euren Standort, solange ihr wollt. Nie von allein.';
 }

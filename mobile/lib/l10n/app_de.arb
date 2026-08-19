@@ -345,5 +345,16 @@
   "notificationsClearAllTitle": "Alle Benachrichtigungen löschen?",
   "notificationsClearAllBody": "Sie verschwinden nur für dich. Das lässt sich nicht rückgängig machen.",
   "notificationDeleteTitle": "Diese Benachrichtigung löschen?",
-  "notificationDeleteBody": "Sie verschwindet nur für dich. Worum es ging, bleibt bestehen."
+  "notificationDeleteBody": "Sie verschwindet nur für dich. Worum es ging, bleibt bestehen.",
+  "onboardSkip": "Überspringen",
+  "onboardNext": "Weiter",
+  "onboardStart": "Los geht's",
+  "onboardTripsTitle": "Ein Ort pro Reise",
+  "onboardTripsBody": "Reise anlegen, Code teilen — und alle landen im selben Plan.",
+  "onboardPlanTitle": "Alles, was eine Uhrzeit hat",
+  "onboardPlanBody": "Flüge, Check-ins, die Bahn um neun. Dazu die Aufgaben, bei denen niemand mehr weiß, wer sie übernommen hat.",
+  "onboardMoneyTitle": "Wer wem was schuldet",
+  "onboardMoneyBody": "Ausgaben eintragen, während sie entstehen. Die Salden ergeben sich von selbst, auf den Cent genau.",
+  "onboardTogetherTitle": "Und wo alle sind",
+  "onboardTogetherBody": "Speichert die Orte, auf die ihr euch geeinigt habt, und teilt euren Standort, solange ihr wollt. Nie von allein."
 }

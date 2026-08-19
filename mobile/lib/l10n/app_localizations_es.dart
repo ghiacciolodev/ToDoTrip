@@ -1275,4 +1275,41 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get notificationDeleteBody =>
       'Desaparece solo para ti. Aquello de lo que hablaba se mantiene.';
+
+  @override
+  String get onboardSkip => 'Saltar';
+
+  @override
+  String get onboardNext => 'Siguiente';
+
+  @override
+  String get onboardStart => 'Empezar';
+
+  @override
+  String get onboardTripsTitle => 'Un sitio para cada viaje';
+
+  @override
+  String get onboardTripsBody =>
+      'Crea un viaje, comparte el código, y todos acaban en el mismo plan.';
+
+  @override
+  String get onboardPlanTitle => 'Todo lo que tiene una hora';
+
+  @override
+  String get onboardPlanBody =>
+      'Vuelos, entradas, el tranvía de las nueve. Y las tareas que nadie recuerda quién se quedó.';
+
+  @override
+  String get onboardMoneyTitle => 'Quién debe qué, resuelto';
+
+  @override
+  String get onboardMoneyBody =>
+      'Añade los gastos según los haces. Las cuentas salen solas, hasta el céntimo.';
+
+  @override
+  String get onboardTogetherTitle => 'Y dónde estáis todos';
+
+  @override
+  String get onboardTogetherBody =>
+      'Guarda los sitios que habéis acordado y comparte tu posición mientras quieras. Nunca por defecto.';
 }

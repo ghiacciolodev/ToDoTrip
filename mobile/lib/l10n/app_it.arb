@@ -345,5 +345,16 @@
   "notificationsClearAllTitle": "Eliminare tutte le notifiche?",
   "notificationsClearAllBody": "Spariscono solo per te. Non è reversibile.",
   "notificationDeleteTitle": "Eliminare questa notifica?",
-  "notificationDeleteBody": "Sparisce solo per te. Quello a cui si riferisce resta."
+  "notificationDeleteBody": "Sparisce solo per te. Quello a cui si riferisce resta.",
+  "onboardSkip": "Salta",
+  "onboardNext": "Avanti",
+  "onboardStart": "Inizia",
+  "onboardTripsTitle": "Un posto per ogni viaggio",
+  "onboardTripsBody": "Crea un viaggio, condividi il codice, e tutti finiscono nello stesso programma.",
+  "onboardPlanTitle": "Tutto ciò che ha un orario",
+  "onboardPlanBody": "Voli, check-in, il tram delle nove. Più le cose da fare che nessuno ricorda chi si è preso.",
+  "onboardMoneyTitle": "Chi deve cosa, sistemato",
+  "onboardMoneyBody": "Aggiungi le spese mentre le fai. I conti si fanno da soli, al centesimo.",
+  "onboardTogetherTitle": "E dove siete tutti",
+  "onboardTogetherBody": "Salva i posti su cui vi siete accordati, e condividi la posizione finché vuoi. Mai di default."
 }

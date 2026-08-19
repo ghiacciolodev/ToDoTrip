@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/user.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/profile_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -13,6 +14,7 @@ import '../../features/trips/presentation/archived_trips_screen.dart';
 import '../../features/trips/presentation/trip_settings_screen.dart';
 import '../../features/trips/presentation/trip_shell.dart';
 import '../../features/trips/presentation/trips_screen.dart';
+import '../onboarding.dart';
 import '../providers.dart';
 
 /// Application routes.
@@ -33,31 +35,52 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
   ref.onDispose(session.dispose);
 
+  // The introduction is device state, not session state, so it gets its own
+  // listenable rather than being folded into the one above.
+  final onboarding = ValueNotifier<AsyncValue<bool>>(const AsyncLoading());
+  ref.listen(
+    onboardingSeenProvider,
+    (_, next) => onboarding.value = next,
+    fireImmediately: true,
+  );
+  ref.onDispose(onboarding.dispose);
+
   // Lets a route opt out of the tab shell and cover it entirely.
   final rootNavigatorKey = GlobalKey<NavigatorState>();
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/trips',
-    refreshListenable: session,
+    refreshListenable: Listenable.merge([session, onboarding]),
     redirect: (context, state) {
       final auth = session.value;
+      final seen = onboarding.value;
 
-      // Session still unknown on cold start: hold on the splash rather than
-      // flashing sign-in at a user who is in fact signed in.
-      if (auth.isLoading) return '/splash';
+      // Neither answer known yet on cold start: hold on the splash rather than
+      // flashing sign-in at somebody who is in fact signed in, or the tour at
+      // somebody who dismissed it months ago.
+      if (auth.isLoading || seen.isLoading) return '/splash';
+
+      final onOnboarding = state.matchedLocation == '/welcome';
+      // Before the sign-in check, and only when signed out: the introduction
+      // exists to answer "what is this" for somebody who has not decided to
+      // make an account yet. Anybody already signed in has plainly decided.
+      if (seen.value == false && auth.value == null) {
+        return onOnboarding ? null : '/welcome';
+      }
 
       final signedIn = auth.value != null;
       final onAuthScreen = state.matchedLocation == '/auth';
       final onSplash = state.matchedLocation == '/splash';
 
       if (!signedIn) return onAuthScreen ? null : '/auth';
-      if (onAuthScreen || onSplash) return '/trips';
+      if (onAuthScreen || onSplash || onOnboarding) return '/trips';
       return null;
     },
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const _SplashScreen()),
       GoRoute(path: '/auth', builder: (_, _) => const AuthScreen()),
+      GoRoute(path: '/welcome', builder: (_, _) => const OnboardingScreen()),
 
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => AppShell(navigationShell: shell),

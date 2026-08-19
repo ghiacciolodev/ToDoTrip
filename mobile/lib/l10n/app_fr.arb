@@ -345,5 +345,16 @@
   "notificationsClearAllTitle": "Supprimer toutes les notifications ?",
   "notificationsClearAllBody": "Elles disparaissent pour vous seul. C’est irréversible.",
   "notificationDeleteTitle": "Supprimer cette notification ?",
-  "notificationDeleteBody": "Elle disparaît pour vous seul. Ce qu’elle annonçait reste."
+  "notificationDeleteBody": "Elle disparaît pour vous seul. Ce qu’elle annonçait reste.",
+  "onboardSkip": "Passer",
+  "onboardNext": "Suivant",
+  "onboardStart": "Commencer",
+  "onboardTripsTitle": "Un endroit par voyage",
+  "onboardTripsBody": "Créez un voyage, partagez le code, et tout le monde arrive dans le même programme.",
+  "onboardPlanTitle": "Tout ce qui a une heure",
+  "onboardPlanBody": "Vols, arrivées, le tram de neuf heures. Et les tâches dont personne ne sait qui les a prises.",
+  "onboardMoneyTitle": "Qui doit quoi, réglé",
+  "onboardMoneyBody": "Ajoutez les dépenses au fur et à mesure. Les comptes se font tout seuls, au centime près.",
+  "onboardTogetherTitle": "Et où vous êtes",
+  "onboardTogetherBody": "Enregistrez les lieux choisis ensemble, et partagez votre position tant que vous le voulez. Jamais par défaut."
 }
