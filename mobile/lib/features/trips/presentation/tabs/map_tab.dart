@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/config.dart';
 import '../../../../core/network/tile_client.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/avatar_color.dart';
@@ -315,7 +316,7 @@ class _TileLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      urlTemplate: AppConfig.mapTileUrl,
       userAgentPackageName: 'dev.ghiacciolo.todotrip',
       maxNativeZoom: 18,
       tileProvider: CachedTileProvider(
@@ -457,9 +458,11 @@ class _Attribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const RichAttributionWidget(
+    // Whoever the tiles actually came from. Required by every provider's
+    // licence, and the name follows the source rather than being fixed.
+    return RichAttributionWidget(
       alignment: AttributionAlignment.bottomLeft,
-      attributions: [TextSourceAttribution('OpenStreetMap contributors')],
+      attributions: [TextSourceAttribution(AppConfig.mapAttribution)],
     );
   }
 }
