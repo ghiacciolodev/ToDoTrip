@@ -54,6 +54,8 @@ flutter:
     - assets/legal/
     # The typeface licence travels with the typeface, as the OFL requires.
     - assets/fonts/OFL.txt
+    # The app mark, generated from the wordmark by tools/brand/generate_icons.py.
+    - assets/brand/
 
   fonts:
     # One variable file instead of four static ones: it carries every weight

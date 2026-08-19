@@ -286,10 +286,15 @@ class _Logo extends StatelessWidget {
             color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
-            Icons.luggage_outlined,
+          alignment: Alignment.center,
+          // The same mark as the launcher icon, on the colour the user picked
+          // in settings. Drawn from the wordmark's own T rather than a stock
+          // glyph, so the app and its logo say the same thing.
+          child: Image.asset(
+            'assets/brand/mark.png',
+            height: 38,
             color: Colors.white,
-            size: 38,
+            filterQuality: FilterQuality.medium,
           ),
         ),
         const SizedBox(height: 16),
