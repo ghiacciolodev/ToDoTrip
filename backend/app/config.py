@@ -24,6 +24,16 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     environment: str = "development"
 
+    # Which header carries the real client address, when something sits in front.
+    #
+    # Empty by default and that is the safe default: trusting a forwarded header
+    # unconditionally lets anybody set their own identity and walk straight past
+    # every limit. Behind a proxy the opposite failure applies — every request
+    # arrives from the proxy, so one shared bucket throttles all users at once.
+    # Set it to what the platform actually guarantees: "Fly-Client-IP" on
+    # Fly.io, "X-Forwarded-For" behind most others.
+    trusted_proxy_header: str = ""
+
     @model_validator(mode="after")
     def check_jwt_secret(self):
         """Refuse to start outside development with a guessable signing key.

@@ -13,6 +13,8 @@ from time import monotonic
 
 from fastapi import HTTPException, Request, status
 
+from app.config import get_settings
+
 # Bounds the memory a flood from many addresses can occupy. Beyond this the
 # oldest idle keys are dropped, which at worst forgives an attacker their
 # history — the alternative is unbounded growth, which is a denial of service in
@@ -68,18 +70,37 @@ def reset_all() -> None:
         limiter.reset()
 
 
-def throttle(*, limit: int, window_seconds: float, scope: str):
-    """Build a dependency that limits one endpoint by client address.
+def client_address(request: Request) -> str:
+    """Who to count this request against.
 
-    Keyed on the peer address, which behind a proxy is the proxy itself: the
-    forwarded headers are not trusted here because anyone can send them, so a
-    deployment terminating TLS elsewhere must do its own limiting.
+    The peer address, unless the deployment has named a header it trusts.
+
+    Both halves matter. Trusting a forwarded header by default would let anyone
+    send one and get a fresh allowance per request, which is worse than no limit
+    because it looks like a limit. Ignoring it behind a proxy is the opposite
+    failure and the one that bites in production: every request then arrives
+    from the proxy's own address, so all users share a single bucket and ten
+    people signing in exhaust everybody's allowance.
+
+    Where the header holds a list — X-Forwarded-For is `client, proxy1, proxy2`
+    — the **last** entry is used. That is the one appended by the nearest proxy,
+    the only party in the chain we have decided to trust; everything to its left
+    was supplied by whoever called it and can be invented.
     """
+    header = get_settings().trusted_proxy_header
+    if header:
+        forwarded = request.headers.get(header)
+        if forwarded:
+            return forwarded.rsplit(",", 1)[-1].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def throttle(*, limit: int, window_seconds: float, scope: str):
+    """Build a dependency that limits one endpoint by client address."""
     limiter = RateLimiter(limit=limit, window_seconds=window_seconds, scope=scope)
     _limiters.append(limiter)
 
     async def dependency(request: Request) -> None:
-        client = request.client.host if request.client else "unknown"
-        limiter.check(f"{scope}:{client}")
+        limiter.check(f"{scope}:{client_address(request)}")
 
     return dependency
