@@ -29,6 +29,10 @@ class AuthRepository {
           'email': email,
           'password': password,
           'display_name': displayName,
+          // Sent as a fact, not as a formality: the server refuses the account
+          // without it, and records when and against which version of the
+          // policy it was given.
+          'accepted_privacy': true,
         },
         options: _noAuth,
       );

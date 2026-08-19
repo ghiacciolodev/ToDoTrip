@@ -120,6 +120,12 @@
   "@authTagline": {
     "description": "One-line description under the sign-in heading"
   },
+  "authPrivacyAccept": "I have read and accept the {policy}",
+  "@authPrivacyAccept": {"description": "Consent sentence next to the sign-up checkbox", "placeholders": {"policy": {"type": "String"}}},
+  "authPrivacyPolicyLink": "privacy policy",
+  "@authPrivacyPolicyLink": {"description": "The tappable words inside authPrivacyAccept"},
+  "authPrivacyRequired": "You have to accept the privacy policy to create an account",
+  "@authPrivacyRequired": {"description": "Shown when somebody tries to sign up without ticking the box"},
   "authNameLabel": "Name",
   "@authNameLabel": {
     "description": "Display name field label"

@@ -72,6 +72,7 @@ class TestSummary:
                 "email": f"extra{index}@test.it",
                 "password": "password123",
                 "display_name": f"Extra {index}",
+                "accepted_privacy": True,
             }
             await client.post("/api/v1/auth/register", json=user)
             login = await client.post(

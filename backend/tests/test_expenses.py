@@ -21,7 +21,12 @@ async def three_members(
 
     await client.post(
         "/api/v1/auth/register",
-        json={"email": "anna@test.it", "password": "password123", "display_name": "Anna"},
+        json={
+            "email": "anna@test.it",
+            "password": "password123",
+            "display_name": "Anna",
+            "accepted_privacy": True,
+        },
     )
     login = await client.post(
         "/api/v1/auth/login", json={"email": "anna@test.it", "password": "password123"}

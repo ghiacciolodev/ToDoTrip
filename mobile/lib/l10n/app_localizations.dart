@@ -284,6 +284,24 @@ abstract class AppLocalizations {
   /// **'Plan trips together with your friends'**
   String get authTagline;
 
+  /// Consent sentence next to the sign-up checkbox
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and accept the {policy}'**
+  String authPrivacyAccept(String policy);
+
+  /// The tappable words inside authPrivacyAccept
+  ///
+  /// In en, this message translates to:
+  /// **'privacy policy'**
+  String get authPrivacyPolicyLink;
+
+  /// Shown when somebody tries to sign up without ticking the box
+  ///
+  /// In en, this message translates to:
+  /// **'You have to accept the privacy policy to create an account'**
+  String get authPrivacyRequired;
+
   /// Display name field label
   ///
   /// In en, this message translates to:

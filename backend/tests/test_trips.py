@@ -212,7 +212,12 @@ class TestJoin:
         # A third account: the second one is already a member and would short-circuit.
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "anna@test.it", "password": "password123", "display_name": "Anna"},
+            json={
+                "email": "anna@test.it",
+                "password": "password123",
+                "display_name": "Anna",
+                "accepted_privacy": True,
+            },
         )
         login = await client.post(
             "/api/v1/auth/login", json={"email": "anna@test.it", "password": "password123"}

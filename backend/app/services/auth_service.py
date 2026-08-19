@@ -7,7 +7,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
-from app.core import security
+from app.core import legal, security
 from app.models import (
     MemberLocation,
     MemberRole,
@@ -49,6 +49,11 @@ async def register(db: AsyncSession, email: str, password: str, display_name: st
         email=email,
         password_hash=security.hash_password(password),
         display_name=display_name.strip(),
+        # Stamped server-side from the server's own clock and its own idea of
+        # which version is current. A timestamp supplied by the client would be
+        # a record of what the client claimed, which proves nothing.
+        privacy_accepted_at=datetime.now(UTC),
+        privacy_version=legal.PRIVACY_POLICY_VERSION,
     )
     db.add(user)
     await db.commit()

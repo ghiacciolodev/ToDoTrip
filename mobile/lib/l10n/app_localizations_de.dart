@@ -100,6 +100,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get authTagline => 'Reisen gemeinsam mit Freunden planen';
 
   @override
+  String authPrivacyAccept(String policy) {
+    return 'Ich habe die $policy gelesen und akzeptiere sie';
+  }
+
+  @override
+  String get authPrivacyPolicyLink => 'Datenschutzerklärung';
+
+  @override
+  String get authPrivacyRequired =>
+      'Sie müssen die Datenschutzerklärung akzeptieren, um ein Konto zu erstellen';
+
+  @override
   String get authNameLabel => 'Name';
 
   @override

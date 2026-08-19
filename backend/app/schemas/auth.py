@@ -24,6 +24,24 @@ class UserRegister(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     display_name: str = Field(min_length=1, max_length=100)
 
+    # Required and required to be true. Not defaulted, so a client that forgets
+    # the field is refused rather than quietly consenting on the user's behalf,
+    # which is the one thing consent may never be.
+    accepted_privacy: bool
+
+    @field_validator("accepted_privacy")
+    @classmethod
+    def must_accept(cls, value: bool) -> bool:
+        """Enforced here as well as in the app.
+
+        A tick box the sign-up screen checks is a tick box, not a rule: this
+        endpoint can be called without the app, and then nobody agreed to
+        anything.
+        """
+        if not value:
+            raise ValueError("the privacy policy has to be accepted to create an account")
+        return value
+
 
 class UserLogin(BaseModel):
     email: EmailStr

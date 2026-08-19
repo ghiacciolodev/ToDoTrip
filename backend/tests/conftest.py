@@ -88,8 +88,20 @@ async def client() -> AsyncGenerator[AsyncClient]:
 
 
 # Reused across tests so credentials live in exactly one place.
-USER = {"email": "mario@test.it", "password": "password123", "display_name": "Mario"}
-SECOND_USER = {"email": "luca@test.it", "password": "password123", "display_name": "Luca"}
+# accepted_privacy is required by the register endpoint: an account cannot be
+# created without agreeing to the policy, and the tests are not exempt from it.
+USER = {
+    "email": "mario@test.it",
+    "password": "password123",
+    "display_name": "Mario",
+    "accepted_privacy": True,
+}
+SECOND_USER = {
+    "email": "luca@test.it",
+    "password": "password123",
+    "display_name": "Luca",
+    "accepted_privacy": True,
+}
 
 
 @pytest.fixture

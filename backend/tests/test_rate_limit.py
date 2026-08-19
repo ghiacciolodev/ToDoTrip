@@ -56,13 +56,19 @@ class TestRegister:
                     "email": f"user{index}@test.it",
                     "password": "password123",
                     "display_name": f"User {index}",
+                    "accepted_privacy": True,
                 },
             )
             assert response.status_code == 201
 
         blocked = await client.post(
             REGISTER,
-            json={"email": "extra@test.it", "password": "password123", "display_name": "Extra"},
+            json={
+                "email": "extra@test.it",
+                "password": "password123",
+                "display_name": "Extra",
+                "accepted_privacy": True,
+            },
         )
         assert blocked.status_code == 429
 

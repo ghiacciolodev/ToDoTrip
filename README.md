@@ -289,7 +289,9 @@ public tile servers, and translations not yet reviewed by native speakers.
 There is no hosted instance and no build on any store. The privacy policy is
 written accordingly. It describes what the code does with data, and doubles as
 the template anybody deploying it would have to complete before running it for
-other people.
+other people. Accepting it is required to create an account, and the server
+records when and against which version, because a tick box the sign-up screen
+checks is a tick box rather than a record.
 
 ---
 

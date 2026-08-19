@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +6,7 @@ import '../../../core/network/error_messages.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../settings/presentation/privacy_screen.dart';
 
 /// Sign in and sign up on one screen.
 ///
@@ -25,6 +27,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   bool _isRegistering = false;
   bool _obscure = true;
+
+  /// Consent, and the server checks it too.
+  ///
+  /// Starts false and is never pre-ticked: a box already checked when the
+  /// screen opens is not consent, it is a decoration.
+  bool _acceptedPrivacy = false;
 
   // Submission state is local, not read from authProvider: a rejected password
   // is a fact about this form, not about the session, and routing it through a
@@ -71,6 +79,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _isRegistering = !_isRegistering;
       _error = null;
+      // Cleared on the way out, so coming back to the form never finds consent
+      // already given by a previous visit.
+      _acceptedPrivacy = false;
     });
   }
 
@@ -178,6 +189,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         return null;
                       },
                     ),
+
+                    if (_isRegistering) ...[
+                      const SizedBox(height: 8),
+                      _PrivacyConsent(
+                        value: _acceptedPrivacy,
+                        onChanged: (value) => setState(() {
+                          _acceptedPrivacy = value;
+                          _clearError();
+                        }),
+                      ),
+                    ],
 
                     if (_error != null) ...[
                       const SizedBox(height: 20),
@@ -306,6 +328,135 @@ class _Logo extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The consent tick, with the policy one tap away.
+///
+/// A [FormField] rather than a bare [Checkbox] so it fails validation in the
+/// same place and the same style as the email and password fields, instead of
+/// the form submitting and the server answering with a 422.
+///
+/// The policy opens in a page rather than a dialog: it is long, and a consent
+/// nobody can comfortably read is not much of a consent.
+class _PrivacyConsent extends StatelessWidget {
+  const _PrivacyConsent({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return FormField<bool>(
+      initialValue: value,
+      validator: (_) => value ? null : l10n.authPrivacyRequired,
+      builder: (state) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              onChanged(!value);
+              state.didChange(!value);
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: value,
+                      // Handled by the row: two tap targets stacked on each
+                      // other would toggle twice on the checkbox itself.
+                      onChanged: (checked) {
+                        onChanged(checked ?? false);
+                        state.didChange(checked ?? false);
+                      },
+                      activeColor: theme.colorScheme.primary,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _ConsentSentence()),
+                ],
+              ),
+            ),
+          ),
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(left: 36, top: 4),
+              child: Text(
+                state.errorText!,
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "I have read and accept the privacy policy", with the last words tappable.
+///
+/// Built by finding the link text inside the translated sentence rather than
+/// gluing two strings together, because the order of the words is not the same
+/// in every language.
+class _ConsentSentence extends StatefulWidget {
+  @override
+  State<_ConsentSentence> createState() => _ConsentSentenceState();
+}
+
+class _ConsentSentenceState extends State<_ConsentSentence> {
+  final _recognizer = TapGestureRecognizer();
+
+  @override
+  void dispose() {
+    _recognizer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final link = l10n.authPrivacyPolicyLink;
+    final sentence = l10n.authPrivacyAccept(link);
+    final at = sentence.indexOf(link);
+
+    _recognizer.onTap = () => Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()));
+
+    final base = TextStyle(fontSize: 13, color: AppColors.ink);
+    // A translation that dropped the placeholder would otherwise lose the link
+    // entirely; plain text is a worse outcome than a broken one is a crash.
+    if (at < 0) return Text(sentence, style: base);
+
+    return Text.rich(
+      TextSpan(
+        style: base,
+        children: [
+          TextSpan(text: sentence.substring(0, at)),
+          TextSpan(
+            text: link,
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+              decorationColor: theme.colorScheme.primary,
+            ),
+            recognizer: _recognizer,
+          ),
+          TextSpan(text: sentence.substring(at + link.length)),
+        ],
+      ),
     );
   }
 }
