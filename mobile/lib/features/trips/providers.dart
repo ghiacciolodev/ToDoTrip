@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/network/api_exception.dart';
 import '../../core/providers.dart';
 import 'data/trip.dart';
 import 'data/trip_member.dart';
@@ -121,12 +122,66 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository(dio: ref.watch(dioProvider));
 });
 
-final expensesProvider = FutureProvider.family<List<Expense>, String>((
-  ref,
-  tripId,
-) {
-  return ref.watch(expenseRepositoryProvider).list(tripId);
-});
+/// A trip's expenses, one page at a time.
+///
+/// The only list in the app without a natural ceiling: a plan has as many
+/// entries as the group bothers to write, but expenses grow with every coffee.
+///
+/// Keyset pagination rather than offsets: the cursor comes from the server and
+/// goes straight back, so an expense added mid-scroll cannot shift the page
+/// boundaries and show a row twice.
+class ExpenseList extends AsyncNotifier<List<Expense>> {
+  ExpenseList(this.tripId);
+
+  final String tripId;
+
+  String? _cursor;
+  bool _loadingMore = false;
+
+  /// How many the trip has, not how many are loaded.
+  ///
+  /// Comes from the server: counting what is on screen gives a figure that
+  /// grows as you scroll, which is worse than no figure at all.
+  int total = 0;
+
+  bool get hasMore => _cursor != null;
+
+  @override
+  Future<List<Expense>> build() async {
+    final page = await ref.watch(expenseRepositoryProvider).list(tripId);
+    _cursor = page.nextCursor;
+    total = page.total;
+    return page.items;
+  }
+
+  /// Fetches the next page and appends it.
+  ///
+  /// A failure here leaves the list exactly as it was rather than replacing a
+  /// screen full of expenses with an error: the cursor is kept, so scrolling
+  /// again or pulling to refresh retries.
+  Future<void> loadMore() async {
+    final cursor = _cursor;
+    if (cursor == null || _loadingMore) return;
+    _loadingMore = true;
+    try {
+      final page = await ref
+          .read(expenseRepositoryProvider)
+          .list(tripId, before: cursor);
+      _cursor = page.nextCursor;
+      total = page.total;
+      state = AsyncData([...?state.value, ...page.items]);
+    } on ApiException {
+      // Swallowed on purpose. Nothing called this: the list scrolled.
+    } finally {
+      _loadingMore = false;
+    }
+  }
+}
+
+final expensesProvider =
+    AsyncNotifierProvider.family<ExpenseList, List<Expense>, String>(
+      ExpenseList.new,
+    );
 
 final balanceProvider = FutureProvider.family<BalanceReport, String>((
   ref,

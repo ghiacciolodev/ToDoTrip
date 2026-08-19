@@ -1,15 +1,18 @@
 """HTTP layer for expenses, balances and settlements."""
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
+from app.core import pagination
 from app.core.events import Notify, emit
 from app.dependencies import CurrentUser, DbSession, Membership, Writable
 from app.models import Expense, NotificationKind, User
 from app.schemas.expense import (
     BalanceReport,
     ExpenseCreate,
+    ExpensePage,
     ExpensePublic,
     SettlementCreate,
     SettlementPublic,
@@ -85,9 +88,21 @@ async def create_expense(
     return expense
 
 
-@router.get("/expenses", response_model=list[ExpensePublic])
-async def list_expenses(trip_id: UUID, db: DbSession, _: Membership):
-    return await expense_service.list_expenses(db, trip_id)
+@router.get("/expenses", response_model=ExpensePage)
+async def list_expenses(
+    trip_id: UUID,
+    db: DbSession,
+    _: Membership,
+    limit: Annotated[int, Query(ge=1, le=pagination.MAX_PAGE)] = pagination.DEFAULT_PAGE,
+    before: str | None = None,
+):
+    """One page of the trip's expenses, most recent first."""
+    page = await expense_service.list_expenses(db, trip_id, limit=limit, before=before)
+    return ExpensePage(
+        items=[ExpensePublic.model_validate(row) for row in page.items],
+        next_cursor=page.next_cursor,
+        total=page.total,
+    )
 
 
 @router.get("/expenses/{expense_id}", response_model=ExpensePublic)

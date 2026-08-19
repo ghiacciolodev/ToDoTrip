@@ -13,6 +13,31 @@ import 'package:todotrip/features/trips/providers.dart';
 /// Repayments have to be on screen: they move the balances as much as expenses
 /// do, and one left over after its expense was deleted is the whole reason the
 /// figures looked wrong with nothing to explain them.
+/// Stands in for the paged notifier: [pages] are handed out one call at a time,
+/// so a test can assert what the tab does when there is more to load.
+class _FakeExpenses extends ExpenseList {
+  _FakeExpenses(this.pages) : super('t');
+
+  final List<List<Expense>> pages;
+  int _served = 0;
+
+  @override
+  Future<List<Expense>> build() async {
+    total = pages.fold(0, (sum, page) => sum + page.length);
+    _served = 1;
+    return pages.first;
+  }
+
+  @override
+  bool get hasMore => _served < pages.length;
+
+  @override
+  Future<void> loadMore() async {
+    if (!hasMore) return;
+    state = AsyncData([...?state.value, ...pages[_served++]]);
+  }
+}
+
 class _FakeAuth extends AuthNotifier {
   _FakeAuth(this.user);
 
@@ -70,12 +95,15 @@ void main() {
     WidgetTester tester, {
     required List<Expense> expenses,
     required List<Settlement> settlements,
+    List<List<Expense>>? pages,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authProvider.overrideWith(() => _FakeAuth(me)),
-          expensesProvider('t').overrideWith((ref) async => expenses),
+          expensesProvider(
+            't',
+          ).overrideWith(() => _FakeExpenses(pages ?? [expenses])),
           settlementsProvider('t').overrideWith((ref) async => settlements),
           balanceProvider('t').overrideWith(
             (ref) async => const BalanceReport(
@@ -124,5 +152,58 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('No expenses yet'), findsOne);
+  });
+
+  testWidgets('the second page loads by itself at the bottom of the list', (
+    tester,
+  ) async {
+    Expense at(String id, int day) => expense.copyWith(
+      id: id,
+      description: 'Spesa $id',
+      spentAt: DateTime(2026, 7, day, 12),
+    );
+
+    await pump(
+      tester,
+      expenses: const [],
+      settlements: const [],
+      pages: [
+        [at('e1', 20), at('e2', 19)],
+        [at('e3', 18)],
+        [at('e4', 17)],
+      ],
+    );
+
+    // The sentinel below the last row asks for the next page as soon as it is
+    // built, so the pages arrive without a scroll listener.
+    expect(find.text('Spesa e3'), findsOne);
+
+    // And it keeps going past the second page: a sentinel that fires only once
+    // would leave the list stuck there. Asserted on the loaded state rather
+    // than on screen, because the rows below the fold are not built.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ExpensesTab)),
+    );
+    expect(container.read(expensesProvider('t')).value, hasLength(4));
+  });
+
+  testWidgets('a page still loading does not show the empty state', (
+    tester,
+  ) async {
+    /// The first page is what decides whether the trip has expenses. Treating
+    /// a not-yet-loaded page as "none" would flash "No expenses yet" over a
+    /// trip that has forty.
+    await pump(
+      tester,
+      expenses: const [],
+      settlements: const [],
+      pages: [
+        [expense],
+        [expense.copyWith(id: 'e2', description: 'Pranzo')],
+      ],
+    );
+
+    expect(find.text('No expenses yet'), findsNothing);
+    expect(find.text('Cena'), findsOne);
   });
 }

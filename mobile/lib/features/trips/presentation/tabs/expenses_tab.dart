@@ -53,6 +53,11 @@ class ExpensesTab extends ConsumerWidget {
     // Expenses and repayments in one column: both move the balances, and a
     // repayment shown nowhere is a figure that changes for no visible reason —
     // most sharply after the expense it was made against has been deleted.
+    //
+    // Only the expenses are paginated. Repayments arrive whole because there is
+    // one per debt actually settled — a handful, where expenses are unbounded —
+    // and because two independent cursors cannot be interleaved: merging page
+    // two of one with page one of the other would put older rows above newer.
     final entries = <_Entry>[
       for (final expense in list) _ExpenseEntry(expense),
       for (final settlement in settlements.value ?? const <Settlement>[])
@@ -76,6 +81,19 @@ class ExpensesTab extends ConsumerWidget {
           const SliverFillRemaining(hasScrollBody: false, child: _EmptyState())
         else
           ..._buildGroupedList(context, ref, entries, myId),
+        if (ref.read(expensesProvider(tripId).notifier).hasMore)
+          // A lazy sliver, not a SliverToBoxAdapter: the adapter builds its
+          // child whether or not it is on screen, which would fetch every page
+          // back to back and leave the pagination doing nothing.
+          //
+          // Keyed on how much is loaded so each page builds a fresh sentinel:
+          // reusing the element would skip initState and stop the list at
+          // page two.
+          SliverList.builder(
+            key: ValueKey(list.length),
+            itemCount: 1,
+            itemBuilder: (context, _) => _LoadMore(tripId: tripId),
+          ),
         const SliverToBoxAdapter(child: SizedBox(height: 96)),
       ],
     );
@@ -625,6 +643,40 @@ class _ErrorState extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sits below the last loaded expense and asks for the next page as soon as it
+/// is built. Inside a lazy sliver that is the moment it scrolls into view, so
+/// there is no scroll listener and no pixel threshold to tune.
+class _LoadMore extends ConsumerStatefulWidget {
+  const _LoadMore({required this.tripId});
+
+  final String tripId;
+
+  @override
+  ConsumerState<_LoadMore> createState() => _LoadMoreState();
+}
+
+class _LoadMoreState extends ConsumerState<_LoadMore> {
+  @override
+  void initState() {
+    super.initState();
+    // After the frame: loadMore writes provider state, and doing that during a
+    // build is what Riverpod refuses.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(expensesProvider(widget.tripId).notifier).loadMore();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 }

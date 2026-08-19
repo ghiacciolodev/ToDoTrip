@@ -564,3 +564,140 @@ class TestSuggestedTransfers:
         g = three_members
         response = await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
         assert response.json()["suggested_transfers"] == []
+
+
+class TestPagination:
+    """The expenses list is the one that grows without a ceiling, so it is the
+    one that is cut into pages."""
+
+    async def _spend(self, client: AsyncClient, g: dict, count: int) -> None:
+        for n in range(count):
+            response = await client.post(
+                f"{TRIPS}/{g['trip_id']}/expenses",
+                json={
+                    "description": f"Spesa {n}",
+                    "amount_cents": 100 + n,
+                    "paid_by": g["mario"],
+                    "participants": [g["mario"], g["luca"]],
+                },
+                headers=g["mario_headers"],
+            )
+            assert response.status_code == 201
+
+    async def test_first_page_is_capped_and_reports_the_total(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        await self._spend(client, g, 8)
+
+        response = await client.get(
+            f"{TRIPS}/{g['trip_id']}/expenses?limit=5", headers=g["mario_headers"]
+        )
+        body = response.json()
+
+        assert response.status_code == 200
+        assert len(body["items"]) == 5
+        # The total counts the trip, not the page: a screen showing "8 expenses"
+        # must not say 5 because that is all it has loaded.
+        assert body["total"] == 8
+        assert body["next_cursor"] is not None
+
+    async def test_the_cursor_walks_the_whole_list_exactly_once(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        await self._spend(client, g, 8)
+
+        seen: list[str] = []
+        cursor: str | None = None
+        for _ in range(10):  # a bound, so a broken cursor loops finitely
+            url = f"{TRIPS}/{g['trip_id']}/expenses?limit=3"
+            if cursor:
+                url += f"&before={cursor}"
+            body = (await client.get(url, headers=g["mario_headers"])).json()
+            seen.extend(row["id"] for row in body["items"])
+            cursor = body["next_cursor"]
+            if cursor is None:
+                break
+
+        assert cursor is None
+        assert len(seen) == 8
+        # No row twice and none missing: the whole point of a keyset cursor.
+        assert len(set(seen)) == 8
+
+    async def test_the_last_page_has_no_cursor(self, client: AsyncClient, three_members: dict):
+        g = three_members
+        await self._spend(client, g, 3)
+
+        body = (
+            await client.get(f"{TRIPS}/{g['trip_id']}/expenses?limit=3", headers=g["mario_headers"])
+        ).json()
+
+        # Exactly limit rows and nothing after them: the extra-row lookahead has
+        # to distinguish "full page, no more" from "full page, more to come".
+        assert len(body["items"]) == 3
+        assert body["next_cursor"] is None
+
+    async def test_an_expense_added_mid_read_cannot_repeat_a_row(
+        self, client: AsyncClient, three_members: dict
+    ):
+        """The reason for a keyset rather than an offset.
+
+        With OFFSET, a row inserted at the top between two requests pushes
+        everything down by one and page two opens with a row already read.
+        """
+        g = three_members
+        await self._spend(client, g, 6)
+
+        first = (
+            await client.get(f"{TRIPS}/{g['trip_id']}/expenses?limit=3", headers=g["mario_headers"])
+        ).json()
+        await self._spend(client, g, 1)
+
+        second = (
+            await client.get(
+                f"{TRIPS}/{g['trip_id']}/expenses?limit=3&before={first['next_cursor']}",
+                headers=g["mario_headers"],
+            )
+        ).json()
+
+        first_ids = {row["id"] for row in first["items"]}
+        assert not first_ids & {row["id"] for row in second["items"]}
+
+    async def test_a_mangled_cursor_gives_the_first_page(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        await self._spend(client, g, 2)
+
+        response = await client.get(
+            f"{TRIPS}/{g['trip_id']}/expenses?before=not-a-cursor", headers=g["mario_headers"]
+        )
+
+        # A query string somebody has edited by hand is not worth a 500.
+        assert response.status_code == 200
+        assert len(response.json()["items"]) == 2
+
+    async def test_limit_above_the_maximum_is_refused(
+        self, client: AsyncClient, three_members: dict
+    ):
+        g = three_members
+        response = await client.get(
+            f"{TRIPS}/{g['trip_id']}/expenses?limit=100000", headers=g["mario_headers"]
+        )
+        # Otherwise the page size is whatever the caller feels like, and
+        # pagination protects nothing.
+        assert response.status_code == 422
+
+    async def test_balances_still_see_every_expense(self, client: AsyncClient, three_members: dict):
+        """Paginating the list must not paginate the arithmetic."""
+        g = three_members
+        await self._spend(client, g, 40)  # more than one page
+
+        report = (
+            await client.get(f"{TRIPS}/{g['trip_id']}/balance", headers=g["mario_headers"])
+        ).json()
+
+        # 40 expenses of 100..139 cents, all paid by Mario, split with Luca.
+        assert report["total_spent_cents"] == sum(100 + n for n in range(40))
+        assert sum(entry["balance_cents"] for entry in report["balances"]) == 0

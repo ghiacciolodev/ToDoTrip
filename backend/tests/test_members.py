@@ -238,8 +238,8 @@ class TestRemoveMember:
         assert removed.status_code == 204
 
         expenses = await client.get(f"{TRIPS}/{trip['id']}/expenses", headers=auth_headers)
-        assert len(expenses.json()) == 1
-        assert len(expenses.json()[0]["shares"]) == 2
+        assert len(expenses.json()["items"]) == 1
+        assert len(expenses.json()["items"][0]["shares"]) == 2
 
 
 class TestPastMembers:
@@ -311,7 +311,7 @@ class TestPastMembers:
         await client.delete(f"{TRIPS}/{trip['id']}/members/{member_id}", headers=auth_headers)
 
         expenses = await client.get(f"{TRIPS}/{trip['id']}/expenses", headers=auth_headers)
-        share_ids = {s["user_id"] for s in expenses.json()[0]["shares"]}
+        share_ids = {s["user_id"] for s in expenses.json()["items"][0]["shares"]}
         listed = {m["user"]["id"] for m in await _members(client, trip["id"], auth_headers)}
         assert share_ids <= listed
 
@@ -565,7 +565,7 @@ class TestLeave:
         assert response.status_code == 204
 
         expenses = await client.get(f"{TRIPS}/{trip['id']}/expenses", headers=auth_headers)
-        assert len(expenses.json()) == 1
+        assert len(expenses.json()["items"]) == 1
 
     async def test_an_owner_with_company_must_transfer_first(
         self,

@@ -9,12 +9,15 @@ class ExpenseRepository {
 
   final Dio dio;
 
-  Future<List<Expense>> list(String tripId) async {
+  /// One page of expenses, newest first. [before] is the cursor from the
+  /// previous page; omitting it asks for the first.
+  Future<ExpensePage> list(String tripId, {String? before}) async {
     try {
-      final response = await dio.get('/trips/$tripId/expenses');
-      return (response.data as List)
-          .map((json) => Expense.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final response = await dio.get(
+        '/trips/$tripId/expenses',
+        queryParameters: {'before': ?before},
+      );
+      return ExpensePage.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ApiException.from(e);
     }

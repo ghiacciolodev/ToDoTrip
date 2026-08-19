@@ -357,6 +357,59 @@ anything touching money waits for the server.
 
 ---
 
+## Pagination
+
+Two lists in the app grow without a ceiling: a user's **notifications** and a
+trip's **expenses**. Everything else is bounded by what a group is willing to
+type. Both of the unbounded ones are cut into pages by the same helper, and the
+rest are fetched whole on purpose.
+
+```mermaid
+flowchart LR
+    A["GET .../expenses<br/>limit=30"] --> B["order by<br/>(spent_at, id) desc<br/>fetch 31"]
+    B --> C{"31st row<br/>came back?"}
+    C -- yes --> D["items = first 30<br/>next_cursor = key of row 30"]
+    C -- no --> E["items = all<br/>next_cursor = null"]
+    D --> F["client appends,<br/>hands the cursor back"]
+    F --> A
+```
+
+**Keyset, not offset.** `OFFSET 30` counts rows from the top, so an expense
+added while somebody is reading pushes everything down by one and page two opens
+with a row they have already seen. On a list sorted newest-first that insertion
+is the normal case, not an edge case. The cursor instead names the last row read
+— `(spent_at, id)` — and the next page is everything strictly older than it,
+which no concurrent write can disturb.
+
+The **id is part of the key** and not decoration. Rows written by one request
+share a timestamp to the microsecond; a boundary landing inside such a group
+would drop or repeat its members depending on which way the tie broke.
+
+The cursor is **opaque** — base64 over the two values — so how pages are cut can
+change without a client release.
+
+### What the page carries
+
+`{ items, next_cursor, total }`. The total is a second query, and it earns its
+keep: the money tab tells you how many expenses a trip has, and a screen that
+counts what it has loaded shows a number that grows as you scroll. A count over
+an indexed column is cheap. A figure that is quietly wrong is not.
+
+### What is deliberately not paginated
+
+| List | Why it arrives whole |
+|---|---|
+| Balances | A balance over the thirty most recent expenses is not a smaller balance, it is a **wrong** one. `get_balance_report` calls `_all_expenses`, which exists separately from the paginated listing precisely so a page size can never be mistaken for a complete set. |
+| Settlements | One per debt actually repaid — bounded by how many people owe each other. They also share the money tab's single chronological column with the expenses, and two independent cursors cannot be interleaved: page two of one merged with page one of the other puts older rows above newer. |
+| Items, checklists, map pins | Bounded by human patience. A fortnight's plan is tens of entries; the same fortnight is hundreds of expenses. `/items` already narrows server-side by type, assignee, completion and date range, which is the pressure that would otherwise become pagination. |
+| CSV export | The point of the export is that it is complete. |
+
+The client mirrors the split: `ExpenseList` is an `AsyncNotifier` that appends
+pages and keeps the server's `total`, and a sentinel widget below the last row
+asks for the next page the moment it is built — which, at the bottom of a lazy
+scroll view, is the moment it scrolls into view. No scroll listener, no pixel
+threshold to tune.
+
 ## What we deliberately did not build
 
 | Not built | Why |

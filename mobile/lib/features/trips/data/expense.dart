@@ -89,3 +89,20 @@ abstract class BalanceReport with _$BalanceReport {
   factory BalanceReport.fromJson(Map<String, dynamic> json) =>
       _$BalanceReportFromJson(json);
 }
+
+/// One page of a trip's expenses, the cursor for the next, and how many the
+/// trip has in total.
+///
+/// The total is sent by the server rather than counted here: a screen that
+/// counts what it has loaded shows a number that changes as you scroll.
+@freezed
+abstract class ExpensePage with _$ExpensePage {
+  const factory ExpensePage({
+    required List<Expense> items,
+    String? nextCursor,
+    required int total,
+  }) = _ExpensePage;
+
+  factory ExpensePage.fromJson(Map<String, dynamic> json) =>
+      _$ExpensePageFromJson(json);
+}

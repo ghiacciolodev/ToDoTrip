@@ -1389,4 +1389,279 @@ as int,
 
 }
 
+
+/// @nodoc
+mixin _$ExpensePage {
+
+ List<Expense> get items; String? get nextCursor; int get total;
+/// Create a copy of ExpensePage
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ExpensePageCopyWith<ExpensePage> get copyWith => _$ExpensePageCopyWithImpl<ExpensePage>(this as ExpensePage, _$identity);
+
+  /// Serializes this ExpensePage to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpensePage&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.total, total) || other.total == total));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(items),nextCursor,total);
+
+@override
+String toString() {
+  return 'ExpensePage(items: $items, nextCursor: $nextCursor, total: $total)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ExpensePageCopyWith<$Res>  {
+  factory $ExpensePageCopyWith(ExpensePage value, $Res Function(ExpensePage) _then) = _$ExpensePageCopyWithImpl;
+@useResult
+$Res call({
+ List<Expense> items, String? nextCursor, int total
+});
+
+
+
+
+}
+/// @nodoc
+class _$ExpensePageCopyWithImpl<$Res>
+    implements $ExpensePageCopyWith<$Res> {
+  _$ExpensePageCopyWithImpl(this._self, this._then);
+
+  final ExpensePage _self;
+  final $Res Function(ExpensePage) _then;
+
+/// Create a copy of ExpensePage
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? items = null,Object? nextCursor = freezed,Object? total = null,}) {
+  return _then(_self.copyWith(
+items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
+as List<Expense>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
+as String?,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ExpensePage].
+extension ExpensePagePatterns on ExpensePage {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ExpensePage value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ExpensePage() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ExpensePage value)  $default,){
+final _that = this;
+switch (_that) {
+case _ExpensePage():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ExpensePage value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ExpensePage() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Expense> items,  String? nextCursor,  int total)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ExpensePage() when $default != null:
+return $default(_that.items,_that.nextCursor,_that.total);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Expense> items,  String? nextCursor,  int total)  $default,) {final _that = this;
+switch (_that) {
+case _ExpensePage():
+return $default(_that.items,_that.nextCursor,_that.total);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Expense> items,  String? nextCursor,  int total)?  $default,) {final _that = this;
+switch (_that) {
+case _ExpensePage() when $default != null:
+return $default(_that.items,_that.nextCursor,_that.total);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _ExpensePage implements ExpensePage {
+  const _ExpensePage({required final  List<Expense> items, this.nextCursor, required this.total}): _items = items;
+  factory _ExpensePage.fromJson(Map<String, dynamic> json) => _$ExpensePageFromJson(json);
+
+ final  List<Expense> _items;
+@override List<Expense> get items {
+  if (_items is EqualUnmodifiableListView) return _items;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_items);
+}
+
+@override final  String? nextCursor;
+@override final  int total;
+
+/// Create a copy of ExpensePage
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ExpensePageCopyWith<_ExpensePage> get copyWith => __$ExpensePageCopyWithImpl<_ExpensePage>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$ExpensePageToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpensePage&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.total, total) || other.total == total));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items),nextCursor,total);
+
+@override
+String toString() {
+  return 'ExpensePage(items: $items, nextCursor: $nextCursor, total: $total)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ExpensePageCopyWith<$Res> implements $ExpensePageCopyWith<$Res> {
+  factory _$ExpensePageCopyWith(_ExpensePage value, $Res Function(_ExpensePage) _then) = __$ExpensePageCopyWithImpl;
+@override @useResult
+$Res call({
+ List<Expense> items, String? nextCursor, int total
+});
+
+
+
+
+}
+/// @nodoc
+class __$ExpensePageCopyWithImpl<$Res>
+    implements _$ExpensePageCopyWith<$Res> {
+  __$ExpensePageCopyWithImpl(this._self, this._then);
+
+  final _ExpensePage _self;
+  final $Res Function(_ExpensePage) _then;
+
+/// Create a copy of ExpensePage
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? items = null,Object? nextCursor = freezed,Object? total = null,}) {
+  return _then(_ExpensePage(
+items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+as List<Expense>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
+as String?,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
 // dart format on

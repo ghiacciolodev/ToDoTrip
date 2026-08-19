@@ -1,12 +1,12 @@
 """Writing, reading and forgetting the notification feed."""
 
-from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import delete, func, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import pagination
 from app.models import Notification, NotificationKind, TripMember
 
 # How long a notification is worth keeping. Read ones go sooner: they have
@@ -15,7 +15,8 @@ _KEEP_READ = timedelta(days=30)
 _KEEP_UNREAD = timedelta(days=90)
 
 # The most a single page can ask for, so a client cannot pull the whole history
-# in one request by passing limit=100000.
+# in one request by passing limit=100000. Lower than the shared cap: a feed row
+# carries a payload, so fifty of them is already a large response.
 MAX_PAGE = 50
 
 
@@ -80,22 +81,6 @@ async def record(
     return len(targets)
 
 
-def _encode(row: Notification) -> str:
-    """An opaque cursor. The client passes it back and never reads it."""
-    raw = f"{row.created_at.isoformat()}|{row.id}"
-    return urlsafe_b64encode(raw.encode()).decode()
-
-
-def _decode(cursor: str) -> tuple[datetime, UUID] | None:
-    try:
-        at, row_id = urlsafe_b64decode(cursor.encode()).decode().split("|", 1)
-        return datetime.fromisoformat(at), UUID(row_id)
-    except (ValueError, TypeError):
-        # A cursor that does not parse is treated as no cursor: a corrupted
-        # query string should hand back the first page, not a 500.
-        return None
-
-
 async def feed(
     db: AsyncSession,
     user_id: UUID,
@@ -120,12 +105,13 @@ async def feed(
         .limit(limit + 1)
     )
 
-    if before is not None and (cursor := _decode(before)) is not None:
+    if (cursor := pagination.decode_cursor(before)) is not None:
         query = query.where(tuple_(Notification.created_at, Notification.id) < tuple_(*cursor))
 
     rows = list((await db.execute(query)).scalars().all())
     if len(rows) > limit:
-        return rows[:limit], _encode(rows[limit - 1])
+        last = rows[limit - 1]
+        return rows[:limit], pagination.encode_cursor(last.created_at, last.id)
     return rows, None
 
 

@@ -66,8 +66,12 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
 
     final transfers =
         report?.suggestedTransfers ?? const <TransferSuggestion>[];
-    final expenseCount =
-        ref.watch(expensesProvider(widget.tripId)).value?.length ?? 0;
+    // The trip's count, not the loaded one: only the first page is in memory,
+    // and "settle 3 expenses" on a trip with forty would be a lie.
+    ref.watch(expensesProvider(widget.tripId));
+    final expenseCount = ref
+        .read(expensesProvider(widget.tripId).notifier)
+        .total;
 
     return SafeArea(
       child: SingleChildScrollView(

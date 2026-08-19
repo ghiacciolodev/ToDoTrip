@@ -89,3 +89,18 @@ Map<String, dynamic> _$BalanceReportToJson(_BalanceReport instance) =>
       'suggested_transfers': instance.suggestedTransfers,
       'total_spent_cents': instance.totalSpentCents,
     };
+
+_ExpensePage _$ExpensePageFromJson(Map<String, dynamic> json) => _ExpensePage(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => Expense.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  nextCursor: json['next_cursor'] as String?,
+  total: (json['total'] as num).toInt(),
+);
+
+Map<String, dynamic> _$ExpensePageToJson(_ExpensePage instance) =>
+    <String, dynamic>{
+      'items': instance.items,
+      'next_cursor': instance.nextCursor,
+      'total': instance.total,
+    };

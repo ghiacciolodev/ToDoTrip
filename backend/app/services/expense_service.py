@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import pagination
 from app.models import Expense, ExpenseShare, Settlement, TripMember
 from app.services.balance import compute_balances, simplify_debts, split_evenly
 
@@ -62,7 +63,35 @@ async def create_expense(db: AsyncSession, trip_id: UUID, user_id: UUID, data: d
     return expense
 
 
-async def list_expenses(db: AsyncSession, trip_id: UUID) -> list[Expense]:
+async def list_expenses(
+    db: AsyncSession,
+    trip_id: UUID,
+    *,
+    limit: int = pagination.DEFAULT_PAGE,
+    before: str | None = None,
+) -> pagination.Page[Expense]:
+    """One page of a trip's expenses, most recently spent first.
+
+    The one list in the app that grows without a ceiling: a plan has as many
+    entries as the group is willing to write, but expenses grow with every
+    coffee. A fortnight in a city is comfortably hundreds.
+    """
+    return await pagination.paginate(
+        db,
+        select(Expense).where(Expense.trip_id == trip_id),
+        sort_column=Expense.spent_at,
+        id_column=Expense.id,
+        limit=limit,
+        before=before,
+    )
+
+
+async def _all_expenses(db: AsyncSession, trip_id: UUID) -> list[Expense]:
+    """Every expense of a trip, for the arithmetic that has to see all of them.
+
+    Kept apart from the paginated listing so that a page size can never be
+    mistaken for a complete set: the caller has to ask for this one by name.
+    """
     result = await db.execute(
         select(Expense).where(Expense.trip_id == trip_id).order_by(Expense.spent_at.desc())
     )
@@ -131,6 +160,14 @@ async def delete_settlement(db: AsyncSession, settlement: Settlement, user_id: U
 
 
 async def list_settlements(db: AsyncSession, trip_id: UUID) -> list[Settlement]:
+    """Whole, not paginated, and deliberately so.
+
+    A trip produces one settlement per repayment actually made, which is bounded
+    by how many people owe each other — a handful, where expenses are unbounded.
+    Paginating them would also break the money tab, which merges both into one
+    column: two independent cursors cannot be interleaved without fetching the
+    same window of time from each.
+    """
     result = await db.execute(
         select(Settlement)
         .where(Settlement.trip_id == trip_id)
@@ -209,7 +246,10 @@ async def get_balance_report(db: AsyncSession, trip_id: UUID) -> dict:
     Cheap at trip scale, and it makes stale balances structurally impossible:
     editing or deleting an expense needs no cache invalidation anywhere.
     """
-    expenses = await list_expenses(db, trip_id)
+    # Every expense, deliberately not a page of them. A balance computed over
+    # the thirty most recent rows is not a smaller balance, it is a wrong one,
+    # and nothing on screen would say so.
+    expenses = await _all_expenses(db, trip_id)
     settlements = await list_settlements(db, trip_id)
 
     expense_input = [(e.paid_by, {s.user_id: s.share_cents for s in e.shares}) for e in expenses]

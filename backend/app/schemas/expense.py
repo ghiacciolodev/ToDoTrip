@@ -97,3 +97,16 @@ class SettlementPublic(BaseModel):
     amount_cents: int
     note: str | None
     settled_at: datetime
+
+
+class ExpensePage(BaseModel):
+    """A page of expenses, plus how to ask for the one after it.
+
+    `total` is sent because the money tab shows how many expenses a trip has,
+    and a screen that counts only what it has loaded shows a number that grows
+    as you scroll.
+    """
+
+    items: list[ExpensePublic]
+    next_cursor: str | None
+    total: int
