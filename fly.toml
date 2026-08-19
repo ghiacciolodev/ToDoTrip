@@ -1,0 +1,48 @@
+# Fly.io deployment.
+#
+# One machine, on purpose. The realtime fan-out lives in the process's memory,
+# so a second instance would hold sockets the first one cannot reach and events
+# would arrive for some members and not others (see README, "Realtime runs on
+# one worker"). Scaling out means moving emit() onto Redis first.
+
+app = "todotrip"
+primary_region = "fra"
+
+[build]
+  dockerfile = "backend/Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  # Fly sets this itself and guarantees it: it is the address its edge saw, not
+  # anything the caller can write. Without it every request would look like it
+  # came from the proxy and all users would share one rate-limit bucket.
+  TRUSTED_PROXY_HEADER = "Fly-Client-IP"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+
+  # Never stop the machine. A suspended instance drops every open websocket and
+  # cold-starts the next caller; both are worse than the cost of staying up.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # The hard ceiling on instances, and the reason for the comment at the top.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  # /health opens a connection to PostgreSQL, so this fails when the database is
+  # unreachable rather than only when the process is dead.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

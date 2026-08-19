@@ -194,6 +194,11 @@ cd backend && pytest          # needs the todotrip_test database, created above
 cd mobile && flutter test
 ```
 
+### Putting it online
+
+One machine on Fly.io and a Neon database, about twenty minutes:
+**[docs/DEPLOY.md](docs/DEPLOY.md)**.
+
 ---
 
 ## Layout

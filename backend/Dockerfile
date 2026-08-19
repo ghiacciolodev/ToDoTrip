@@ -22,8 +22,12 @@ USER app
 
 EXPOSE 8000
 
-# Migrations run here rather than in a separate service: they must happen after
-# the database is reachable and before the first request, which is exactly the
-# window this command owns. One worker — the realtime fan-out is in-process (see
-# README).
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Migrations run here rather than in a separate service or a release step: they
+# must happen after the database is reachable and before the first request,
+# which is exactly the window this command owns. Safe precisely because there is
+# only ever one instance — two starting at once would race, and the realtime
+# fan-out already pins the deployment to one (see README).
+#
+# $PORT because every platform that runs a container tells it which port to
+# listen on; 8000 is the local default.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
