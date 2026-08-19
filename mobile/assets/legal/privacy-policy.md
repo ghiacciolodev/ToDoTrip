@@ -1,16 +1,48 @@
 # Privacy policy
 
-Last updated: 27 July 2026
+Last updated: 19 August 2026
 
-This describes what TodoTrip stores about you, why, who else can see it, and how
-to get rid of it. It describes the app as it is actually built — every item
-below corresponds to something the code really does.
+## Read this first
 
-## Who is responsible
+**Nobody runs TodoTrip as a service.** There is no hosted instance, no sign-up
+page on the internet, and nobody holding anyone's account. The app is source
+code you can read and run yourself.
 
-TodoTrip is operated by [CONTROLLER NAME], [ADDRESS], reachable at
-[CONTACT EMAIL]. Under the GDPR this is the "data controller": the party that
-decides what is collected and why, and the one you exercise your rights against.
+So this is not an information notice in force — it is two things at once:
+
+1. **A description of what the software does with data**, accurate to the code
+   in this repository. Every item below corresponds to something that really
+   happens, and the point of writing it is that a privacy policy ought to be
+   checkable against the thing it describes.
+2. **The template for anyone who deploys it.** The fields in square brackets
+   have no honest answer until somebody actually runs it for other people; the
+   moment they do, they become that person's obligations, not a formality.
+
+## Who would be responsible
+
+The moment somebody runs TodoTrip for other people, they become what the GDPR
+calls the **data controller** — the party that decides what is collected and
+why, and the one users exercise their rights against. That party has to name
+itself here:
+
+> TodoTrip is operated by [CONTROLLER NAME], [ADDRESS], reachable at
+> [CONTACT EMAIL].
+
+Three things do not come for free with the paragraph above, and whoever fills it
+in has to deal with them rather than inherit them from this file:
+
+- **A record of consent for location sharing.** The app treats the operating
+  system's permission prompt as the moment consent is given, which is defensible
+  but is not written down anywhere. Article 7(1) asks a controller to be able to
+  demonstrate it.
+- **An age check.** This document says the app is not for under-16s and nothing
+  in the code enforces that.
+- **A way to honour the breach notification below.** Promising to tell an
+  authority within 72 hours means having someone who would notice.
+
+This text is in English only. A controller addressing users in another language
+owes them the notice in that language (Art. 12(1)), which is a translation job
+for a lawyer rather than for the app's ARB files.
 
 ## What we store, and why
 
@@ -107,7 +139,8 @@ whichever maps application you choose to open. What happens next is governed by
 that app's own policy, not this one.
 
 We do not use analytics, advertising, tracking pixels, or crash reporting
-services, and we do not sell or share your data with anyone for marketing.
+services. There is nowhere in the code that sells or shares anything with
+anybody for marketing, which is a claim you can check rather than trust.
 
 ## Where it is stored
 
@@ -145,11 +178,14 @@ correct it, delete it, restrict or object to how we use it, and hand it to you o
 another service in a machine-readable form (portability). Where we rely on your
 consent — live location — you can withdraw it at any time.
 
-The app itself lets you do most of this directly: edit your name in Settings,
-turn off location sharing, leave a trip, delete your account, and export a
-trip's expenses as a spreadsheet — that export is the portable, machine-readable
-copy of the part of your data that is worth having in one. For anything else,
-write to [CONTACT EMAIL]; we answer within one month.
+The app itself lets you do most of this without asking anybody: edit your name
+in Settings, turn off location sharing, leave a trip, delete your account, and
+export a trip's expenses as a spreadsheet — that export is the portable,
+machine-readable copy of the part of your data worth having in one. That is
+deliberate, and it is the half a controller cannot get wrong.
+
+For anything the app cannot do itself, a running instance owes you a reply
+within one month at [CONTACT EMAIL].
 
 If you think we are handling your data wrongly you can complain to your national
 data protection authority. In Italy that is the Garante per la protezione dei
@@ -172,15 +208,15 @@ short-lived and rotate, so a stolen one stops working quickly, and the app store
 them in the device's own encrypted store. Access to anything inside a trip is
 checked against your membership of that trip on every request.
 
-No system is perfectly safe. If a breach ever puts your rights at risk we will
-tell the supervisory authority within 72 hours and tell you where the law
-requires it.
+No system is perfectly safe. Whoever runs an instance owes the supervisory
+authority notice within 72 hours of a breach that puts users' rights at risk,
+and owes those users notice where the law requires it.
 
 ## Children
 
-TodoTrip is not intended for children under 16 and we do not knowingly hold
-their data. If you believe a child has an account, write to [CONTACT EMAIL] and
-we will remove it.
+TodoTrip is not intended for children under 16. Nothing in the code checks an
+age, so an instance that expects to reach any is relying on this sentence and
+nothing else.
 
 ## Automated decisions
 
@@ -189,5 +225,6 @@ automatically.
 
 ## Changes
 
-If this policy changes in a way that matters, we will say so in the app before
-the change takes effect. The date at the top always reflects the current version.
+This file lives beside the code and changes with it; the date at the top is the
+last time it did. A running instance owes its users notice in the app before a
+change that matters takes effect.
