@@ -1217,6 +1217,10 @@
   "@settingsDefaultCurrency": {
     "description": "Currency preselected for new trips"
   },
+  "settingsDefaultCurrencyHint": "Used when you create a trip. Existing trips keep theirs.",
+  "@settingsDefaultCurrencyHint": {
+    "description": "Explains that the setting only affects new trips"
+  },
   "settingsAbout": "About",
   "@settingsAbout": {
     "description": "Settings section for version and legal links"

@@ -883,6 +883,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDefaultCurrency => 'Default currency';
 
   @override
+  String get settingsDefaultCurrencyHint =>
+      'Used when you create a trip. Existing trips keep theirs.';
+
+  @override
   String get settingsAbout => 'About';
 
   @override

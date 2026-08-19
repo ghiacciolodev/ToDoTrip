@@ -147,6 +147,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final members = ref.watch(activeMembersProvider(widget.tripId));
+    final currency = ref.watch(tripCurrencyProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
     final even = _evenShares;
 
@@ -302,6 +303,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       controller: _customShares[member.user.id],
                       evenShare: even[member.user.id],
                       onCustomChanged: () => setState(() => _error = null),
+                      currency: currency,
                     ),
                   ],
                 ],
@@ -320,7 +322,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     style: TextStyle(color: AppColors.inkMuted),
                   ),
                   Text(
-                    Money(_remainingCents).formatted,
+                    Money(_remainingCents).formattedIn(
+                      ref.watch(tripCurrencyProvider(widget.tripId)),
+                    ),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -389,6 +393,7 @@ class _ParticipantRow extends StatelessWidget {
     required this.controller,
     required this.evenShare,
     required this.onCustomChanged,
+    required this.currency,
   });
 
   final String name;
@@ -399,6 +404,10 @@ class _ParticipantRow extends StatelessWidget {
   final TextEditingController? controller;
   final int? evenShare;
   final VoidCallback onCustomChanged;
+
+  /// The trip's currency. Passed down rather than assumed: the symbol used to
+  /// be a euro sign written into this file.
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -453,10 +462,10 @@ class _ParticipantRow extends StatelessWidget {
                 ],
                 onChanged: (_) => onCustomChanged(),
                 textAlign: TextAlign.end,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
-                  prefixText: '€',
-                  contentPadding: EdgeInsets.symmetric(
+                  prefixText: Money.symbolFor(currency),
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 8,
                   ),
@@ -464,7 +473,9 @@ class _ParticipantRow extends StatelessWidget {
                 style: const TextStyle(fontSize: 14),
               )
             : Text(
-                evenShare == null ? '—' : Money(evenShare!).formatted,
+                evenShare == null
+                    ? '—'
+                    : Money(evenShare!).formattedIn(currency),
                 textAlign: TextAlign.end,
                 style: const TextStyle(
                   color: AppColors.inkMuted,

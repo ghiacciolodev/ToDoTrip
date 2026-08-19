@@ -280,8 +280,14 @@ class _Balance extends StatelessWidget {
     // roughly 8% of men.
     final (label, colour) = switch (cents) {
       0 => (l10n.moneySettledShort, AppColors.inkMuted),
-      > 0 => ('+${Money(cents).formatted}', AppColors.primaryDark),
-      _ => ('−${Money(cents).abs.formatted}', AppColors.terracotta),
+      > 0 => (
+        '+${Money(cents).formattedIn(trip.baseCurrency)}',
+        AppColors.primaryDark,
+      ),
+      _ => (
+        '−${Money(cents).abs.formattedIn(trip.baseCurrency)}',
+        AppColors.terracotta,
+      ),
     };
 
     return Padding(

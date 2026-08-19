@@ -890,6 +890,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsDefaultCurrency => 'Devise par défaut';
 
   @override
+  String get settingsDefaultCurrencyHint =>
+      'Utilisée à la création d\'un voyage. Les voyages existants gardent la leur.';
+
+  @override
   String get settingsAbout => 'À propos';
 
   @override

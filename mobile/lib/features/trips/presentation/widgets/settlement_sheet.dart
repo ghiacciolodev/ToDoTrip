@@ -116,7 +116,9 @@ class _SettlementSheetState extends ConsumerState<_SettlementSheet> {
 
             Center(
               child: Text(
-                Money(settlement.amountCents).formatted,
+                Money(
+                  widget.settlement.amountCents,
+                ).formattedIn(ref.watch(tripCurrencyProvider(widget.tripId))),
                 style: const TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w700,

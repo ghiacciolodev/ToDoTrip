@@ -272,3 +272,52 @@ class TestDelete:
         await client.delete(f"{TRIPS}/{trip['id']}", headers=auth_headers)
         remaining = await db.scalar(select(TripMember).where(TripMember.trip_id == trip["id"]))
         assert remaining is None
+
+
+class TestCurrencyValidation:
+    """A trip's currency is a label, not a conversion, which is exactly why it
+    has to be a real one: nothing later can repair a column of numbers with a
+    meaningless symbol in front."""
+
+    async def test_a_made_up_code_is_rejected(self, client: AsyncClient, auth_headers: dict):
+        response = await client.post(
+            TRIPS, json={"name": "Lisbona", "base_currency": "ABC"}, headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    async def test_the_no_currency_code_is_rejected(self, client: AsyncClient, auth_headers: dict):
+        """XXX is three letters and passes a length check, which is what the
+        length check was worth."""
+        response = await client.post(
+            TRIPS, json={"name": "Lisbona", "base_currency": "XXX"}, headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    async def test_lower_case_is_accepted_and_stored_upper(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """A sloppy client is not a wrong user, and storing both "eur" and
+        "EUR" would split one currency in two."""
+        response = await client.post(
+            TRIPS, json={"name": "Tokyo", "base_currency": "jpy"}, headers=auth_headers
+        )
+        assert response.status_code == 201
+        assert response.json()["base_currency"] == "JPY"
+
+    async def test_editing_to_a_bad_code_is_rejected(
+        self, client: AsyncClient, trip: dict, auth_headers: dict
+    ):
+        response = await client.patch(
+            f"{TRIPS}/{trip['id']}", json={"base_currency": "ZZZ"}, headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    async def test_leaving_the_currency_alone_still_works(
+        self, client: AsyncClient, trip: dict, auth_headers: dict
+    ):
+        """The validator must not turn an absent field into a rejected one."""
+        response = await client.patch(
+            f"{TRIPS}/{trip['id']}", json={"name": "Lisbona 2027"}, headers=auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["base_currency"] == "EUR"

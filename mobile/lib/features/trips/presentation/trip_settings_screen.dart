@@ -751,7 +751,7 @@ class _Facts extends ConsumerWidget {
         ListTile(
           title: Text(l10n.tripTotalSpent),
           trailing: Text(
-            Money(trip.totalSpentCents).formatted,
+            Money(trip.totalSpentCents).formattedIn(trip.baseCurrency),
             style: const TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 15,

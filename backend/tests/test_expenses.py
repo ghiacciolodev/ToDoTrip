@@ -701,3 +701,31 @@ class TestPagination:
         # 40 expenses of 100..139 cents, all paid by Mario, split with Luca.
         assert report["total_spent_cents"] == sum(100 + n for n in range(40))
         assert sum(entry["balance_cents"] for entry in report["balances"]) == 0
+
+
+class TestExpenseCurrency:
+    async def test_an_expense_takes_the_trip_currency(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """It used to take the column default, so every expense claimed to be
+        in euro whatever the trip was kept in."""
+        trip = (
+            await client.post(
+                TRIPS, json={"name": "Tokyo", "base_currency": "JPY"}, headers=auth_headers
+            )
+        ).json()
+        me = (await client.get("/api/v1/auth/me", headers=auth_headers)).json()["id"]
+
+        response = await client.post(
+            f"{TRIPS}/{trip['id']}/expenses",
+            json={
+                "description": "Ramen",
+                "amount_cents": 120000,
+                "paid_by": me,
+                "participants": [me],
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        assert response.json()["currency"] == "JPY"

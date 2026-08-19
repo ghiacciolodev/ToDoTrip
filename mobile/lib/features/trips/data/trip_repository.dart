@@ -37,6 +37,7 @@ class TripRepository {
     DateTime? endDate,
     String? icon,
     String? color,
+    String? baseCurrency,
   }) async {
     try {
       final response = await dio.post(
@@ -49,6 +50,9 @@ class TripRepository {
           // would be rejected, so only the calendar day is sent.
           if (startDate != null) 'start_date': _asDate(startDate),
           if (endDate != null) 'end_date': _asDate(endDate),
+          // Omitted when unset so the server's own default applies, rather
+          // than this client deciding what "no preference" means.
+          'base_currency': ?baseCurrency,
           // Omitted rather than sent as null when the user skipped the step, so
           // "not chosen" stays the server's own default.
           'icon': ?icon,

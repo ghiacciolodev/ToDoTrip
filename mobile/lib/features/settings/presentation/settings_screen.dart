@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/currency.dart';
 import '../../../core/locale_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -139,13 +140,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.euro_outlined),
+                leading: const Icon(Icons.payments_outlined),
                 title: Text(l10n.settingsDefaultCurrency),
-                trailing: const Text(
-                  'EUR',
-                  style: TextStyle(color: AppColors.inkMuted),
+                subtitle: Text(l10n.settingsDefaultCurrencyHint),
+                trailing: Text(
+                  ref.watch(defaultCurrencyProvider).value ??
+                      DefaultCurrency.fallback,
+                  style: const TextStyle(color: AppColors.inkMuted),
                 ),
-                onTap: () => _showComingSoon(context),
+                onTap: _pickCurrency,
               ),
             ],
           ),
@@ -241,12 +244,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .select(choice == 'system' ? null : Locale(choice));
   }
 
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).commonComingSoon)),
-      );
+  /// Picks the currency new trips start in.
+  ///
+  /// Only a default for the creation form: every trip carries its own currency
+  /// afterwards, and changing this one never touches a trip that exists. The
+  /// dozen most likely codes come first because scrolling 156 of them to reach
+  /// the one you almost certainly want is a worse list.
+  Future<void> _pickCurrency() async {
+    final l10n = AppLocalizations.of(context);
+    final current =
+        ref.read(defaultCurrencyProvider).value ?? DefaultCurrency.fallback;
+    final rest = [
+      for (final code in supportedCurrencies)
+        if (!commonCurrencies.contains(code)) code,
+    ];
+
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          builder: (context, controller) => RadioGroup<String>(
+            groupValue: current,
+            onChanged: (value) => Navigator.of(context).pop(value),
+            child: ListView(
+              controller: controller,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Text(
+                    l10n.settingsDefaultCurrency,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                for (final code in [...commonCurrencies, ...rest])
+                  RadioListTile<String>(
+                    value: code,
+                    title: Text(currencyLabel(code)),
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (choice == null) return;
+
+    await ref.read(defaultCurrencyProvider.notifier).select(choice);
   }
 }
 

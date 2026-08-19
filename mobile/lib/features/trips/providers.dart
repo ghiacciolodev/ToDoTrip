@@ -118,6 +118,20 @@ final myMembershipProvider = Provider.family<TripMember?, String>((
   return null;
 });
 
+/// The currency a trip's amounts are written in.
+///
+/// Its own provider so a single row can ask for the symbol without depending on
+/// the whole trip object. Euro while the trip is still loading: a symbol that
+/// settles a frame later is better than an amount that appears a frame later.
+///
+/// The trip's current currency, not the one frozen on each expense. That is the
+/// behaviour the settings screen promises — changing it renames, it does not
+/// convert — and it was a promise the app did not keep while the euro sign was
+/// hardcoded.
+final tripCurrencyProvider = Provider.family<String, String>((ref, tripId) {
+  return ref.watch(tripProvider(tripId)).value?.baseCurrency ?? 'EUR';
+});
+
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository(dio: ref.watch(dioProvider));
 });

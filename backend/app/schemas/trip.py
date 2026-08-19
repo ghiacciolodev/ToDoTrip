@@ -3,8 +3,9 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.core.currency import normalise as normalise_currency
 from app.models import MemberRole
 from app.schemas.auth import UserPublic
 
@@ -15,6 +16,8 @@ class TripCreate(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     base_currency: str = Field(default="EUR", min_length=3, max_length=3)
+
+    _check_currency = field_validator("base_currency")(lambda cls, value: normalise_currency(value))
 
     # Symbolic keys the client understands; the server only stores them. Kept
     # loose on purpose: adding a thirteenth icon must not need a backend change.
@@ -45,6 +48,10 @@ class TripUpdate(BaseModel):
     # "put this away" or "bring it back", and when that happened is the server's
     # business to record.
     archived: bool | None = None
+
+    _check_currency = field_validator("base_currency")(
+        lambda cls, value: value if value is None else normalise_currency(value)
+    )
 
 
 class TripPublic(BaseModel):

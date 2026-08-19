@@ -110,7 +110,9 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
 
               Center(
                 child: Text(
-                  Money(expense.amountCents).formatted,
+                  Money(
+                    widget.expense.amountCents,
+                  ).formattedIn(ref.watch(tripCurrencyProvider(widget.tripId))),
                   style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
@@ -170,7 +172,9 @@ class _ExpenseDetailSheetState extends ConsumerState<_ExpenseDetailSheet> {
                         ),
                       ),
                       Text(
-                        Money(share.shareCents).formatted,
+                        Money(share.shareCents).formattedIn(
+                          ref.watch(tripCurrencyProvider(widget.tripId)),
+                        ),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontFeatures: [FontFeature.tabularFigures()],

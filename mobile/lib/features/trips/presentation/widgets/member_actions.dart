@@ -320,9 +320,10 @@ String _balanceMessage(
   required String name,
   required bool isYou,
   required String action,
+  required String currency,
 }) {
   final cents = (error.details?['balance_cents'] as num?)?.toInt() ?? 0;
-  final amount = Money(cents.abs()).formatted;
+  final amount = Money(cents.abs()).formattedIn(currency);
   final owing = cents < 0;
 
   final who = isYou
@@ -396,7 +397,13 @@ Future<void> confirmRemoveMember(
       await _explain(
         context,
         l10n.memberNotSettledTitle,
-        _balanceMessage(e, name: name, isYou: false, action: 'removing them'),
+        _balanceMessage(
+          e,
+          name: name,
+          isYou: false,
+          action: 'removing them',
+          currency: ref.read(tripCurrencyProvider(tripId)),
+        ),
       );
     } else {
       _toast(context, friendlyError(context, e));
@@ -439,7 +446,13 @@ Future<void> confirmLeaveTrip(
         await _explain(
           context,
           l10n.memberNotSettledTitle,
-          _balanceMessage(e, name: 'You', isYou: true, action: 'leaving'),
+          _balanceMessage(
+            e,
+            name: 'You',
+            isYou: true,
+            action: 'leaving',
+            currency: trip.baseCurrency,
+          ),
         );
       case 'owner_must_transfer':
         await _explain(

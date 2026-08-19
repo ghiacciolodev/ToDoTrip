@@ -207,6 +207,7 @@ class _BalanceCard extends ConsumerWidget {
       );
     }
 
+    final currency = ref.watch(tripCurrencyProvider(tripId));
     final mine = Money(report!.balanceFor(myId));
     final total = Money(report!.totalSpentCents);
     final hasDebts = report!.suggestedTransfers.isNotEmpty;
@@ -232,7 +233,7 @@ class _BalanceCard extends ConsumerWidget {
             Text(label, style: const TextStyle(color: AppColors.inkMuted)),
             const SizedBox(height: 6),
             Text(
-              mine.isZero ? '—' : mine.abs.formatted,
+              mine.isZero ? '—' : mine.abs.formattedIn(currency),
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.w700,
@@ -242,7 +243,7 @@ class _BalanceCard extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              l10n.moneyTripTotal(total.formatted),
+              l10n.moneyTripTotal(total.formattedIn(currency)),
               style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
             ),
             if (hasDebts) ...[
@@ -279,6 +280,7 @@ class _EveryoneBalance extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lookup = ref.watch(memberLookupProvider(tripId));
+    final currency = ref.watch(tripCurrencyProvider(tripId));
 
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -305,7 +307,7 @@ class _EveryoneBalance extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    Money(entry.balanceCents).signed,
+                    Money(entry.balanceCents).signedIn(currency),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -340,6 +342,7 @@ class _ExpenseRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lookup = ref.watch(memberLookupProvider(tripId));
+    final currency = ref.watch(tripCurrencyProvider(tripId));
     final l10n = AppLocalizations.of(context);
     final payer = expense.paidBy == myId
         ? l10n.commonYou
@@ -399,7 +402,7 @@ class _ExpenseRow extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      Money(expense.amountCents).formatted,
+                      Money(expense.amountCents).formattedIn(currency),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontFeatures: [FontFeature.tabularFigures()],
@@ -411,7 +414,9 @@ class _ExpenseRow extends ConsumerWidget {
                     Text(
                       myShare == null
                           ? l10n.moneyNotInvolved
-                          : l10n.moneyYourShare(Money(myShare).formatted),
+                          : l10n.moneyYourShare(
+                              Money(myShare).formattedIn(currency),
+                            ),
                       style: const TextStyle(
                         color: AppColors.inkMuted,
                         fontSize: 12,
@@ -470,6 +475,7 @@ class _SettlementRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lookup = ref.watch(memberLookupProvider(tripId));
+    final currency = ref.watch(tripCurrencyProvider(tripId));
 
     final l10n = AppLocalizations.of(context);
 
@@ -524,7 +530,7 @@ class _SettlementRow extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                Money(settlement.amountCents).formatted,
+                Money(settlement.amountCents).formattedIn(currency),
                 style: const TextStyle(
                   color: AppColors.inkMuted,
                   fontFeatures: [FontFeature.tabularFigures()],

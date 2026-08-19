@@ -885,6 +885,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDefaultCurrency => 'Standardwährung';
 
   @override
+  String get settingsDefaultCurrencyHint =>
+      'Wird bei neuen Reisen verwendet. Bestehende Reisen behalten ihre.';
+
+  @override
   String get settingsAbout => 'Info';
 
   @override

@@ -254,6 +254,7 @@
   "settingsLanguage": "Langue",
   "settingsLanguageSystem": "Système",
   "settingsDefaultCurrency": "Devise par défaut",
+  "settingsDefaultCurrencyHint": "Utilisée à la création d'un voyage. Les voyages existants gardent la leur.",
   "settingsAbout": "À propos",
   "settingsVersion": "Version",
   "settingsPrivacyPolicy": "Politique de confidentialité",

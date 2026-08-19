@@ -254,6 +254,7 @@
   "settingsLanguage": "Lingua",
   "settingsLanguageSystem": "Sistema",
   "settingsDefaultCurrency": "Valuta predefinita",
+  "settingsDefaultCurrencyHint": "Usata quando crei un viaggio. I viaggi esistenti mantengono la loro.",
   "settingsAbout": "Info",
   "settingsVersion": "Versione",
   "settingsPrivacyPolicy": "Informativa sulla privacy",

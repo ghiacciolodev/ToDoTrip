@@ -15,42 +15,58 @@ import 'package:intl/intl.dart';
 /// localised by the same switch, instead of forty places each having to
 /// remember.
 extension type const Money(int cents) {
-  /// Rebuilt when the language changes, cached while it does not: formatting a
-  /// list of expenses builds one of these per row on every repaint.
-  static String? _cachedFor;
-  static NumberFormat? _currency;
+  /// One formatter per language and currency, kept between repaints: a list of
+  /// expenses would otherwise build one per row on every frame.
+  ///
+  /// Keyed by both because both change the output — "32,50 €" in Italian,
+  /// "€32.50" in English, "¥3,250" with no decimals at all.
+  static final _currencies = <String, NumberFormat>{};
+  static String? _plainFor;
   static NumberFormat? _plain;
 
-  static void _ensure() {
+  static NumberFormat _formatter(String currency) {
     final locale = Intl.getCurrentLocale();
-    if (_cachedFor == locale && _currency != null) return;
-    _cachedFor = locale;
-    _currency = NumberFormat.currency(locale: locale, symbol: '€');
+    return _currencies.putIfAbsent(
+      '$locale/$currency',
+      () => NumberFormat.simpleCurrency(locale: locale, name: currency),
+    );
+  }
+
+  static void _ensurePlain() {
+    final locale = Intl.getCurrentLocale();
+    if (_plainFor == locale && _plain != null) return;
+    _plainFor = locale;
     _plain = NumberFormat.decimalPatternDigits(
       locale: locale,
       decimalDigits: 2,
     );
   }
 
-  /// "€32.50" in English, "32,50 €" in Italian.
-  String get formatted {
-    _ensure();
-    return _currency!.format(cents / 100);
-  }
+  /// "€32.50" in English, "32,50 €" in Italian, "¥3,250" for a trip in yen.
+  ///
+  /// The currency is passed in rather than assumed. It used to be a hardcoded
+  /// euro sign, which made the promise on the trip settings screen — that
+  /// changing the currency changes the symbol — simply untrue.
+  String formattedIn(String currency) =>
+      _formatter(currency).format(cents / 100);
 
   /// "32.50" — for text fields, where the symbol is part of the decoration.
   String get plain {
-    _ensure();
+    _ensurePlain();
     return _plain!.format(cents / 100);
   }
 
   /// "+€32.50" / "−€18.00", using a real minus sign rather than a hyphen.
-  String get signed {
-    _ensure();
-    if (cents == 0) return _currency!.format(0);
+  String signedIn(String currency) {
+    final format = _formatter(currency);
+    if (cents == 0) return format.format(0);
     final sign = cents > 0 ? '+' : '−';
-    return '$sign${_currency!.format(cents.abs() / 100)}';
+    return '$sign${format.format(cents.abs() / 100)}';
   }
+
+  /// The bare symbol, for labels and text-field decorations.
+  static String symbolFor(String currency) =>
+      _formatter(currency).currencySymbol;
 
   bool get isZero => cents == 0;
   bool get isPositive => cents > 0;
@@ -59,7 +75,12 @@ extension type const Money(int cents) {
   /// Parses user input, accepting both "12,50" and "12.50": the keyboard a
   /// user gets depends on their device locale, not on ours.
   static Money? tryParse(String input) {
-    final cleaned = input.trim().replaceAll('€', '').replaceAll(' ', '');
+    // Any currency symbol the user may have typed or pasted along with the
+    // number, not just the euro sign this once assumed.
+    final cleaned = input
+        .trim()
+        .replaceAll(RegExp(r'[^0-9,.\-]'), '')
+        .replaceAll(' ', '');
     if (cleaned.isEmpty) return null;
 
     final normalised = cleaned.replaceAll(',', '.');

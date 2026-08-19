@@ -1628,6 +1628,12 @@ abstract class AppLocalizations {
   /// **'Default currency'**
   String get settingsDefaultCurrency;
 
+  /// Explains that the setting only affects new trips
+  ///
+  /// In en, this message translates to:
+  /// **'Used when you create a trip. Existing trips keep theirs.'**
+  String get settingsDefaultCurrencyHint;
+
   /// Settings section for version and legal links
   ///
   /// In en, this message translates to:

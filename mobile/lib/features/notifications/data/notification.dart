@@ -65,6 +65,11 @@ abstract class AppNotification with _$AppNotification {
   String? get description => payload['description'] as String?;
   int? get amountCents => (payload['amount_cents'] as num?)?.toInt();
 
+  /// Frozen with the amount rather than read from the trip: the trip may have
+  /// been renamed, re-denominated or deleted since, and the row still has to
+  /// read as the sentence it was written as.
+  String get currency => payload['currency'] as String? ?? 'EUR';
+
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
       _$AppNotificationFromJson(json);
 }

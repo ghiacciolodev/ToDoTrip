@@ -368,7 +368,7 @@ class _NotificationRow extends ConsumerWidget {
   ) {
     final amount = row.amountCents == null
         ? ''
-        : Money(row.amountCents!).formatted;
+        : Money(row.amountCents!).formattedIn(row.currency);
     return switch (row.kind) {
       NotificationKind.expenseAdded => l10n.notificationExpenseAdded(
         actor,

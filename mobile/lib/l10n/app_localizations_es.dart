@@ -889,6 +889,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsDefaultCurrency => 'Moneda predeterminada';
 
   @override
+  String get settingsDefaultCurrencyHint =>
+      'Se usa al crear un viaje. Los viajes existentes mantienen la suya.';
+
+  @override
   String get settingsAbout => 'Información';
 
   @override

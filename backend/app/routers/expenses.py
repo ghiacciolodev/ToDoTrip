@@ -61,6 +61,9 @@ async def _money_payload(
         "trip_name": await _trip_name(db, trip_id),
         "description": expense.description,
         "amount_cents": expense.amount_cents,
+        # Frozen with the rest: the notification has to read as a sentence long
+        # after the expense, and possibly the trip, has gone.
+        "currency": expense.currency,
     }
 
 

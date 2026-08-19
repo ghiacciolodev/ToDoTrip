@@ -254,6 +254,7 @@
   "settingsLanguage": "Sprache",
   "settingsLanguageSystem": "System",
   "settingsDefaultCurrency": "Standardwährung",
+  "settingsDefaultCurrencyHint": "Wird bei neuen Reisen verwendet. Bestehende Reisen behalten ihre.",
   "settingsAbout": "Info",
   "settingsVersion": "Version",
   "settingsPrivacyPolicy": "Datenschutzerklärung",

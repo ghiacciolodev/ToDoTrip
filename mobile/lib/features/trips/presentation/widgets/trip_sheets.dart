@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_messages.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/currency.dart';
 import '../../data/trip_identity.dart';
 import '../../providers.dart';
 import 'trip_pickers.dart';
@@ -139,6 +140,9 @@ class _CreateTripFormState extends ConsumerState<_CreateTripForm> {
             endDate: _dates?.end,
             icon: _icon,
             color: _color,
+            // The preference from settings, not a constant: this is the one
+            // place it does anything.
+            baseCurrency: ref.read(defaultCurrencyProvider).value,
           );
       // Marks the list stale so it refetches; no manual cache surgery.
       ref.invalidate(tripsProvider);

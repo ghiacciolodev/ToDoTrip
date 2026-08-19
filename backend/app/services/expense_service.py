@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import pagination
-from app.models import Expense, ExpenseShare, Settlement, TripMember
+from app.models import Expense, ExpenseShare, Settlement, Trip, TripMember
 from app.services.balance import compute_balances, simplify_debts, split_evenly
 
 
@@ -48,11 +48,16 @@ async def create_expense(db: AsyncSession, trip_id: UUID, user_id: UUID, data: d
     if not ({data["paid_by"], *shares} <= members):
         raise NotAllMembers
 
+    # Copied from the trip rather than left on the column default, which made
+    # every expense claim to be in euro no matter what the trip was kept in.
+    currency = await db.scalar(select(Trip.base_currency).where(Trip.id == trip_id))
+
     expense = Expense(
         trip_id=trip_id,
         created_by=user_id,
         description=data["description"],
         amount_cents=data["amount_cents"],
+        currency=currency or "EUR",
         paid_by=data["paid_by"],
         **({"spent_at": data["spent_at"]} if data.get("spent_at") else {}),
     )

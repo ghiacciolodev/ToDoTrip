@@ -62,6 +62,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
     final l10n = AppLocalizations.of(context);
     final report = ref.watch(balanceProvider(widget.tripId)).value;
     final lookup = ref.watch(memberLookupProvider(widget.tripId));
+    final currency = ref.watch(tripCurrencyProvider(widget.tripId));
     final myId = ref.watch(authProvider).value?.id;
 
     final transfers =
@@ -107,6 +108,7 @@ class _SettleUpSheetState extends ConsumerState<_SettleUpSheet> {
               else ...[
                 for (final transfer in transfers) ...[
                   _TransferRow(
+                    currency: currency,
                     from: transfer.fromUserId == myId
                         ? l10n.commonYou
                         : lookup[transfer.fromUserId]?.user.nameOrNull ??
@@ -154,6 +156,7 @@ class _TransferRow extends StatelessWidget {
     required this.amount,
     required this.onMarkPaid,
     required this.busy,
+    required this.currency,
   });
 
   final String from;
@@ -161,6 +164,7 @@ class _TransferRow extends StatelessWidget {
   final Money amount;
   final VoidCallback? onMarkPaid;
   final bool busy;
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +210,7 @@ class _TransferRow extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                amount.formatted,
+                amount.formattedIn(currency),
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
