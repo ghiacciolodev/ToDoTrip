@@ -10,7 +10,6 @@ __pycache__/
 .dart_tool/
 build/
 
-# Editor and local tooling state: personal to a machine, never to the project.
 .idea/
 .vscode/
 .claude/
