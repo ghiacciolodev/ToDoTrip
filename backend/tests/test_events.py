@@ -97,7 +97,13 @@ class TestAuth:
     def test_a_non_member_is_rejected_with_4403(self, tc: TestClient, group: dict):
         """Valid identity, wrong trip: same 403-shaped answer as the REST API."""
         _, outsider_token, _ = _login(
-            tc, {"email": "anna@test.it", "password": "password123", "display_name": "Anna"}
+            tc,
+            {
+                "email": "anna@test.it",
+                "password": "password123",
+                "display_name": "Anna",
+                "accepted_privacy": True,
+            },
         )
         with tc.websocket_connect(group["url"]) as ws:
             ws.send_json({"token": outsider_token})

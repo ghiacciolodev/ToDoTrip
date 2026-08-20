@@ -11,6 +11,19 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 
+# Warnings are failures. A suite that prints them trains everybody to scroll
+# past the one that mattered, and CI should be silent or red, never noisy green.
+#
+# Anything genuinely out of our hands gets an explicit line below, so the list
+# doubles as the record of what was decided and why.
+filterwarnings = [
+    "error",
+    # Starlette's TestClient asks for httpx2. It is the only way to drive a
+    # websocket from a test, the app itself does not use httpx at all, and
+    # httpx2 is not released. Nothing to act on until it is.
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py313"

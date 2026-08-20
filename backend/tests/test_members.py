@@ -17,7 +17,12 @@ from app.models import MemberRole, TripMember
 
 TRIPS = "/api/v1/trips"
 AUTH = "/api/v1/auth"
-THIRD_USER = {"email": "giulia@test.it", "password": "password123", "display_name": "Giulia"}
+THIRD_USER = {
+    "email": "giulia@test.it",
+    "password": "password123",
+    "display_name": "Giulia",
+    "accepted_privacy": True,
+}
 
 
 async def _me(client: AsyncClient, headers: dict) -> str:

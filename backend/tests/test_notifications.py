@@ -110,7 +110,12 @@ class TestWhoGetsTold:
     ):
         """To everybody else it is bookkeeping between two other people."""
         await _join(client, invite_code, other_headers)
-        third = {"email": "gio@test.it", "password": "password123", "display_name": "Gio"}
+        third = {
+            "email": "gio@test.it",
+            "password": "password123",
+            "display_name": "Gio",
+            "accepted_privacy": True,
+        }
         await client.post(f"{AUTH}/register", json=third)
         login = await client.post(
             f"{AUTH}/login", json={"email": third["email"], "password": third["password"]}
