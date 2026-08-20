@@ -79,6 +79,18 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
+        // Set here rather than left to titleLarge, which is 22 at regular
+        // weight: a screen title in the same weight as body text has to rely on
+        // size alone to read as a heading, and at this size that is not enough.
+        // Smaller and bolder reads as a title and takes up less of the top of
+        // every screen. One place, so all the app bars stay identical.
+        titleTextStyle: TextStyle(
+          fontFamily: _fontFamily,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+          color: AppColors.ink,
+        ),
       ),
 
       cardTheme: CardThemeData(

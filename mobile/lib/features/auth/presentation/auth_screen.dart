@@ -332,6 +332,13 @@ class _Logo extends StatelessWidget {
   }
 }
 
+/// One line of the consent sentence, in logical pixels.
+///
+/// Shared by the sentence and the box beside it: they have to be the same
+/// height or the row reads as crooked.
+const _consentLineHeight = 20.0;
+const _consentFontSize = 13.5;
+
 /// The consent tick, with the policy one tap away.
 ///
 /// A [FormField] rather than a bare [Checkbox] so it fails validation in the
@@ -368,9 +375,13 @@ class _PrivacyConsent extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Exactly one line of the sentence tall, so the box centres
+                  // against the first line instead of against the paragraph.
+                  // Start-aligning a 24-high box next to a 20-high line is what
+                  // made this row look crooked.
                   SizedBox(
-                    height: 24,
-                    width: 24,
+                    height: _consentLineHeight,
+                    width: 22,
                     child: Checkbox(
                       value: value,
                       // Handled by the row: two tap targets stacked on each
@@ -380,10 +391,17 @@ class _PrivacyConsent extends StatelessWidget {
                         state.didChange(checked ?? false);
                       },
                       activeColor: theme.colorScheme.primary,
+                      side: const BorderSide(
+                        color: AppColors.inkMuted,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(child: _ConsentSentence()),
                 ],
               ),
@@ -391,7 +409,8 @@ class _PrivacyConsent extends StatelessWidget {
           ),
           if (state.hasError)
             Padding(
-              padding: const EdgeInsets.only(left: 36, top: 4),
+              // Under the sentence, not under the box.
+              padding: const EdgeInsets.only(left: 32, top: 4),
               child: Text(
                 state.errorText!,
                 style: TextStyle(color: theme.colorScheme.error, fontSize: 12),
@@ -434,7 +453,11 @@ class _ConsentSentenceState extends State<_ConsentSentence> {
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const PrivacyScreen()));
 
-    final base = TextStyle(fontSize: 13, color: AppColors.ink);
+    final base = TextStyle(
+      fontSize: _consentFontSize,
+      height: _consentLineHeight / _consentFontSize,
+      color: AppColors.ink,
+    );
     // A translation that dropped the placeholder would otherwise lose the link
     // entirely; plain text is a worse outcome than a broken one is a crash.
     if (at < 0) return Text(sentence, style: base);

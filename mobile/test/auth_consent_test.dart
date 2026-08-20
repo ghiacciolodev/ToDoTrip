@@ -110,6 +110,34 @@ void main() {
     expect(auth.registrations, 1);
   });
 
+  testWidgets('the box sits level with the line it belongs to', (tester) async {
+    // The reported bug: the box was 24 high next to a ~19 high line, and
+    // start-aligning the two left the row visibly crooked.
+    await pump(tester);
+    await switchToRegister(tester);
+
+    final box = tester.getRect(find.byType(Checkbox));
+    // The consent sentence by its content: the screen holds several rich texts
+    // and picking one by position would silently measure the wrong thing.
+    final sentence = tester.getRect(
+      find.byWidgetPredicate(
+        (w) => w is RichText && w.text.toPlainText().contains('privacy policy'),
+      ),
+    );
+
+    // Against the FIRST line, not the paragraph: the sentence wraps on a narrow
+    // screen, and centring the box on a two-line block would drop it into the
+    // gap between the lines.
+    const lineHeight = 20.0;
+    final firstLineCentre = sentence.top + lineHeight / 2;
+
+    expect(
+      (box.center.dy - firstLineCentre).abs(),
+      lessThanOrEqualTo(1.0),
+      reason: 'box ${box.center.dy}, first line $firstLineCentre',
+    );
+  });
+
   testWidgets('leaving and returning does not keep the tick', (tester) async {
     // Otherwise a stray tap earlier in the session counts as consent given on
     // the form actually being submitted.
