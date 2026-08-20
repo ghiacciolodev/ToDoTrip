@@ -30,7 +30,6 @@
   <img src="docs/brand/05-lists.png" width="200" alt="Checklists, each showing how many entries are left">
   <img src="docs/brand/06-add-trip.png" width="200" alt="Creating a trip, or joining one with an invite code">
   <img src="docs/brand/07-settings.png" width="200" alt="Settings: accent colour, language and default currency">
-  <img src="docs/brand/08-sign-up.png" width="200" alt="Signing up, with the privacy policy to accept">
   <img src="docs/brand/09-sign-in.png" width="200" alt="Signing in">
 </p>
 </details>
