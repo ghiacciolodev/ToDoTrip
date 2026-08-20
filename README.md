@@ -18,19 +18,20 @@
 </p>
 
 <p align="center">
-  <img src="docs/brand/tripslists.png" width="200" alt="Trips">
-  <img src="docs/brand/Calendar.png" width="200" alt="Calendar">
-  <img src="docs/brand/money.png" width="200" alt="Money">
-  <img src="docs/brand/todo.png" width="200" alt="Tasks">
+  <img src="docs/brand/01-trips.png" width="200" alt="The list of trips, each with its dates, members and what you owe">
+  <img src="docs/brand/02-calendar.png" width="200" alt="The itinerary grouped by day, with the next event highlighted">
+  <img src="docs/brand/03-money.png" width="200" alt="What you owe, the trip total, and the expenses behind them">
+  <img src="docs/brand/04-tasks.png" width="200" alt="Tasks with deadlines and owners, completed ones collapsed">
 </p>
 
 <details>
 <summary align="center">More screens</summary>
 <p align="center">
-  <img src="docs/brand/groupinfo.png" width="200" alt="Group">
-  <img src="docs/brand/lists.png" width="200" alt="Lists">
-  <img src="docs/brand/add join trip.png" width="200" alt="Create or join a trip">
-  <img src="docs/brand/settings.png" width="200" alt="Settings">
+  <img src="docs/brand/05-lists.png" width="200" alt="Checklists, each showing how many entries are left">
+  <img src="docs/brand/06-add-trip.png" width="200" alt="Creating a trip, or joining one with an invite code">
+  <img src="docs/brand/07-settings.png" width="200" alt="Settings: accent colour, language and default currency">
+  <img src="docs/brand/08-sign-up.png" width="200" alt="Signing up, with the privacy policy to accept">
+  <img src="docs/brand/09-sign-in.png" width="200" alt="Signing in">
 </p>
 </details>
 
