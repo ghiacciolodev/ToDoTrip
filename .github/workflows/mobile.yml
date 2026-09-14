@@ -37,6 +37,10 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          # Pinned to the version this is developed against. "stable" means
+          # whatever shipped that morning, so a Flutter release could turn main
+          # red on its own; bumping this is then a visible, reviewable commit.
+          flutter-version: 3.44.8
           channel: stable
           cache: true
 
@@ -51,6 +55,19 @@ jobs:
 
       - name: Analyze
         run: flutter analyze
+
+      - name: Check generated code is current
+        # freezed, json_serializable and gen-l10n outputs are committed. Editing
+        # a model or an ARB without regenerating leaves the build green and the
+        # app running on stale code, which is the kind of bug that surfaces far
+        # from its cause.
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          flutter gen-l10n
+          git diff --exit-code -- . || {
+            echo "::error::Generated files are out of date. Run build_runner and gen-l10n, then commit the result."
+            exit 1
+          }
 
       - name: Run tests
         run: flutter test

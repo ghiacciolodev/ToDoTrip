@@ -57,7 +57,8 @@ constraint, explained under [`emit()`](#the-three-channels-of-emit).
 
 ```mermaid
 flowchart TD
-    r["<b>routers/</b><br/>HTTP only — status codes, response models<br/><i>never imports a model</i>"]
+    r["<b>routers/</b><br/>HTTP — status codes, response models"]
+    w["<b>routers/events.py</b><br/>WebSocket — authenticates in its first frame"]
     d["<b>dependencies.py</b><br/>CurrentUser · Membership · Ownership · Writable"]
     s["<b>services/</b><br/>the rules<br/><i>never imports FastAPI</i>"]
     m["<b>models/</b><br/>SQLAlchemy 2, async — one table per file"]
@@ -65,9 +66,11 @@ flowchart TD
 
     r --> d
     r --> s
+    w --> s
     d --> s
     s --> m
     r -.-> c
+    w -.-> c
     s -.-> c
 ```
 
@@ -261,7 +264,7 @@ flowchart LR
     hub --> notif["notifications table<br/><i>durable</i>"]
     hub -.-> push["push<br/><i>not built</i>"]
 
-    ws --> online["Whoever is looking:<br/>re-runs the GET it knows"]
+    ws --> online["Whoever is looking:<br/>re-runs the GET it knows<br/><i>live positions arrive with their data</i>"]
     notif --> offline["Whoever is not:<br/>finds it hours later"]
     push -.-> closed["Whoever has the app closed"]
 
@@ -273,6 +276,13 @@ flowchart LR
 next fetch shows current data regardless. Losing a notification means it never
 happened. One is a bell, the other is a record — so one is memory and the other
 is a table.
+
+**The one event that carries its data.** Everything stored is announced and
+fetched. Live location is not: a position is a couple of numbers, it is
+ephemeral, and each member sends one at most every twenty seconds, so telling
+every other member to refetch it would be dozens of requests a minute to move a
+few bytes. `location.update` carries the coordinates and `location.cleared` the
+member it concerns; the app applies them directly.
 
 **Why they are raised from the same call.** The alternative is writing
 notifications in the routers, and then adding push means a second full pass over

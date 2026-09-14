@@ -1,5 +1,5 @@
 name: todotrip
-description: "A new Flutter project."
+description: "TodoTrip mobile app: plan group trips together, with a shared calendar, tasks, checklists, split expenses and a trip map."
 publish_to: 'none'
 version: 0.1.0+1
 

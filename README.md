@@ -73,19 +73,21 @@ flowchart TD
     end
 
     subgraph api["FastAPI, one process"]
-        rt["routers: HTTP only"]
+        rt["HTTP routers"]
+        wr["WebSocket events router"]
         dp["dependencies: auth, membership, write permission"]
         sv["services: the rules"]
         md["models: SQLAlchemy 2, async"]
         rt --> dp
         dp --> sv
+        wr --> sv
         sv --> md
     end
 
     db[("PostgreSQL 17")]
 
     da -->|"REST /api/v1"| rt
-    da <-->|"WS, trip events"| rt
+    da <-->|"WS, trip events"| wr
     md -->|asyncpg| db
 ```
 
@@ -110,17 +112,22 @@ Balances are recomputed from expenses, shares and repayments every time they are
 asked for. A stored total is a second source of truth that eventually disagrees
 with the first.
 
-**Some records outlive the people in them.** Leaving a trip is blocked while you
-owe money, because your shares cannot be deleted without silently changing what
-everyone else owes. A closed account is emptied rather than deleted, for the
-same reason, and remembered in `trip_past_members` so old expenses still have a
-name on them.
+**Some records outlive the people in them.** Leaving a trip is blocked while your
+balance is anything but zero, in either direction: owing money or being owed it.
+Your shares cannot be deleted without silently changing what everyone else owes,
+and a former member could no longer be paid back. A closed account is emptied
+rather than deleted, for the same reason, and remembered in `trip_past_members`
+so old expenses still have a name on them.
 
-**Realtime is a bell, not a channel.** A websocket event carries the fact that
-something changed and never the data itself; clients re-run a GET they already
-know. No merging, no conflicts, no client drifting from the server. Every screen
-also refetches on tab change and on resume, so with the socket down the app
-behaves exactly as it did before realtime existed.
+**Realtime is a bell, not a channel.** For stored state, a websocket event
+announces only that something changed, and the client re-runs a GET it already
+knows. No merging, no conflicts, no client drifting from the server. Live
+location is the deliberate exception: a position is a couple of numbers, it is
+ephemeral, and each member sends one every twenty seconds or so, so making
+everyone refetch it would be dozens of requests a minute to move a few bytes.
+Positions travel inside the event instead. Every screen also refetches on tab
+change and on resume, so with the socket down the app behaves exactly as it did
+before realtime existed.
 
 **Notifications are the opposite, so they get a table.** Missing an event is
 harmless; missing a notification means it never happened. Rows are written one
