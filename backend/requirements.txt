@@ -1,4 +1,7 @@
 fastapi>=0.115
+# Starlette's TestClient still uses anyio.abc.BlockingPortal, deprecated in 4.15.
+# Remove this pin once Starlette uses anyio.from_thread.BlockingPortal.
+anyio==4.14.2
 uvicorn[standard]>=0.34
 sqlalchemy[asyncio]>=2.0.36
 asyncpg>=0.30
