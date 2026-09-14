@@ -69,13 +69,12 @@ def compute_balances(
 
 
 def simplify_debts(balances: dict[UUID, int]) -> list[Transfer]:
-    """Turn net balances into the fewest transfers that clear them.
+    """Suggest repayments that clear the group's net balances.
 
-    Six friends with twenty crossed expenses usually settle in three payments
-    rather than twenty reversals. The greedy pairing of the largest debtor with
-    the largest creditor is not provably minimal in every case (that problem is
-    NP-hard), but it is optimal whenever no subset happens to cancel out, and it
-    never produces more than n-1 transfers.
+    Debtors and creditors are sorted once by amount, then paired greedily,
+    carrying each remainder forward. For zero-sum balances and n nonzero
+    participants, this produces at most n-1 transfers (none when n is zero).
+    It does not guarantee the globally minimum number of payments.
     """
     debtors = sorted(
         ((uid, -amount) for uid, amount in balances.items() if amount < 0),

@@ -21,8 +21,8 @@ Future<void> showSettleUpSheet(BuildContext context, String tripId) {
 
 /// Where the backend's debt simplification becomes visible.
 ///
-/// The API already reduces a web of crossed expenses to the fewest payments
-/// that clear everything; this screen's job is to make that reduction legible.
+/// The API suggests repayments by netting crossed expenses into balances;
+/// this screen makes those repayments legible.
 class _SettleUpSheet extends ConsumerStatefulWidget {
   const _SettleUpSheet({required this.tripId});
 

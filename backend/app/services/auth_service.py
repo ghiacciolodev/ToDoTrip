@@ -41,6 +41,10 @@ class StillOwnsTrips(Exception):
         super().__init__(f"still owns {len(trip_ids)} trips")
 
 
+async def get_user(db: AsyncSession, user_id: UUID) -> User | None:
+    return await db.get(User, user_id)
+
+
 async def register(db: AsyncSession, email: str, password: str, display_name: str) -> User:
     email = email.lower().strip()
     if await db.scalar(select(User).where(User.email == email)):

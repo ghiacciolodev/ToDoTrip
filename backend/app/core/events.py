@@ -1,7 +1,9 @@
-"""Realtime fan-out: the fact that something changed, never the data.
+"""Realtime fan-out: changes to durable content, direct live-location payloads.
 
 A client hearing {"type": "expenses.changed"} re-runs the GET it already knows;
-the database stays the only source of truth and this channel is just a bell.
+the database stays the source of truth and this channel is just a bell.
+Live locations are the deliberate exception: small, ephemeral, frequent updates
+travel in the event so every listener need not refetch after each position fix.
 That removes the entire category of sync problems — no merging, no conflicts,
 no client drifting from the server — at the cost of one extra HTTP request per
 event, and events are rare.

@@ -94,6 +94,23 @@ class TestBalances:
 
 
 class TestSimplify:
+    def test_greedy_can_use_more_payments_than_necessary(self):
+        e = UUID("00000000-0000-0000-0000-00000000000e")
+        balances = {A: -800, B: -700, C: -500, D: 1200, e: 800}
+        transfers = simplify_debts(balances)
+        actual = [(t.from_user_id, t.to_user_id, t.amount_cents) for t in transfers]
+        assert actual == [(A, D, 800), (B, D, 400), (B, e, 300), (C, e, 500)]
+
+        # Both clear the same balances; the greedy result is not a global minimum.
+        shorter = [(A, e, 800), (B, D, 700), (C, D, 500)]
+        for payments in (actual, shorter):
+            residual = dict(balances)
+            for sender, recipient, amount in payments:
+                residual[sender] += amount
+                residual[recipient] -= amount
+            assert all(value == 0 for value in residual.values())
+        assert balances == {A: -800, B: -700, C: -500, D: 1200, e: 800}
+
     def test_single_debt(self):
         transfers = simplify_debts({A: 1000, B: -1000})
         assert len(transfers) == 1

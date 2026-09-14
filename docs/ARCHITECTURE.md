@@ -74,10 +74,16 @@ flowchart TD
     s -.-> c
 ```
 
-The arrows only point down, and that is the whole discipline. A service that
-never imports FastAPI can be exercised without a request; a router that never
-touches a model cannot smuggle a rule into a handler where no test will look for
-it.
+Services do not import FastAPI. Database reads and domain operations live there;
+routers translate requests, returned objects and domain errors into HTTP or
+WebSocket messages. Model attributes and domain enums are still used by routers.
+Routers still select notification kinds and recipients, including the threshold
+for notifying expense deletion; the layer boundary does not imply all policy
+is absent from handlers. Notification snapshot construction lives in `notification_service.money_payload`;
+user lookup lives in `auth_service.get_user`, shared by HTTP authentication and
+the WebSocket handshake/watchdog. The WebSocket router owns the short-lived
+sessions and closes them, but does not query models directly. The infrastructure
+health probe in `app/main.py` is an explicit exception: it runs `SELECT 1`.
 
 The layer that earns its keep most is `dependencies.py`. It is four declarations
 that every trip-scoped endpoint reuses, and it is the reason there is exactly
@@ -118,7 +124,11 @@ bring with them.
 **Why `Writable` exists at all.** Archiving means "nothing more goes in here".
 Hiding buttons in the app does not achieve that — an older client, a request
 retried from a queue, or anybody with a terminal walks straight past it. The
-dependency sits on all seventeen mutating endpoints instead.
+`Writable` dependency protects 18 content operations: 4 for expenses/repayments,
+5 for plan items, 6 for checklists/entries and 3 for pins. It does not guard trip
+metadata, archive/unarchive/delete, membership or invite management, personal
+notification settings, or live-location updates/clears. Those operations retain
+their normal authorization checks. Reads and CSV export remain available.
 
 ---
 
@@ -277,8 +287,9 @@ next fetch shows current data regardless. Losing a notification means it never
 happened. One is a bell, the other is a record — so one is memory and the other
 is a table.
 
-**The one event that carries its data.** Everything stored is announced and
-fetched. Live location is not: a position is a couple of numbers, it is
+**The deliberate payload exception.** Events about durable trip content announce
+a change for the client to refetch. Live location, though temporarily stored,
+travels directly: a position is a couple of numbers, it is
 ephemeral, and each member sends one at most every twenty seconds, so telling
 every other member to refetch it would be dozens of requests a minute to move a
 few bytes. `location.update` carries the coordinates and `location.cleared` the
@@ -307,9 +318,30 @@ flowchart LR
     s["expense_shares<br/><i>who owes a part</i>"] --> b
     t["settlements<br/><i>who paid whom back</i>"] --> b
     b --> rep["Balance report"]
-    b --> min["Minimal transfers<br/><i>greedy match</i>"]
+    b --> repay["Suggested repayments<br/><i>net balances, greedy pairing</i>"]
     b --> card["The number on the trip card"]
 ```
+
+`simplify_debts()` sorts debtors and creditors once by descending amount, with
+UUIDs breaking ties, then pairs them while carrying remainders forward. It
+clears zero-sum balances with at most n-1 transfers for n nonzero participants
+(and no transfers for an already settled group). It does **not** guarantee the
+globally minimum number of payments.
+
+For example, debts of 800, 700 and 500 cents against credits of 1200 and 800
+produce four payments: 800 to the first creditor, then 400 and 300 from the
+second debtor, then 500 from the third. Three payments would suffice by matching
+800 to 800 and paying 700 plus 500 to the 1200 creditor. The app promises useful
+repayment suggestions through balance netting, not an optimal transfer count.
+The arithmetic and deterministic greedy algorithm are intentionally unchanged.
+
+Leaving a trip requires a zero balance, whether the member owes or is owed.
+Closing an account instead retains the user ID and accounting references while
+clearing the profile name, replacing the email and disabling credentials. It
+removes memberships and live locations and revokes refresh tokens. Frozen
+notification payloads are not rewritten on closure, so actor names can remain
+until notification deletion or retention cleanup; free-text content is also
+retained. Keeping accounting references is not a claim of complete anonymisation.
 
 A stored total is a second source of truth that eventually disagrees with the
 first, and by then nobody knows which one is wrong. Recomputing costs two

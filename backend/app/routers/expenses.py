@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.core import pagination
 from app.core.events import Notify, emit
 from app.dependencies import CurrentUser, DbSession, Membership, Writable
-from app.models import Expense, NotificationKind, User
+from app.models import NotificationKind
 from app.schemas.expense import (
     BalanceReport,
     ExpenseCreate,
@@ -17,7 +17,7 @@ from app.schemas.expense import (
     SettlementCreate,
     SettlementPublic,
 )
-from app.services import expense_service, trip_service
+from app.services import expense_service, notification_service, trip_service
 from app.services.expense_service import (
     ExpenseNotFound,
     NotAllMembers,
@@ -44,29 +44,6 @@ async def _trip_name(db: DbSession, trip_id: UUID) -> str:
     return trip.name
 
 
-async def _money_payload(
-    db: DbSession, trip_id: UUID, actor: User | UUID, expense: Expense
-) -> dict:
-    """The facts a money notification needs, copied rather than referenced.
-
-    The expense may be deleted five minutes from now; the notification about it
-    still has to read as a sentence.
-    """
-    name = actor.display_name if isinstance(actor, User) else None
-    if name is None:
-        member = await db.get(User, actor)
-        name = member.display_name if member else ""
-    return {
-        "actor_name": name,
-        "trip_name": await _trip_name(db, trip_id),
-        "description": expense.description,
-        "amount_cents": expense.amount_cents,
-        # Frozen with the rest: the notification has to read as a sentence long
-        # after the expense, and possibly the trip, has gone.
-        "currency": expense.currency,
-    }
-
-
 @router.post("/expenses", response_model=ExpensePublic, status_code=status.HTTP_201_CREATED)
 async def create_expense(
     trip_id: UUID, payload: ExpenseCreate, db: DbSession, user: CurrentUser, _: Writable
@@ -85,7 +62,7 @@ async def create_expense(
         notify=Notify(
             kind=NotificationKind.EXPENSE_ADDED,
             entity_id=expense.id,
-            payload=await _money_payload(db, trip_id, user, expense),
+            payload=await notification_service.money_payload(db, trip_id, user, expense),
         ),
     )
     return expense
@@ -120,7 +97,7 @@ async def get_expense(trip_id: UUID, expense_id: UUID, db: DbSession, _: Members
 async def delete_expense(trip_id: UUID, expense_id: UUID, db: DbSession, membership: Writable):
     try:
         expense = await expense_service.get_expense(db, trip_id, expense_id)
-        removed = await _money_payload(db, trip_id, membership.user_id, expense)
+        removed = await notification_service.money_payload(db, trip_id, membership.user_id, expense)
         await expense_service.delete_expense(db, expense)
     except ExpenseNotFound:
         raise _NOT_FOUND from None
@@ -144,7 +121,7 @@ async def delete_expense(trip_id: UUID, expense_id: UUID, db: DbSession, members
 
 @router.get("/balance", response_model=BalanceReport)
 async def get_balance(trip_id: UUID, db: DbSession, _: Membership):
-    """Who owes what, plus the shortest way to settle up."""
+    """Who owes what, plus suggested repayments that clear the net balances."""
     return await expense_service.get_balance_report(db, trip_id)
 
 

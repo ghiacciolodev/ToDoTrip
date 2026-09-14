@@ -2,8 +2,8 @@ services:
   db:
     image: postgres:17-alpine
     container_name: todotrip-db
-    # Local development credentials only. Production uses Neon and reads
-    # DATABASE_URL from the environment, never from this file.
+    # Local development credentials only. There is no public backend; a separate
+    # installation must supply its own database configuration.
     environment:
       POSTGRES_USER: todotrip
       POSTGRES_PASSWORD: todotrip

@@ -13,8 +13,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.core import events, security
 from app.database import SessionLocal
 from app.dependencies import DbSession
-from app.models import User
-from app.services import trip_service
+from app.services import auth_service, trip_service
 from app.services.trip_errors import NotAMember
 
 router = APIRouter(prefix="/trips/{trip_id}/events", tags=["events"])
@@ -59,7 +58,7 @@ async def trip_events(websocket: WebSocket, trip_id: UUID, db: DbSession):
         await _reject(websocket, _WS_UNAUTHENTICATED)
         return
 
-    user = await db.get(User, user_id)
+    user = await auth_service.get_user(db, user_id)
     if user is None or not user.is_active:
         await _reject(websocket, _WS_UNAUTHENTICATED)
         return
@@ -121,7 +120,7 @@ async def _revalidate_forever(trip_id: UUID, token: str) -> int | None:
             return _WS_UNAUTHENTICATED
 
         async with SessionLocal() as session:
-            user = await session.get(User, user_id)
+            user = await auth_service.get_user(session, user_id)
             if user is None or not user.is_active:
                 return _WS_UNAUTHENTICATED
             try:

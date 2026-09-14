@@ -7,7 +7,8 @@ from sqlalchemy import delete, func, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import pagination
-from app.models import Notification, NotificationKind, TripMember
+from app.models import Expense, Notification, NotificationKind, TripMember, User
+from app.services import trip_service
 
 # How long a notification is worth keeping. Read ones go sooner: they have
 # already done their job, and the feed is a reminder list, not an archive.
@@ -18,6 +19,29 @@ _KEEP_UNREAD = timedelta(days=90)
 # in one request by passing limit=100000. Lower than the shared cap: a feed row
 # carries a payload, so fifty of them is already a large response.
 MAX_PAGE = 50
+
+
+async def money_payload(
+    db: AsyncSession, trip_id: UUID, actor: User | UUID, expense: Expense
+) -> dict:
+    """The facts a money notification needs, copied rather than referenced.
+
+    The expense may be deleted five minutes from now; the notification about it
+    still has to read as a sentence.
+    """
+    name = actor.display_name if isinstance(actor, User) else None
+    if name is None:
+        member = await db.get(User, actor)
+        name = member.display_name if member else ""
+    return {
+        "actor_name": name,
+        "trip_name": (await trip_service.get_trip(db, trip_id)).name,
+        "description": expense.description,
+        "amount_cents": expense.amount_cents,
+        # Frozen with the rest: the notification has to read as a sentence long
+        # after the expense, and possibly the trip, has gone.
+        "currency": expense.currency,
+    }
 
 
 async def recipients_for(

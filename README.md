@@ -51,7 +51,7 @@ it and nothing outside it.
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Calendar**      | The itinerary, grouped by day. The next thing about to happen is the only row on screen that asks for attention.  |
 | **To-do & lists** | Tasks with a deadline and an owner, plus throwaway checklists for the twenty things to grab in a supermarket.     |
-| **Money**         | Shared expenses with uneven splits, running balances, and the shortest set of payments that settles the group.    |
+| **Money**         | Shared expenses with uneven splits, running balances, and suggested repayments based on net balances.    |
 | **Map**           | Places the group saved, and where everyone is right now, for as long as they choose to share it.                  |
 | **Group**         | Who is here, invite codes, and the rules for leaving without wrecking the accounts.                               |
 
@@ -91,9 +91,13 @@ flowchart TD
     md -->|asyncpg| db
 ```
 
-**Layers are one way.** A router never touches a model; it turns HTTP into a
-service call, and a service error into a status code. A service never imports
-FastAPI. That is what makes the rules testable without a request.
+**Routers handle transport; services handle persistence and domain operations.**
+HTTP routers translate requests and service errors into responses. The WebSocket
+router manages authentication frames, connection lifetime and close codes, calling
+services for user and membership lookups. Routers still read returned model
+attributes and use domain enums; this is not a ban on model imports. Services do
+not import FastAPI. Routers also choose which changes deserve a notification,
+including the amount threshold for deleted expenses. The health probe in `app/main.py` directly checks the database.
 
 The full picture, including the data model, the authorization ladder and the
 anatomy of a single write, is in
@@ -115,11 +119,16 @@ with the first.
 **Some records outlive the people in them.** Leaving a trip is blocked while your
 balance is anything but zero, in either direction: owing money or being owed it.
 Your shares cannot be deleted without silently changing what everyone else owes,
-and a former member could no longer be paid back. A closed account is emptied
-rather than deleted, for the same reason, and remembered in `trip_past_members`
-so old expenses still have a name on them.
+and a former member could no longer be paid back. Leaving preserves a
+former-member reference in `trip_past_members`. Account
+closure is different: the user row remains for accounting references, while its
+display name is cleared, email replaced with a random placeholder, password
+disabled and sessions revoked. Memberships and live location are removed. This
+does not erase every historical personal detail: frozen notification payloads
+can still contain the old actor name until deleted or purged, and user-written
+descriptions are not scrubbed.
 
-**Realtime is a bell, not a channel.** For stored state, a websocket event
+**Realtime is a bell, not a channel.** For durable trip content, a websocket event
 announces only that something changed, and the client re-runs a GET it already
 knows. No merging, no conflicts, no client drifting from the server. Live
 location is the deliberate exception: a position is a couple of numbers, it is
@@ -142,8 +151,11 @@ plan is tens of entries while the same fortnight is hundreds of expenses.
 Balances keep their own query on purpose. A balance over the thirty most recent
 expenses is not a smaller balance, it is a wrong one.
 
-**Archiving is enforced by the server.** An archived trip refuses every write
-across seventeen endpoints, not only the ones whose button is hidden. A rule
+**Archiving is enforced by the server.** An archived trip refuses content writes
+across 18 endpoints: expenses and repayments (4), plan items (5), checklists
+and entries (6), and pins (3). Trip settings, membership and invite management,
+notification preferences and live-location sharing retain their own permissions;
+archiving does not freeze those operations. A rule
 that lives in the UI is not a rule: an older client, a retried request or a
 terminal walks straight past it.
 
@@ -152,9 +164,9 @@ terminal walks straight past it.
 The fan-out in `app/core/events.py` is in-memory and single-process **on
 purpose**. With several uvicorn workers, an event raised on worker 1 never
 reaches a socket held by worker 3, and realtime that works intermittently looks
-like a client bug and is not. Run production with one worker. When the API needs
+like a client bug and is not. Run the API with one worker. When the API needs
 to scale, replace the in-process fan-out inside `emit()` with Redis pub/sub. The
-twenty-odd routers that call `emit()` do not change.
+handlers that call `emit()` do not change.
 
 ---
 
@@ -244,18 +256,22 @@ backend/
     models/       one table per file
     schemas/      the API contract, Pydantic v2
     services/     the rules
-    routers/      HTTP, 59 endpoints
-  alembic/        11 migrations, applied automatically at startup
-  tests/          17 files, one per feature
+    routers/      59 HTTP operations + one WebSocket route
+  alembic/        12 migrations, applied automatically at startup
+  tests/          16 test modules + conftest.py (shared fixtures)
 mobile/
   lib/
     core/         theme, money, currency, localisation, router, network
     features/     auth, trips, notifications, onboarding, settings, shell
     l10n/         ARB files in five languages, English is the template
-  test/           19 files
+  test/           21 *_test.dart files
   assets/legal/   the privacy policy, shipped as a file and read by the app
 tools/brand/      the icon generator
 ```
+
+The HTTP total is 60 operations including `/health` in `app/main.py`; generated
+OpenAPI and documentation routes are excluded. These are source-file and route
+counts, not counts of executed tests. Use the test runner output for the latter.
 
 Every feature folder is `data/` (models and repositories) plus `presentation/`
 (screens and widgets), with a `providers.dart` between them.
