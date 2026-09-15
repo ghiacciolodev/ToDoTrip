@@ -18,6 +18,12 @@
 </p>
 
 <p align="center">
+  <a href="https://simoneacierno.dev/projects/todotrip/#trailer">
+    <img src="https://img.shields.io/badge/▶_Watch_the_trailer-2D9583?style=for-the-badge" alt="Watch the TodoTrip trailer">
+  </a>
+</p>
+
+<p align="center">
   <img src="docs/brand/01-trips.png" width="200" alt="The list of trips, each with its dates, members and what you owe">
   <img src="docs/brand/02-calendar.png" width="200" alt="The itinerary grouped by day, with the next event highlighted">
   <img src="docs/brand/03-money.png" width="200" alt="What you owe, the trip total, and the expenses behind them">
